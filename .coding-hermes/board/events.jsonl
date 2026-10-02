@@ -14,3 +14,8 @@
 {"event_type":"task_created","actor":"foreman","tick":"guard-docs-2026-10-02-05-18-54","task_id":"DOC-3","note":null,"id":13,"timestamp":"2026-10-02T05:45:12.714260+00:00","detail":"{\"id\":\"DOC-3\",\"status\":\"pending\"}"}
 {"event_type":"task_created","actor":"foreman","tick":"guard-docs-2026-10-02-05-18-54","task_id":"DOC-4","note":null,"id":14,"timestamp":"2026-10-02T05:45:12.714260+00:00","detail":"{\"id\":\"DOC-4\",\"status\":\"pending\"}"}
 {"event_type":"task_created","actor":"foreman","tick":"guard-docs-2026-10-02-05-18-54","task_id":"DOC-5","note":null,"id":15,"timestamp":"2026-10-02T05:45:12.714260+00:00","detail":"{\"id\":\"DOC-5\",\"status\":\"pending\"}"}
+{"event_type":"task_updated","actor":"foreman","tick":null,"task_id":"GUARD-002","note":null,"id":16,"timestamp":"2026-10-02T10:51:56.860245+00:00","detail":"{\"status\":\"in_progress\"}"}
+{"event_type":"task_updated","actor":"foreman","tick":null,"task_id":"GUARD-009","note":null,"id":17,"timestamp":"2026-10-02T10:51:56.864703+00:00","detail":"{\"status\":\"in_progress\"}"}
+{"event_type":"task_completed","actor":"foreman","tick":null,"task_id":"GUARD-005","note":null,"id":18,"timestamp":"2026-10-02T10:59:12.481084+00:00","detail":"{\"status\":\"complete\"}"}
+{"event_type":"task_completed","actor":"foreman","tick":null,"task_id":"DOC-1","note":null,"id":19,"timestamp":"2026-10-02T10:59:12.491863+00:00","detail":"{\"status\":\"complete\"}"}
+{"event_type":"task_completed","actor":"foreman","tick":null,"task_id":"README-1","note":null,"id":20,"timestamp":"2026-10-02T10:59:12.500737+00:00","detail":"{\"status\":\"complete\"}"}
