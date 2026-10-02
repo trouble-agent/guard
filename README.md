@@ -135,7 +135,8 @@ Nothing in the pipeline requires touching another layer to grow.
   labelled `masquerade` at 0.24). Trust the `route`, not the `attack_class`, at
   the margin.
 - **This is a filter, not a gatekeeper.** It informs a capability split; it does
-  not replace one. See the fleet's `prompt-injection-defense` doctrine.
+  not replace one — pair it with an agent-side layer that gates tools and
+  secrets on the returned verdict.
 
 ## Build
 
@@ -144,3 +145,6 @@ go build ./...                                   # library + CLI
 go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
 go test ./... -count=1
 ```
+
+Agent-facing usage notes (prerequisites, key load order, the `errored`
+verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md).
