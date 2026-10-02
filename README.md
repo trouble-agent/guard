@@ -79,14 +79,25 @@ printf '%s' "$message" | guardd
 guardd -content "$message" -source github_pr -pretty
 
 # 2. HTTP service — one instance, every language
-guardd -serve :8768
-curl -s localhost:8768/check -d '{"source":"inbox","channel":"crier","content":"..."}'
+guardd -serve :8768 -token "$GUARD_TOKEN"     # -token is REQUIRED; binds 127.0.0.1 by default
+curl -s localhost:8768/check \
+  -H "X-Operator-Token: $GUARD_TOKEN" \
+  -d '{"source":"inbox","channel":"crier","content":"..."}'
 
 # 3. Go library
 g := &guard.Guard{Classifier: guard.NewJev(), Policy: guard.DefaultPolicy()}
 res := g.Check(ctx, guard.Input{Source: "github_pr", Content: raw})
 if res.Route != guard.RouteDeliver { /* honour res.Constraints */ }
 ```
+
+The HTTP shape is authenticated. `-token` sets a shared secret that **every**
+`/check` request must present in the `X-Operator-Token` header; a missing or
+wrong token is a 401 and the body is never classified. `guardd` refuses to start
+serving without `-token` rather than run unauthenticated, and `GET /healthz`
+stays open (no header) so probes keep working. `-serve` takes the bind address:
+an omitted host defaults to loopback, so `:8768` binds `127.0.0.1:8768` — pass
+`0.0.0.0:8768` (or an explicit host) to bind every interface deliberately. The
+CLI shapes (`stdin`, `-content`) are unaffected.
 
 ## Policy is data, in code
 
