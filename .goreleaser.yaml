@@ -1,0 +1,27 @@
+version: 2
+
+project_name: guard
+
+builds:
+  - id: guardd
+    main: ./cmd/guardd
+    binary: guardd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - formats: [tar.gz]
+    name_template: "guard-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: git
