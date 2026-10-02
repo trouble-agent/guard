@@ -148,3 +148,6 @@ go test ./... -count=1
 
 Agent-facing usage notes (prerequisites, key load order, the `errored`
 verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md).
+
+CI runs the same build, vet, and test steps on every push and pull request
+(`.github/workflows/ci.yml`), plus a gitleaks secret scan.
