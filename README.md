@@ -144,3 +144,6 @@ go build ./...                                   # library + CLI
 go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
 go test ./... -count=1
 ```
+
+CI runs the same build, vet, and test steps on every push and pull request
+(`.github/workflows/ci.yml`), plus a gitleaks secret scan.
