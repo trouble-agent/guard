@@ -29,7 +29,10 @@ jobs:
 
       - name: gitleaks
         # gitleaks-action@v2 requires a paid license on org repos; use the
-        # pinned binary instead (INT-CI-1, run 36999031002).
+        # pinned binary instead (INT-CI-1, run 36999031002). Extract to /tmp:
+        # the tarball ships its own README.md which would clobber the repo's
+        # and trip the scanner (run 36999603133).
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz | tar -xz
-          ./gitleaks detect --no-git -v --redact --exit-code 1
+          mkdir -p /tmp/gitleaks-bin
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz | tar -xz -C /tmp/gitleaks-bin
+          /tmp/gitleaks-bin/gitleaks detect --no-git -v --redact --exit-code 1
