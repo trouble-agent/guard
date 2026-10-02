@@ -1,0 +1,17 @@
+{
+  "scheduler_tick_id": "guard-foreman-2026-10-02-10-44-23",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "wave_budget": 4,
+  "composed_at": "2026-10-02T10:50:00Z",
+  "base_sha": "a8aab6c",
+  "workers": [
+    {"task_id": "GUARD-002", "worktree": "~/worktrees/guard-GUARD-002", "branch": "wt/GUARD-002", "model": "glm-5.3-flash", "provider": "zai-glm-default", "scope": ".github/workflows/ci.yml (+README CI badge optional)", "brief": "/tmp/brief-GUARD-002.txt"},
+    {"task_id": "GUARD-009", "worktree": "~/worktrees/guard-GUARD-009", "branch": "wt/GUARD-009", "model": "glm-5.3-flash", "provider": "zai-glm-default", "scope": "jev_test.go or jev_contract_test.go (new fixture/httptest test)", "brief": "/tmp/brief-GUARD-009.txt"}
+  ],
+  "independence_check": "GUARD-002 touches only .github/workflows/; GUARD-009 touches only *_test.go + maybe a testdata fixture. No shared files, no depends_on edges between the two (GUARD-002 depends_on GUARD-009 for CI-green-on-bare-runner, which is already verified true on this tree: empty-HOME/no-key `go test ./...` green, live tests self-skip).",
+  "foreman_direct": [
+    {"task_id": "GUARD-005", "reason": "complexity 1, one-line go.mod edit"},
+    {"task_id": "DOC-1", "reason": "complexity 1, one-line README pointer edit"}
+  ]
+}
