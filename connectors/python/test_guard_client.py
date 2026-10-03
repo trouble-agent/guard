@@ -27,9 +27,47 @@ class _Stub(BaseHTTPRequestHandler):
         pass
 
 
+class _TokenStub(BaseHTTPRequestHandler):
+    """Mimics guardd's /check: 401 unless X-Operator-Token matches."""
+
+    response: dict = {"route": "deliver", "decision": "allow"}
+    token: str = ""
+
+    def do_POST(self):  # noqa: N802
+        length = int(self.headers.get("Content-Length", 0))
+        self.rfile.read(length)
+        if self.headers.get("X-Operator-Token") != _TokenStub.token:
+            body = b"unauthorized: missing or invalid X-Operator-Token"
+            self.send_response(401)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        body = json.dumps(_TokenStub.response).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):  # silence
+        pass
+
+
 @pytest.fixture()
 def stub():
     srv = HTTPServer(("127.0.0.1", 0), _Stub)
+    t = threading.Thread(target=srv.serve_forever, daemon=True)
+    t.start()
+    yield f"http://127.0.0.1:{srv.server_port}"
+    srv.shutdown()
+
+
+@pytest.fixture()
+def token_stub(monkeypatch):
+    monkeypatch.delenv("GUARD_TOKEN", raising=False)  # ambient env must not leak in
+    srv = HTTPServer(("127.0.0.1", 0), _TokenStub)
     t = threading.Thread(target=srv.serve_forever, daemon=True)
     t.start()
     yield f"http://127.0.0.1:{srv.server_port}"
@@ -80,3 +118,38 @@ def test_fail_open_returns_review_with_no_capabilities():
 def test_rejects_bad_fail_mode():
     with pytest.raises(ValueError):
         Guard(fail_mode="whatever")
+
+
+# --- token auth (REVIEW-GUARD-002): guardd's /check requires X-Operator-Token ---
+
+
+def test_check_without_token_gets_401(token_stub):
+    _TokenStub.token = "s3cret"
+    g = Guard(endpoint=token_stub)
+    with pytest.raises(GuardError) as ei:
+        g.check("x")
+    assert "401" in str(ei.value)
+
+
+def test_check_with_token_arg_sends_header(token_stub):
+    _TokenStub.token = "s3cret"
+    v = Guard(endpoint=token_stub, token="s3cret").check("x")
+    assert v.deliver
+
+
+def test_check_with_token_env_fallback(token_stub, monkeypatch):
+    monkeypatch.setenv("GUARD_TOKEN", "env-secret")
+    _TokenStub.token = "env-secret"
+    v = Guard(endpoint=token_stub).check("x")
+    assert v.deliver
+
+
+def test_token_arg_wins_over_env(token_stub, monkeypatch):
+    monkeypatch.setenv("GUARD_TOKEN", "env-secret")
+    _TokenStub.token = "arg-secret"
+    v = Guard(endpoint=token_stub, token="arg-secret").check("x")
+    assert v.deliver
+    monkeypatch.setenv("GUARD_TOKEN", "arg-secret")
+    _TokenStub.token = "arg-secret"
+    g = Guard(endpoint=token_stub, token="")  # empty string falls back to env
+    assert g.check("x").deliver

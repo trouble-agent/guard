@@ -56,9 +56,11 @@ context; that description is the untrusted input.
 (pip installable: `pip install guard-client` from this repo's `connectors/python/`).
 
 ```python
+import os
+
 from guard_client import Guard
 
-guard = Guard(fail_mode="open")   # a guard outage must not stall the scheduler
+guard = Guard(fail_mode="open", token=os.environ["GUARD_TOKEN"])   # a guard outage must not stall the scheduler
 
 def route_task(task):
     v = guard.check(task.description, source="task-router", channel="router")
@@ -92,6 +94,7 @@ to a stall.
 
 ```go
 c := client.New(guardEndpoint)
+c.Token = os.Getenv("GUARD_TOKEN") // /check requires X-Operator-Token
 res, _ := c.Check(ctx, guard.Input{Source: "webhook", Channel: "dagger", Content: body})
 if res.Route != guard.RouteDeliver {
     return daggerErr(res.Reason)   // do not build a DAG from this input
