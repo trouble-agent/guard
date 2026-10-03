@@ -92,9 +92,18 @@ type Result struct {
 	DurationMs  int64       `json:"duration_ms,omitempty"`
 	CostUSD     float64     `json:"cost_usd,omitempty"`
 	// Normalizations lists the deterministic transforms applied before
-	// classification (e.g. "base64", "rot13"). Visible so a caller can see
-	// WHY a decode-and-follow payload was caught.
-	Normalizations []string `json:"normalizations,omitempty"`
+	// classification (e.g. "base64", "rot13"). This is what RAN, not what
+	// MATTERED: rot13 runs unconditionally (see normalize.go), so it appears
+	// on almost every result and must not be read as "this payload was
+	// encoded".
+	//
+	// LoadBearingNormalizations is the audit signal (GUARD-DF-002): populated
+	// only when the decoded variant actually drove the verdict — Guard.Check
+	// re-classifies the raw input on a non-deliver verdict and names the
+	// decode layer only if the verdict then differs. Empty/absent means the
+	// normalisation pipeline did not change the outcome.
+	Normalizations            []string `json:"normalizations,omitempty"`
+	LoadBearingNormalizations []string `json:"load_bearing_normalizations,omitempty"`
 }
 
 // Signals is what a classifier returns: calibrated numbers, not prose.
@@ -166,5 +175,23 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 		res.Patterns = []string{sig.Class}
 	}
 	g.Policy.apply(&res, sig)
+
+	// Attribution (GUARD-DF-002): every transform in the chain runs on every
+	// message, so "applied" alone cannot say whether an encoding mattered.
+	// When the first verdict is not deliver, re-classify the RAW input: if the
+	// verdict differs without the decoded text, the decode layer drove the
+	// outcome and is reported as load-bearing. Benign messages (deliver) pay
+	// no extra call; an errored verdict has nothing to attribute; text
+	// unchanged by normalisation cannot have hidden anything.
+	if !res.Errored && res.Route != RouteDeliver && text != in.Content {
+		rawSig, rawErr := g.Classifier.Classify(ctx, in.Content)
+		if rawErr == nil {
+			raw := Result{Policy: res.Policy}
+			g.Policy.apply(&raw, rawSig)
+			if raw.Route != res.Route {
+				res.LoadBearingNormalizations = append([]string(nil), applied...)
+			}
+		}
+	}
 	return res
 }

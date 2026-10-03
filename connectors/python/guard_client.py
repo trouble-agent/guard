@@ -48,6 +48,10 @@ class Verdict:
     errored: bool = False
     constraints: Mapping[str, bool] = field(default_factory=dict)
     normalizations: list = field(default_factory=list)
+    # Transforms whose decoded variant actually drove the verdict (absent/empty
+    # otherwise). GUARD-DF-002: `normalizations` is what RAN (rot13 always);
+    # this is what MATTERED.
+    load_bearing_normalizations: list = field(default_factory=list)
     cost_usd: float = 0.0
     duration_ms: int = 0
     raw: Mapping[str, Any] = field(default_factory=dict)
@@ -80,6 +84,7 @@ class Verdict:
             errored=bool(d.get("errored", False)),
             constraints=d.get("constraints", {}) or {},
             normalizations=list(d.get("normalizations", []) or []),
+            load_bearing_normalizations=list(d.get("load_bearing_normalizations", []) or []),
             cost_usd=d.get("cost_usd", 0.0),
             duration_ms=d.get("duration_ms", 0),
             raw=d,

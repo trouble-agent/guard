@@ -12,8 +12,10 @@ One Go module, three surfaces, one `Result`:
   quoted-downgrade rule; classification never decides the route alone.
 - `normalize.go` — decode base64/hex/URL/ROT13, strip zero-widths. ROT13 is
   applied to EVERY message on purpose (normalize.go:152): a bare ROT13 payload
-  once scored 0.32 = delivered. The cost is label noise on the
-  `normalizations` field (see GUARD-DF-002), not correctness.
+  once scored 0.32 = delivered. The label noise that cost is FIXED
+  (GUARD-DF-002): `normalizations` = what ran (rot13 on ~everything),
+  `load_bearing_normalizations` = the decoded variant actually drove the
+  verdict — read the second for "why it was caught".
 - `jev.go` — the classifier: OpenRouter's `/api/alpha/decisions` (NOT
   /chat/completions — a decisions model 400s there; that's "the usual first
   mistake" per the code comment). Keys load env → ~/.hermes/.env →

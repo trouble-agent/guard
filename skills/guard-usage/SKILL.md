@@ -44,8 +44,10 @@ if not v.deliver: ...    # quarantine/review
 - `errored: true` ⇒ every other field describes the ERROR verdict, not a
   classification (attack_class is absent, score is 0).
 - `normalizations` includes `rot13` on ~every result: ROT13 is applied
-  unconditionally by design; the field does NOT mean "this payload was
-  encoded" (GUARD-DF-002).
+  unconditionally by design; the field means "transform ran", NOT "this
+  payload was encoded". "Caught by an encoding" reads from
+  `load_bearing_normalizations` (populated only when the decoded variant
+  changed the verdict — GUARD-DF-002 fix).
 - `attack_class` is noisy near the threshold — benign text often carries
   masquerade at 0.1–0.4. Trust `route`, not the label, at the margin.
 
