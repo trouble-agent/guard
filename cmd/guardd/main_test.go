@@ -62,7 +62,7 @@ func TestCheckRequiresOperatorToken(t *testing.T) {
 			if err != nil {
 				t.Fatalf("post /check: %v", err)
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			raw, _ := io.ReadAll(resp.Body)
 
 			if resp.StatusCode != tc.want {
@@ -103,7 +103,7 @@ func TestHealthzStaysOpenWithTokenSet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get /healthz: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (body: %q)", resp.StatusCode, strings.TrimSpace(string(raw)))
@@ -128,7 +128,7 @@ func TestCheckFailsClosedWithoutConfiguredToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("post /check: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want 401 when no token is configured", resp.StatusCode)
 	}
@@ -186,7 +186,7 @@ func postCheck(t *testing.T, url, token string) int {
 	if err != nil {
 		t.Fatalf("post /check: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	return resp.StatusCode
 }
 
@@ -342,7 +342,7 @@ func TestWarnTokenProvenanceWarnsOnArgv(t *testing.T) {
 	os.Stderr = w
 	warnTokenProvenance(tokenFromArgv, "-token")
 	os.Stderr = orig
-	w.Close()
+	_ = w.Close()
 
 	raw, _ := io.ReadAll(r)
 	out := string(raw)
@@ -370,7 +370,7 @@ func TestWarnTokenProvenanceQuietForPreferredForms(t *testing.T) {
 		os.Stderr = w
 		warnTokenProvenance(tc.prov, "")
 		os.Stderr = orig
-		w.Close()
+		_ = w.Close()
 		raw, _ := io.ReadAll(r)
 		out := string(raw)
 		if !strings.Contains(out, tc.want) {

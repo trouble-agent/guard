@@ -123,7 +123,7 @@ func authorized(r *http.Request, token string) bool {
 func newHandler(g *guard.Guard, token string) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "ok\n")
+		_, _ = io.WriteString(w, "ok\n")
 	})
 	mux.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
 		// Auth before anything else: an unauthenticated request learns nothing,
@@ -148,7 +148,7 @@ func newHandler(g *guard.Guard, token string) http.Handler {
 		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
 		defer cancel()
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(g.Check(ctx, in))
+		_ = json.NewEncoder(w).Encode(g.Check(ctx, in))
 	})
 	return mux
 }
