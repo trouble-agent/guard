@@ -64,6 +64,11 @@ guard = Guard(fail_mode="open", token=os.environ["GUARD_TOKEN"])   # a guard out
 
 def route_task(task):
     v = guard.check(task.description, source="task-router", channel="router")
+    if v.errored:
+        # guard outage under fail-open: capabilities are PRESERVED (flagged),
+        # route to REVIEW. Never auto-deliver an errored verdict.
+        task.context = {"guard": {"route": v.route, "error": v.reason}}
+        return task
     if not v.deliver:
         # do not let an injected description reach a model with tools/secrets
         task.context = {"guard": {"route": v.route, "class": v.attack_class}}
@@ -75,6 +80,31 @@ def route_task(task):
 **Fail mode:** **open** — task-router's own doctrine is "fail-open is sacred;
 never block the scheduler." A guard outage must therefore degrade to REVIEW, not
 to a stall.
+
+### Constraints branching
+
+`constraints` is a **capability map, not a verdict**. Branch on `v.errored`
+first, in this order:
+
+- **`v.errored` is True** — the guard was unreachable and `fail_mode='open'`
+  applied. The verdict *grants* the usual capabilities
+  (`Guard.CONSTRAINTS_FAIL_OPEN` = `{"allow_tools": True, "allow_secrets":
+  True}`) precisely so an outage does not silently cripple every task, and sets
+  `route='review'` / `decision='error'`. **Keep `task.tools` and
+  `task.secrets` intact and take the review path — never auto-deliver an
+  errored verdict, regardless of what `constraints` says.** The strip pattern
+  below is for real policy verdicts only.
+- **`v.errored` is False** — a real verdict. Honour `route` and `constraints`:
+  route `deliver` means proceed; anything else means review/quarantine, and
+  clear (`[]`) each capability the verdict does not grant.
+
+Why: before this rule an outage returned `constraints={}` — indistinguishable
+from a real block-all policy — so the documented strip pattern emptied
+`task.tools` and `task.secrets` on every task for the whole outage, with no
+signal a consumer was likely to check (`deliver` was the documented binding
+key, and it only says *not to deliver*, not *why*). An errored verdict now
+carries its own `decision='error'` and always routes to review. Fail-open means
+"delivery continues flagged"; it must not mean "fail-crippled".
 
 ---
 

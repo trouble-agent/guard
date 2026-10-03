@@ -106,10 +106,29 @@ class Guard:
     fail_mode:
         'closed' (default) — a transport/HTTP error raises GuardError. The
             caller must not proceed; nothing is delivered on a failed check.
-        'open' — a failed check returns a REVIEW verdict with every capability
-            withheld, so an outage degrades to "a human looks", never to
-            "no protection" or "work stops".
+        'open' — a failed check returns a REVIEW verdict that PRESERVES
+            capabilities and flags the outage: route='review',
+            decision='error', errored=True, and
+            constraints=CONSTRAINTS_FAIL_OPEN (allow_tools/allow_secrets
+            still granted). An outage therefore degrades to "a human looks"
+            without silently stripping tools/secrets from every task. An
+            errored verdict ALWAYS gates unattended delivery — consumers must
+            branch on `errored` and never auto-deliver, whatever constraints
+            say.
+
+    GUARD-DF-001: before this, an outage returned constraints={} — the same
+    shape a real block-all policy produces — so the documented strip pattern
+    (empty tools/secrets when a capability is not granted) crippled every task
+    for the whole outage with no signal a consumer was likely to check.
     """
+
+    # Granted on an errored (fail-open outage) verdict so the outage does not
+    # silently cripple tasks. `errored=True` + route='review' still gate
+    # delivery; these capabilities are explicitly flagged, not trusted.
+    CONSTRAINTS_FAIL_OPEN: Mapping[str, bool] = {
+        "allow_tools": True,
+        "allow_secrets": True,
+    }
 
     def __init__(
         self,
@@ -158,14 +177,18 @@ class Guard:
 
     def _on_error(self, exc: Exception) -> Verdict:
         if self.fail_mode == "open":
+            # GUARD-DF-001: preserve capabilities and flag the outage. An
+            # errored verdict always routes to REVIEW (deliver False) and
+            # carries decision='error' so consumers can tell an outage from a
+            # real block-all policy — `constraints` alone cannot.
             return Verdict(
                 route=ROUTE_REVIEW,
-                decision="allow",
+                decision="error",
                 risk_level="medium",
                 reason=f"guard_error (connector fail-open): {exc}",
                 errored=True,
-                constraints={},  # nothing granted
-                raw={"error": str(exc)},
+                constraints=dict(self.CONSTRAINTS_FAIL_OPEN),
+                raw={"error": str(exc), "fail_mode": "open"},
             )
         raise GuardError(f"guard check failed: {exc}") from exc
 
