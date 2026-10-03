@@ -121,13 +121,43 @@ def test_fail_closed_raises():
         g.check("x")
 
 
-def test_fail_open_returns_review_with_no_capabilities():
+def test_fail_open_outage_preserves_capabilities():
+    # GUARD-DF-001: an outage must not silently strip tools/secrets from every
+    # task. Capabilities are PRESERVED and flagged (errored/decision='error').
     g = Guard(endpoint="http://127.0.0.1:1", timeout=1, fail_mode="open")
     v = g.check("x")
-    assert v.route == ROUTE_REVIEW
+    assert v.allows_tools
+    assert v.allows_secrets
+    assert v.constraints == Guard.CONSTRAINTS_FAIL_OPEN
+
+
+def test_fail_open_outage_verdict_shape():
+    # The outage is distinguishable from a real block-all policy: route=review
+    # (deliver False) + decision='error' + errored=True.
+    g = Guard(endpoint="http://127.0.0.1:1", timeout=1, fail_mode="open")
+    v = g.check("x")
     assert v.errored
+    assert v.route == ROUTE_REVIEW
+    assert not v.deliver
+    assert v.decision == "error"
+    assert v.risk_level == "medium"
+    assert "guard_error" in v.reason
+    assert v.raw.get("fail_mode") == "open"
+
+
+def test_constraints_denial_still_applies_to_normal_verdicts(stub):
+    # The strip pattern must stay correct for REAL policy verdicts: a
+    # non-errored verdict that denies tools still yields allows_tools False.
+    _Stub.response = {
+        "route": "review",
+        "decision": "block",
+        "risk_level": "high",
+        "constraints": {"allow_tools": False},
+    }
+    v = Guard(endpoint=stub).check("x")
+    assert not v.errored
     assert not v.allows_tools
-    assert not v.allows_secrets
+    assert not v.deliver
 
 
 def test_rejects_bad_fail_mode():
