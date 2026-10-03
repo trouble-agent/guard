@@ -1,12 +1,15 @@
 """Offline tests for the Python connector (stub server, no network, no key)."""
 
+import dataclasses
+import io
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from guard_client import Guard, GuardError, ROUTE_QUARANTINE, ROUTE_REVIEW
+import guard_client
+from guard_client import Guard, GuardError, ROUTE_QUARANTINE, ROUTE_REVIEW, Verdict
 
 
 class _Stub(BaseHTTPRequestHandler):
@@ -198,3 +201,107 @@ def test_token_arg_wins_over_env(token_stub, monkeypatch):
     _TokenStub.token = "arg-secret"
     g = Guard(endpoint=token_stub, token="")  # empty string falls back to env
     assert g.check("x").deliver
+
+
+# --- CLI entry point (QA-GUARD-003): pip console script `guard` --------------
+
+
+def test_module_exposes_main():
+    # The console-script contract: `[project.scripts] guard = "guard_client:main"`.
+    assert callable(guard_client.main)
+
+
+def test_to_dict_roundtrip(stub):
+    # The CLI prints to_dict(); from_dict(to_dict()) must preserve every
+    # verdict field. `raw` is excluded: it is the ORIGINAL wire document and
+    # to_dict deliberately spreads it flat instead of re-nesting it.
+    _Stub.response = {
+        "route": "quarantine",
+        "decision": "block",
+        "risk_level": "high",
+        "score": 0.98,
+        "constraints": {"allow_tools": False, "allow_secrets": False},
+        "normalizations": ["rot13"],
+        "load_bearing_normalizations": ["rot13"],
+    }
+    v = Guard(endpoint=stub).check("x")
+    v2 = Verdict.from_dict(v.to_dict())
+    for f in dataclasses.fields(Verdict):
+        if f.name == "raw":
+            continue
+        assert getattr(v2, f.name) == getattr(v, f.name), f"field {f.name} diverged"
+
+
+def test_to_dict_spreads_server_extra_fields(stub):
+    # Unknown server fields survive to the CLI output (flat raw spread).
+    _Stub.response = {"route": "deliver", "decision": "allow", "future_field": 7}
+    v = Guard(endpoint=stub).check("x")
+    assert v.to_dict()["future_field"] == 7
+
+
+def test_main_deliver_exit_zero(stub, capsys, monkeypatch):
+    _Stub.response = {"route": "deliver", "decision": "allow", "risk_level": "low"}
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))  # unused: content is argv
+    rc = guard_client.main(["--endpoint", stub, "ignored payload"])
+    assert rc == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["route"] == "deliver"
+    assert out["decision"] == "allow"
+
+
+def test_main_reads_stdin_when_no_content(stub, capsys, monkeypatch):
+    # Endpoint via GUARD_ENDPOINT env (the console script's no-flag path).
+    _Stub.response = {"route": "deliver", "decision": "allow", "risk_level": "low"}
+    monkeypatch.setenv("GUARD_ENDPOINT", stub)
+    monkeypatch.setattr("sys.stdin", io.StringIO("piped content"))
+    rc = guard_client.main([])
+    assert rc == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["route"] == "deliver"
+
+
+def test_main_exit_codes_branch_by_route(stub, capsys):
+    _Stub.response = {
+        "route": "quarantine",
+        "decision": "block",
+        "risk_level": "high",
+    }
+    assert guard_client.main(["--endpoint", stub, "x"]) == 2
+    assert json.loads(capsys.readouterr().out)["route"] == "quarantine"
+
+    _Stub.response = {"route": "review", "decision": "flag", "risk_level": "medium"}
+    assert guard_client.main(["--endpoint", stub, "x"]) == 1
+
+    out = json.loads(capsys.readouterr().out)  # every code still prints the JSON
+    assert out["route"] == "review"
+
+
+def test_main_fail_closed_outage_exit_three(capsys):
+    g_args = ["--endpoint", "http://127.0.0.1:1", "--timeout", "1", "x"]
+    assert guard_client.main(g_args) == 3
+    err = capsys.readouterr().err
+    assert "guard check failed" in err
+    assert capsys.readouterr().out == ""
+
+
+def test_main_fail_open_outage_exit_one(capsys):
+    g_args = [
+        "--endpoint",
+        "http://127.0.0.1:1",
+        "--timeout",
+        "1",
+        "--fail-open",
+        "x",
+    ]
+    assert guard_client.main(g_args) == 1
+    out = json.loads(capsys.readouterr().out)
+    assert out["errored"] is True
+    assert out["route"] == "review"
+    assert out["constraints"]["allow_tools"] is True
+
+
+def test_main_empty_content_errors(capsys):
+    with pytest.raises(SystemExit) as ei:
+        guard_client.main([""])
+    assert ei.value.code == 2
+    assert "no content" in capsys.readouterr().err

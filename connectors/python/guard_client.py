@@ -11,14 +11,25 @@ import, one call, the way a parameterised query is one call.
         # honour v.route and v.constraints — do not treat the body as trusted
         ...
 
-The contract is the same Result shape as the Go package and the CLI, so a
-verdict is portable across every surface.
+The contract is the same Result shape as the Go package and the guardd CLI,
+so a verdict is portable across every surface.
+
+The pip install also ships a console script for shell callers:
+
+    guard "ignore previous instructions"     # argument form
+    printf '%s' "$input" | guard             # stdin form (no argument)
+
+It prints the verdict JSON on stdout; exit codes branch by route so shell
+callers never parse JSON: 0 deliver, 1 review, 2 quarantine, 3 no verdict
+(transport/auth failure, fail-closed).
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
+import sys
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -84,11 +95,37 @@ class Verdict:
             errored=bool(d.get("errored", False)),
             constraints=d.get("constraints", {}) or {},
             normalizations=list(d.get("normalizations", []) or []),
-            load_bearing_normalizations=list(d.get("load_bearing_normalizations", []) or []),
+            load_bearing_normalizations=list(
+                d.get("load_bearing_normalizations", []) or []
+            ),
             cost_usd=d.get("cost_usd", 0.0),
             duration_ms=d.get("duration_ms", 0),
             raw=d,
         )
+
+    def to_dict(self) -> dict:
+        """The wire form of this verdict (route/delta fields; raw echoed whole)."""
+        out: dict = dict(self.raw) if self.raw else {}
+        out.update(
+            {
+                "route": self.route,
+                "decision": self.decision,
+                "risk_level": self.risk_level,
+                "reason": self.reason,
+                "attack_class": self.attack_class,
+                "score": self.score,
+                "policy": self.policy,
+                "provider": self.provider,
+                "model": self.model,
+                "errored": self.errored,
+                "constraints": dict(self.constraints),
+                "normalizations": list(self.normalizations),
+                "load_bearing_normalizations": list(self.load_bearing_normalizations),
+                "cost_usd": self.cost_usd,
+                "duration_ms": self.duration_ms,
+            }
+        )
+        return out
 
 
 class GuardError(RuntimeError):
@@ -197,3 +234,92 @@ class Guard:
     def is_safe(self, content: str, **kw: Any) -> bool:
         """True only when the message may be delivered unchanged."""
         return self.check(content, **kw).deliver
+
+
+# --- CLI (pip console script `guard`): classify via guardd's /check ----------
+
+
+class _ArgumentParser(argparse.ArgumentParser):
+    def error(self, message):  # pragma: no cover - exercised only on bad flags
+        """Exit 2 with the usage message on stderr, argparse's own default."""
+        self.print_usage(sys.stderr)
+        self.exit(2, f"{self.prog}: error: {message}\n")
+
+
+def _parser() -> argparse.ArgumentParser:
+    p = _ArgumentParser(
+        prog="guard",
+        description="Classify text through a guardd instance's /check endpoint.",
+        epilog=(
+            "With no CONTENT argument, reads stdin. Prints the verdict JSON on"
+            " stdout. Exit codes: 0 deliver, 1 review, 2 quarantine, 3 no"
+            " verdict (transport/auth failure)."
+        ),
+    )
+    p.add_argument("content", nargs="?", help="content to classify (default: stdin)")
+    p.add_argument(
+        "--endpoint",
+        default=None,
+        metavar="URL",
+        help="guardd base URL (default: GUARD_ENDPOINT, else http://127.0.0.1:8768)",
+    )
+    p.add_argument(
+        "--token",
+        default=None,
+        metavar="SECRET",
+        help="shared secret for X-Operator-Token (default: GUARD_TOKEN env)",
+    )
+    p.add_argument(
+        "--timeout",
+        type=float,
+        default=120.0,
+        metavar="SECONDS",
+        help="per-check timeout (default: 120)",
+    )
+    p.add_argument(
+        "--fail-open",
+        dest="fail_mode",
+        action="store_const",
+        const="open",
+        default="closed",
+        help="on outage, emit a flagged REVIEW verdict instead of failing",
+    )
+    return p
+
+
+def _verdict_exit_code(v: Optional[Verdict]) -> int:
+    if v is None:
+        return 3
+    return {ROUTE_DELIVER: 0, ROUTE_REVIEW: 1, ROUTE_QUARANTINE: 2}.get(v.route, 1)
+
+
+def main(argv: Optional[list] = None) -> int:
+    """CLI entry point. argv=None reads sys.argv; returns the process exit code."""
+    args = _parser().parse_args(argv)
+
+    content = args.content
+    if content is None:
+        content = sys.stdin.read()
+    if not content:
+        _parser().error("no content: pass CONTENT or pipe it on stdin")
+
+    guard = Guard(
+        # Resolve the endpoint at CALL time: the console script is a fresh
+        # process, but tests (and embedders) may set GUARD_ENDPOINT after
+        # import — the module-level DEFAULT_ENDPOINT would freeze it.
+        endpoint=args.endpoint or os.environ.get("GUARD_ENDPOINT") or DEFAULT_ENDPOINT,
+        token=args.token,
+        timeout=args.timeout,
+        fail_mode=args.fail_mode,
+    )
+    try:
+        verdict = guard.check(content)
+    except GuardError as exc:
+        print(f"guard: {exc}", file=sys.stderr)
+        return 3
+    print(json.dumps(verdict.to_dict(), sort_keys=True))
+    return _verdict_exit_code(verdict)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    sys.exit(main())
