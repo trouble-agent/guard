@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "guard-client"
+version = "0.1.0"
+description = "Python connector for the guard service - stdlib only, same verdict contract as the Go client"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["llm", "guard", "prompt-injection", "safety"]
+
+[tool.setuptools]
+py-modules = ["guard_client"]

@@ -51,7 +51,8 @@ deterministic pre-scan that still blocks high-confidence hits. Match that:
 server (`:9092`). Every task carries a description that ends up in a model's
 context; that description is the untrusted input.
 
-**Connector:** `connectors/python/guard_client.py`.
+**Connector:** `connectors/python/guard_client.py`
+(pip installable: `pip install guard-client` from this repo's `connectors/python/`).
 
 ```python
 from guard_client import Guard
