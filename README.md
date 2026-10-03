@@ -79,7 +79,9 @@ printf '%s' "$message" | guardd
 guardd -content "$message" -source github_pr -pretty
 
 # 2. HTTP service — one instance, every language
-guardd -serve :8768 -token "$GUARD_TOKEN"     # -token is REQUIRED; binds 127.0.0.1 by default
+GUARD_TOKEN="$GUARD_TOKEN" guardd -serve :8768           # env (recommended: token never in argv)
+guardd -serve :8768 -tokenfile /run/secrets/guard.token  # or a 0600 token file
+guardd -serve :8768 -token "$GUARD_TOKEN"                # dev: works, but warns (token visible in ps)
 curl -s localhost:8768/check \
   -H "X-Operator-Token: $GUARD_TOKEN" \
   -d '{"source":"inbox","channel":"crier","content":"..."}'
@@ -90,12 +92,16 @@ res := g.Check(ctx, guard.Input{Source: "github_pr", Content: raw})
 if res.Route != guard.RouteDeliver { /* honour res.Constraints */ }
 ```
 
-The HTTP shape is authenticated. `-token` sets a shared secret that **every**
-`/check` request must present in the `X-Operator-Token` header; a missing or
-wrong token is a 401 and the body is never classified. `guardd` refuses to start
-serving without `-token` rather than run unauthenticated, and `GET /healthz`
-stays open (no header) so probes keep working. `-serve` takes the bind address:
-an omitted host defaults to loopback, so `:8768` binds `127.0.0.1:8768` — pass
+The HTTP shape is authenticated. A shared secret that **every** `/check`
+request must present in the `X-Operator-Token` header is resolved by
+precedence **`GUARD_TOKEN` env > `-tokenfile` (must be 0600; group/world-
+readable files are refused) > `-token`**; a missing or wrong token is a 401
+and the body is never classified. `guardd` refuses to start serving without a
+token rather than run unauthenticated, and `GET /healthz` stays open (no
+header) so probes keep working. Prefer the env or tokenfile forms: `-token`
+puts the secret in the process list (`ps`, `/proc/<pid>/cmdline`), so serving
+with it prints a warning to stderr. `-serve` takes the bind address: an
+omitted host defaults to loopback, so `:8768` binds `127.0.0.1:8768` — pass
 `0.0.0.0:8768` (or an explicit host) to bind every interface deliberately. The
 CLI shapes (`stdin`, `-content`) are unaffected.
 

@@ -19,8 +19,10 @@ One Go module, three surfaces, one `Result`:
   mistake" per the code comment). Keys load env → ~/.hermes/.env →
   9router-deploy/.env.shared, regex-extracted `sk-or-v1-…`, deduped, tried in
   order on 401/402/429.
-- `cmd/guardd` — CLI + HTTP. Since GUARD-001 (c796feb): `-token` required for
-  /check, loopback default bind, /healthz open.
+- `cmd/guardd` — CLI + HTTP. Since GUARD-001 (c796feb): token required for
+  /check, loopback default bind, /healthz open. Since REVIEW-GUARD-001: the
+  token resolves GUARD_TOKEN env > `-tokenfile` (0600 enforced) > `-token`
+  (dev; warned on stderr — argv leaks via ps).
 
 ## Errors hit during real use, and what each actually meant
 
@@ -49,7 +51,9 @@ One Go module, three surfaces, one `Result`:
 - Never trust `attack_class` near the threshold; README's own honest-
   limitations section says the same and the dogfood battery agreed (benign
   text labelled masquerade at 0.09–0.37 several times).
-- For the HTTP shape, always pass `-token` and an explicit loopback host.
+- For the HTTP shape, always pass an explicit loopback host and supply the
+  token via GUARD_TOKEN env or a 0600 `-tokenfile` (never `-token` in prod —
+  ps leaks it; guardd warns).
 - Expect ~260–330 ms per verdict, essentially all of it the Jev decisions
   API round trip; budget for it in synchronous paths.
 

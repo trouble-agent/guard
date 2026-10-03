@@ -25,7 +25,8 @@ One Go core, three consumption shapes, one `Result` contract. Route on
 go build -o bin/guardd ./cmd/guardd
 printf '%s' "$msg" | ./bin/guardd                    # CLI, stdin
 ./bin/guardd -content "$msg" -source github_pr       # CLI, one-shot
-./bin/guardd -serve 127.0.0.1:8768 -token <secret>   # HTTP (token REQUIRED since GUARD-001 fix; loopback default)
+./bin/guardd -serve 127.0.0.1:8768 -tokenfile <0600-file>  # HTTP (preferred; or GUARD_TOKEN env)
+./bin/guardd -serve 127.0.0.1:8768 -token <secret>         # dev: works but warns (token visible in ps)
 ```
 
 ```python
