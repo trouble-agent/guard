@@ -9,6 +9,7 @@
 // parameterised query is one line:
 //
 //	c := client.New("http://127.0.0.1:8768")
+//	c.Token = os.Getenv("GUARD_TOKEN") // /check requires X-Operator-Token
 //	res, err := c.Check(ctx, guard.Input{Source: "webhook", Content: raw})
 //	if res.Route != guard.RouteDeliver {
 //		// honour res.Route and res.Constraints — do not deliver as-is
@@ -22,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/trouble-agent/guard"
@@ -31,6 +33,10 @@ import (
 type Client struct {
 	// Endpoint is the base URL of the service, e.g. http://127.0.0.1:8768.
 	Endpoint string
+	// Token is the shared secret sent as the X-Operator-Token header on
+	// /check (guardd's operator-token auth). When empty, GUARD_TOKEN from
+	// the environment is used; guardd answers 401 to /check without it.
+	Token string
 	// Timeout bounds one classification. Default 120s (Jev can be slow).
 	Timeout time.Duration
 	// FailMode says what a transport/HTTP error means to the CALLER. It mirrors
@@ -58,6 +64,16 @@ func New(endpoint string) *Client {
 	return &Client{Endpoint: endpoint, Timeout: 120 * time.Second, FailMode: FailClosed}
 }
 
+// token resolves the operator token: the Token field, else GUARD_TOKEN from
+// the environment. An empty result means no header is sent (a token-gated
+// guardd then answers 401, which is the fail-closed outcome).
+func (c *Client) token() string {
+	if c.Token != "" {
+		return c.Token
+	}
+	return os.Getenv("GUARD_TOKEN")
+}
+
 // Check classifies one message. On error it honours FailMode: FailClosed
 // returns the error, FailOpen returns a REVIEW verdict that withholds every
 // capability. It never returns a zero Result with a nil error.
@@ -82,6 +98,9 @@ func (c *Client) Check(ctx context.Context, in guard.Input) (guard.Result, error
 		return c.onError(fmt.Errorf("build request: %w", err))
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if token := c.token(); token != "" {
+		req.Header.Set("X-Operator-Token", token)
+	}
 
 	hc := c.HTTP
 	if hc == nil {

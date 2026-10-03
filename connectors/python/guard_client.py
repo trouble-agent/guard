@@ -93,6 +93,11 @@ class GuardError(RuntimeError):
 class Guard:
     """Client for a guardd instance.
 
+    token:
+        Shared secret sent as the X-Operator-Token header on /check (guardd's
+        operator-token auth). When empty, GUARD_TOKEN from the environment is
+        used; guardd answers 401 to /check without a valid token.
+
     fail_mode:
         'closed' (default) — a transport/HTTP error raises GuardError. The
             caller must not proceed; nothing is delivered on a failed check.
@@ -104,12 +109,14 @@ class Guard:
     def __init__(
         self,
         endpoint: Optional[str] = None,
+        token: Optional[str] = None,
         timeout: float = 120.0,
         fail_mode: str = "closed",
     ) -> None:
         if fail_mode not in ("closed", "open"):
             raise ValueError("fail_mode must be 'closed' or 'open'")
         self.endpoint = (endpoint or DEFAULT_ENDPOINT).rstrip("/")
+        self.token = token if token else os.environ.get("GUARD_TOKEN", "")
         self.timeout = timeout
         self.fail_mode = fail_mode
 
@@ -130,10 +137,13 @@ class Guard:
             "meta": dict(meta or {}),
         }
         try:
+            headers = {"Content-Type": "application/json"}
+            if self.token:
+                headers["X-Operator-Token"] = self.token
             req = urllib.request.Request(
                 self.endpoint + "/check",
                 data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
+                headers=headers,
                 method="POST",
             )
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
