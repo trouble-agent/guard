@@ -1,0 +1,16 @@
+{
+  "tick_id": "guard-foreman-2026-10-03-07-52-00",
+  "project": "guard",
+  "repo": "github.com/trouble-agent/guard",
+  "base": "origin/main@4752870",
+  "wave_budget": 11,
+  "workers": [
+    {"task": "REVIEW-GUARD-001", "worktree": "/home/kara/worktrees/guard-REVIEW-GUARD-001", "branch": "wt/REVIEW-GUARD-001"},
+    {"task": "REVIEW-GUARD-002", "worktree": "/home/kara/worktrees/guard-REVIEW-GUARD-002", "branch": "wt/REVIEW-GUARD-002"},
+    {"task": "GUARD-004", "worktree": "/home/kara/worktrees/guard-GUARD-004", "branch": "wt/GUARD-004"},
+    {"task": "GUARD-DF-002", "worktree": "/home/kara/worktrees/guard-GUARD-DF-002", "branch": "wt/GUARD-DF-002"},
+    {"task": "DOC-5", "worktree": "/home/kara/worktrees/guard-DOC-5", "branch": "wt/DOC-5"}
+  ],
+  "worker_model": "glm-5.3-flash@zai-glm-default",
+  "independence": "no depends_on edges between the five rows; each touches disjoint files (REVIEW-GUARD-001: cmd/guardd/main.go; REVIEW-GUARD-002: client/ + connectors/python/; GUARD-004: connectors/python/pyproject.toml only; GUARD-DF-002: normalize.go+README normalization section; DOC-5: README decision line + docs/ADOPTION.md). Known overlap: REVIEW-GUARD-002 and GUARD-004 both touch connectors/python/guard_client.py — GUARD-004 is new-file-only (pyproject.toml) and merges first if conflict; resolve at merge."
+}
