@@ -37,7 +37,7 @@ func newContractJevStub(t *testing.T, handler func(t *testing.T, r *http.Request
 	stub.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body []byte
 		if r.Body != nil {
-			defer r.Body.Close()
+			defer func() { _ = r.Body.Close() }()
 			var err error
 			body, err = io.ReadAll(r.Body)
 			if err != nil {

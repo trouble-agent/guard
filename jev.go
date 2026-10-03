@@ -184,19 +184,19 @@ func (j *JevClassifier) Classify(ctx context.Context, content string) (Signals, 
 		}
 		if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusPaymentRequired ||
 			resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			lastErr = fmt.Errorf("key rejected: http %d", resp.StatusCode)
 			continue
 		}
 		if resp.StatusCode != http.StatusOK {
 			b := make([]byte, 400)
 			n, _ := resp.Body.Read(b)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return sig, fmt.Errorf("http %d: %s", resp.StatusCode, strings.TrimSpace(string(b[:n])))
 		}
 		var jr jevResponse
 		decErr := json.NewDecoder(resp.Body).Decode(&jr)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if decErr != nil {
 			return sig, fmt.Errorf("malformed response: %w", decErr)
 		}

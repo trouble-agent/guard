@@ -110,7 +110,7 @@ func (c *Client) Check(ctx context.Context, in guard.Input) (guard.Result, error
 	if err != nil {
 		return c.onError(fmt.Errorf("guard unreachable: %w", err))
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(io.LimitReader(resp.Body, 512))

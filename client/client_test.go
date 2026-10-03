@@ -22,7 +22,7 @@ func TestCheckAgainstStub(t *testing.T) {
 			http.Error(w, "bad", http.StatusBadRequest)
 			return
 		}
-		json.NewEncoder(w).Encode(guard.Result{
+		_ = json.NewEncoder(w).Encode(guard.Result{
 			Decision:  guard.DecisionBlock,
 			RiskLevel: guard.RiskHigh,
 			Route:     guard.RouteQuarantine,
@@ -80,7 +80,7 @@ func newTokenServer(t *testing.T, token string) *httptest.Server {
 			http.Error(w, "unauthorized: missing or invalid X-Operator-Token", http.StatusUnauthorized)
 			return
 		}
-		json.NewEncoder(w).Encode(guard.Result{
+		_ = json.NewEncoder(w).Encode(guard.Result{
 			Decision: guard.DecisionAllow,
 			Route:    guard.RouteDeliver,
 		})
