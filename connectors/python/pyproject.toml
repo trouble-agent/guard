@@ -12,3 +12,6 @@ keywords = ["llm", "guard", "prompt-injection", "safety"]
 
 [tool.setuptools]
 py-modules = ["guard_client"]
+
+[project.scripts]
+guard = "guard_client:main"
