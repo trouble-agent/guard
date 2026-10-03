@@ -1,0 +1,11 @@
+{
+  "tick": "guard-foreman-2026-10-03-18-31-35",
+  "created_at": "2026-10-03T18:40:00Z",
+  "budget": 3,
+  "workers": [
+    {"id": "QA-GUARD-001", "worktree": "/home/kara/worktrees/guard-QA-GUARD-001", "branch": "wt/QA-GUARD-001", "base_sha": "142b799"},
+    {"id": "GUARD-DF-003", "worktree": "/home/kara/worktrees/guard-GUARD-DF-003", "branch": "wt/GUARD-DF-003", "base_sha": "142b799"},
+    {"id": "QA-GUARD-003", "worktree": "/home/kara/worktrees/guard-QA-GUARD-003", "branch": "wt/QA-GUARD-003", "base_sha": "142b799"}
+  ],
+  "status": "dispatched"
+}
