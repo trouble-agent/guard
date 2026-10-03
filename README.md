@@ -5,6 +5,58 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
 (piped through the CLI). The contract is deliberately the same shape crier's
 `internal/guard` already speaks, so adopting it is not a second dialect.
 
+## Quick Start
+
+**Prerequisites**
+
+- **Go ≥ 1.24** to build (the repo itself declares Go 1.26 in `go.mod`).
+- **An OpenRouter API key is required for ANY classification.** Classification
+  runs on the Jev decisions model via OpenRouter; with no key available, every
+  verdict comes back as the fail-closed block shown below. A key is picked up
+  from, in order, `$OPENROUTER_API_KEY`, then `~/.hermes/.env`, then
+  `~/9router-deploy/.env.shared` (key-shaped `sk-or-v1-…` values are scanned
+  from each file, deduplicated, and tried in that order — a 401/402/429 moves
+  to the next key). There is no key flag — the CLI and HTTP shapes both resolve
+  keys through this same order (`loadOpenRouterKeys`, `jev.go`).
+
+**Build and run**
+
+```bash
+go build ./cmd/guardd          # produces ./guardd
+printf '%s' "hello, world" | ./guardd          # CLI: classify via stdin
+GUARD_TOKEN=s3cr3t ./guardd -serve :8768       # or serve over HTTP
+```
+
+**First run with no key — this is the expected, correct (fail-closed) result**
+
+```json
+{
+  "decision": "block",
+  "risk_level": "medium",
+  "route": "quarantine",
+  "reason": "guard_error (fail-closed): no openrouter api key available",
+  "policy": "default",
+  "provider": "jev",
+  "score": 0,
+  "errored": true,
+  "constraints": {
+    "allow_tools": false,
+    "allow_network": false,
+    "allow_secrets": false
+  },
+  "normalizations": [
+    "rot13"
+  ]
+}
+```
+
+This is fail-closed working as designed: a guard that cannot judge must not
+wave content through, so the message is blocked and quarantined and the
+`reason` names the error. Set `OPENROUTER_API_KEY` (or populate one of the two
+`.env` files above) and real classification starts. To invert this on purpose,
+run with `-fail-closed=false` (an error then routes to `review` flagged instead
+of blocking).
+
 ```
 message in ──▶ normalise ──▶ classify ──▶ policy ──▶ route out
                 (decode)      (Jev)       (code)      (deliver|review|quarantine
