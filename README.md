@@ -57,7 +57,8 @@ that architecture:
     "allow_network": false,
     "allow_secrets": false
   },
-  "normalizations": ["rot13"],      // why it was caught, visibly
+  "normalizations": ["rot13"],               // what RAN before classification (rot13 always)
+  "load_bearing_normalizations": ["rot13"],  // the decoded variant DROVE the verdict (absent otherwise)
   "duration_ms": 439,
   "cost_usd": 0.000027468
 }
@@ -68,6 +69,20 @@ destination can afford to be wrong far more often than one that gates content:
 a false negative gets a reader holding no tools and no secrets, a false positive
 gets a slightly dumber reader. That is what makes the filter safe to deploy at
 90% accuracy instead of 99%.
+
+### normalizations: what ran vs what mattered
+
+`normalizations` lists the deterministic transforms that ran before
+classification. ROT13 runs on **every** message by design — it is the measured
+fix for the bare-ROT13 payload that once scored 0.32 and was delivered — so
+its presence says nothing about your payload. Read
+`load_bearing_normalizations` for the audit answer: on a non-deliver verdict
+the guard re-classifies the raw input, and names the decode layer there only
+if the verdict differs without the decoded text. A caught ROT13 payload
+reports both fields; benign plain text reports
+`normalizations: ["rot13"]` (the transform ran) and no load-bearing
+normalizations. Attribution costs one extra classifier call on caught
+messages only — deliver verdicts skip it.
 
 ### Attack classes (stable identifiers, shared with crier)
 `instruction_injection` · `jailbreak` · `masquerade` · `structured_object` · `none`

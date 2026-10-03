@@ -21,7 +21,8 @@ Response — the `Result`:
   "route": "quarantine",
   "attack_class": "instruction_injection", "score": 0.98,
   "constraints": { "allow_tools": false, "allow_network": false, "allow_secrets": false },
-  "normalizations": ["rot13"], "provider": "jev", "model": "…", "cost_usd": 0.000027
+  "normalizations": ["rot13"], "load_bearing_normalizations": ["rot13"],
+  "provider": "jev", "model": "…", "cost_usd": 0.000027
 }
 ```
 

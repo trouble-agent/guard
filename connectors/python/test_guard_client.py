@@ -82,12 +82,27 @@ def test_parses_verdict(stub):
         "score": 0.98,
         "constraints": {"allow_tools": False, "allow_secrets": False},
         "normalizations": ["rot13"],
+        "load_bearing_normalizations": ["rot13"],
     }
     v = Guard(endpoint=stub).check("x")
     assert v.route == ROUTE_QUARANTINE
     assert not v.deliver
     assert not v.allows_tools
     assert v.normalizations == ["rot13"]
+    assert v.load_bearing_normalizations == ["rot13"]
+
+
+def test_parses_verdict_without_load_bearing(stub):
+    # Old server / benign traffic: field absent -> empty list, no error.
+    _Stub.response = {
+        "route": "deliver",
+        "decision": "allow",
+        "risk_level": "low",
+        "constraints": {"allow_tools": True},
+        "normalizations": ["rot13"],
+    }
+    v = Guard(endpoint=stub).check("x")
+    assert v.load_bearing_normalizations == []
 
 
 def test_deliver_true_for_benign(stub):
