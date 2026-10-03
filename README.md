@@ -41,7 +41,8 @@ that architecture:
 
 ```json
 {
-  "decision": "block",              // allow | block | sanitize
+  "decision": "block",              // allow | block only — sanitize is reserved
+                                    // for contract parity with crier, not produced
   "risk_level": "high",             // low | medium | high
   "route": "quarantine",            // deliver | review | quarantine
   "reason": "injection signals above block threshold",

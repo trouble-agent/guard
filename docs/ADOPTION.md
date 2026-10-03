@@ -32,8 +32,9 @@ answers, so the parse step and its failure mode disappear.
 
 - *Minimal* — add Jev as a provider class behind the existing `ProviderSpec`
   seam (`internal/guard/router.go`, presets in spec §5.2). The verdict contract
-  is already identical (`allow|block|sanitize`, `low|medium|high`), so nothing
-  downstream changes.
+  is already compatible (`allow|block` — `sanitize` is reserved for contract
+  parity with crier but no path in this core produces it yet; risk is
+  `low|medium|high`), so nothing downstream changes.
 - *Full* — have crier's guard delegate classification to the shared core
   (in-process import, or the `client` package against a shared `guardd`) and keep
   crier's delivery integration (per-channel policy, sanitize/rewrite, quarantine
