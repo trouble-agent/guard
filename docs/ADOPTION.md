@@ -151,3 +151,7 @@ drive DAG construction), **open** for read-only `$()` enrichment.
 
 If the consumer needs a lane the contract lacks, extend the core — the
 connectors stay one-liners, which is what keeps the surface powerful.
+
+For agent-facing integration details the consumer docs don't repeat
+(prerequisites, key load order, `GUARD_ENDPOINT`, the `errored` verdict
+contract), see [skills/guard-usage/SKILL.md](../skills/guard-usage/SKILL.md).
