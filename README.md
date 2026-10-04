@@ -153,6 +153,12 @@ before trusting any other field of a block verdict — an outage looks like a
 block, but it is a different shape, and a consumer that parses the success
 shape unconditionally will mis-handle it.
 
+The Go core always produces the shapes above. The Python connector's own
+fail-open outage verdict additionally uses `decision="error"` (not `allow`) so
+consumers can tell an outage from a real block-all policy, and pairs it with
+`route=review` plus fail-open constraints — honour those constraints rather
+than treating the verdict as a block.
+
 ### Attack classes (stable identifiers, shared with crier)
 `instruction_injection` · `jailbreak` · `masquerade` · `structured_object` · `none`
 
