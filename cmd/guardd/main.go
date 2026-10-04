@@ -19,6 +19,14 @@
 //	guardd -serve :8768 -tokenfile f         # 0600 file (group/world-readable refused)
 //	guardd -serve :8768 -token s3cr3t        # argv (works, but warned: visible in ps)
 //
+// CLI exit codes: 0 for any verdict the guard served — including a normal
+// block (blocking is the guard working, not failing). Exit code 3 fires only
+// when the fail-closed guard_error verdict is produced (the guard could not
+// judge at all, e.g. no OpenRouter API key is configured), so callers keying
+// on the exit status can distinguish "classified, blocked" from "never
+// classified". With fail-closed disabled (-fail-closed=false or a per-source
+// policy override) a guard error still exits 0, since the verdict was served.
+//
 // Zero dependencies, one static binary. task-router (Python) calls the HTTP
 // form; crier (Go) imports the package directly; shell scripts pipe through the
 // CLI. Same verdict everywhere.
@@ -91,6 +99,14 @@ func main() {
 
 	res := g.Check(ctx, guard.Input{Source: *source, Channel: *channel, Content: text})
 	emit(res, *pretty)
+	// QA-GUARD-002: the CLI errorpath contract — a broken (config/egress-failed)
+	// run must not look successful to rc-keying shell/CI callers. The fail-closed
+	// DECISION in the JSON is the product; the exit code distinguishes
+	// "classified" from "guard_error fired". Serving mode (/check) is unaffected:
+	// there the block verdict is the legitimate answer to a request.
+	if res.Errored {
+		os.Exit(2)
+	}
 }
 
 // normalizeBindAddr keeps the operator's address but defaults an omitted host to

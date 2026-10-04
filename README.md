@@ -52,7 +52,11 @@ GUARD_TOKEN=s3cr3t ./guardd -serve :8768       # or serve over HTTP
 
 This is fail-closed working as designed: a guard that cannot judge must not
 wave content through, so the message is blocked and quarantined and the
-`reason` names the error. Set `OPENROUTER_API_KEY` (or populate one of the two
+`reason` names the error. The CLI (guardd run without `-serve`) exits with
+code 2 in this state and 0 on a successfully classified run, so shell and CI
+callers keying on rc can distinguish "classified" from "config broken"
+(serving mode always exits 0 — the block verdict is the legitimate answer to
+a request). Set `OPENROUTER_API_KEY` (or populate one of the two
 `.env` files above) and real classification starts. To invert this on purpose,
 run with `-fail-closed=false` (an error then routes to `review` flagged instead
 of blocking).
