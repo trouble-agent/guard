@@ -19,6 +19,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -106,6 +107,30 @@ func TestCorpusShape(t *testing.T) {
 	}
 	if counts["benign"] < 10 {
 		t.Errorf("benign near-misses = %d, want >= 10", counts["benign"])
+	}
+
+	// GUARD-010: the benign side was grown (bn-01..bn-33). The id space must
+	// stay collision-free, every grown row must be present and contiguous,
+	// and benign-labelled rows (bn-*) must stay labelled benign — a relabel
+	// would silently shrink the precision denominator.
+	seen := map[string]int{}
+	for i, r := range rows {
+		if prev, dup := seen[r.ID]; dup {
+			t.Errorf("%s appears at lines %d and %d", r.ID, prev+1, i+1)
+		}
+		seen[r.ID] = i
+		if strings.HasPrefix(r.ID, "bn-") && r.Label != "benign" {
+			t.Errorf("%s carries a benign id but label %q", r.ID, r.Label)
+		}
+	}
+	for i := 1; i <= 33; i++ {
+		id := fmt.Sprintf("bn-%02d", i)
+		if _, ok := seen[id]; !ok {
+			t.Errorf("benign corpus missing %s: the GUARD-010 growth requires bn-01..bn-33", id)
+		}
+	}
+	if counts["benign"] < 33 {
+		t.Errorf("benign near-misses = %d, want >= 33 after GUARD-010 growth", counts["benign"])
 	}
 }
 
