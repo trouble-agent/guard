@@ -31,6 +31,40 @@ destination (`deliver | review | quarantine`); `constraints` is the capability
 set the handling agent may hold. A wrong verdict is then survivable: a false
 negative gets a tool-less reader, a false positive gets a slightly dumber one.
 
+## HTTP contract
+
+Exact behaviour of `guardd -serve`'s `/check` endpoint (from `cmd/guardd/main.go`,
+`newHandler`). The result body is the same `Result` JSON as above.
+
+**Order of checks** — auth first, then method, then body. A rejected request
+reveals nothing about the later stages:
+
+| # | Trigger | Status | Body | Code |
+|---|---------|--------|------|------|
+| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:148 |
+| 2 | Method other than `POST` | `405` | `POST only` | main.go:152 |
+| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:157 |
+| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:161 |
+
+**Limits:**
+
+- **Body size**: capped at **8 MiB** via `io.LimitReader(r.Body, 8<<20)`
+  (main.go:156). A larger body is silently truncated mid-read; the truncation
+  breaks the JSON, so an oversized request surfaces as case 3 (`400 bad
+  request: ...`), not a dedicated 413.
+- **Classification timeout**: **120s** per request via
+  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:164). The CLI
+  form uses the same 120s budget (main.go:97), so CLI and HTTP verdicts agree
+  on timing too.
+
+**`GET /healthz`** — no auth, always `200` with body `ok\n` (main.go:141-143),
+so liveness probes work without the shared secret. It never classifies
+anything.
+
+**Note on truncation ordering**: auth (case 1) is checked before the body is
+read, so an unauthenticated request cannot spend server resources reading a
+huge body.
+
 ## Available connectors
 
 | Consumer | Language | Connector | Transport |
