@@ -1,1 +1,46 @@
-{"wave_id":"guard-foreman-2026-10-04-04-47-16","tasks":["DOC-2","DOC-3"],"worktrees":{"DOC-2":{"wt":"/home/kara/worktrees/guard-DOC-2","branch":"wt/DOC-2"},"DOC-3":{"wt":"/home/kara/worktrees/guard-DOC-3","branch":"wt/DOC-3"}},"status":"open"}
+{
+  "tick_id": "guard-foreman-2026-10-04-04-47-16",
+  "project": "guard",
+  "workdir": "/home/kara/trouble-agent/guard",
+  "base_sha": "812f092",
+  "workers": [
+    {
+      "task_id": "REL-GUARD-001",
+      "branch": "wt/REL-GUARD-001",
+      "worktree": "/home/kara/worktrees/guard-REL-GUARD-001",
+      "session_id": "proc_7ed3372f5cdb",
+      "pid": 1093201,
+      "model": "glm-5.3-flash@zai-glm-default",
+      "brief": "RELEASE readiness re-verify 2026-10-04: verify v0.1.0 published, delta since tag, propose next cut version, confirm CI green on HEAD"
+    },
+    {
+      "task_id": "GUARD-006",
+      "branch": "wt/GUARD-006",
+      "worktree": "/home/kara/worktrees/guard-GUARD-006",
+      "session_id": "proc_01f0fbab6881",
+      "pid": 1093304,
+      "model": "glm-5.3-flash@zai-glm-default",
+      "brief": "Prove ADOPTION.md consumer seams are integrated: land minimal crier path with Jev provider class behind ProviderSpec seam"
+    },
+    {
+      "task_id": "GUARD-007",
+      "branch": "wt/GUARD-007",
+      "worktree": "/home/kara/worktrees/guard-GUARD-007",
+      "session_id": "proc_249163f6ae22",
+      "pid": 1093438,
+      "model": "glm-5.3-flash@zai-glm-default",
+      "brief": "Add redaction pre-pass or local-classifier path for classifier egress: startup warning + health field + local path or refuse loudly"
+    },
+    {
+      "task_id": "GUARD-008",
+      "branch": "wt/GUARD-008",
+      "worktree": "/home/kara/worktrees/guard-GUARD-008",
+      "session_id": "proc_972a8682dfd7",
+      "pid": 1093711,
+      "model": "glm-5.3-flash@zai-glm-default",
+      "brief": "Build labelled corpus and measure precision/recall at bands: 5 attack classes + benign near-misses, measure at ReviewAt/BlockAt"
+    }
+  ],
+  "status": "dispatched",
+  "dispatched_at": "2026-10-04T04:47:16-05:00"
+}
