@@ -101,6 +101,8 @@ that architecture:
                                     // for contract parity with crier, not produced
   "risk_level": "high",             // low | medium | high
   "route": "quarantine",            // deliver | review | quarantine
+  "errored": false,                 // true on any classifier failure — check it
+                                    // FIRST (see "Error verdicts" below)
   "reason": "injection signals above block threshold",
   "matched_patterns": ["instruction_injection"],
   "attack_class": "instruction_injection",
@@ -139,6 +141,23 @@ reports both fields; benign plain text reports
 `normalizations: ["rot13"]` (the transform ran) and no load-bearing
 normalizations. Attribution costs one extra classifier call on caught
 messages only — deliver verdicts skip it.
+
+### Error verdicts
+
+On any classifier failure the verdict is a DIFFERENT shape: `errored=true`,
+`risk_level=medium`, `decision=block|allow`, `route=quarantine|review` (block +
+quarantine when the policy fails closed, allow + review when it fails open), and
+`reason="guard_error (fail-closed|fail-open): <err>"`. An error verdict carries
+NO `score`, NO `attack_class`, and NO `model`. Integrators: check `errored`
+before trusting any other field of a block verdict — an outage looks like a
+block, but it is a different shape, and a consumer that parses the success
+shape unconditionally will mis-handle it.
+
+The Go core always produces the shapes above. The Python connector's own
+fail-open outage verdict additionally uses `decision="error"` (not `allow`) so
+consumers can tell an outage from a real block-all policy, and pairs it with
+`route=review` plus fail-open constraints — honour those constraints rather
+than treating the verdict as a block.
 
 ### Attack classes (stable identifiers, shared with crier)
 `instruction_injection` · `jailbreak` · `masquerade` · `structured_object` · `none`
