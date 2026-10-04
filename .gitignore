@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .coding-hermes/board/.lock
+.gitreins/
+dagger.db
+connectors/python/build/
+connectors/python/guard_client.egg-info/

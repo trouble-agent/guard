@@ -1,0 +1,23 @@
+{
+  "tick_id": "guard-foreman-2026-10-04-11-21-14",
+  "project": "guard",
+  "workdir": "/home/kara/trouble-agent/guard",
+  "recovered_wave": "guard-foreman-2026-10-04-04-47-16",
+  "recovery_note": "inherited wave already fully recovered by sibling tick (all 4 workers merged/blocked, manifest closed, parity 0/0); residue was stale gitreins lock (removed)",
+  "base_sha": "2b6d47a",
+  "workers": [
+    {
+      "task_id": "GUARD-010",
+      "branch": "wt/GUARD-010",
+      "worktree": "/home/kara/worktrees/guard-GUARD-010",
+      "model": "glm-5.3-flash@zai-glm-default",
+      "brief": "grow benign calibration corpus per /tmp/brief_GUARD-010.txt",
+      "merge": "merged",
+      "sha": "e3f88ce",
+      "judge": "a48e4f4b PASS"
+    }
+  ],
+  "status": "finished",
+  "dispatched_at": "2026-10-04T11:21:14-05:00",
+  "finished_at": "2026-10-04T13:45:00-05:00"
+}
