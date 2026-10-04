@@ -41,6 +41,8 @@
       "brief": "Build labelled corpus and measure precision/recall at bands: 5 attack classes + benign near-misses, measure at ReviewAt/BlockAt"
     }
   ],
-  "status": "dispatched",
-  "dispatched_at": "2026-10-04T04:47:16-05:00"
+  "status": "recovered",
+  "dispatched_at": "2026-10-04T04:47:16-05:00",
+  "finished_at": "2026-10-04T11:40:00-05:00",
+  "recovery_note": "REL-GUARD-001 & GUARD-007 already merged (d3d2123/df97648), worktrees cleaned; GUARD-006 blocked w/ cross-repo crier dep + FAIL verdict preserved; GUARD-008 produced 0 commits -> re-dispatched as fixup GUARD-008-R2."
 }
