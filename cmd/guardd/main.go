@@ -44,6 +44,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/trouble-agent/guard"
@@ -59,6 +60,27 @@ const OperatorTokenHeader = "X-Operator-Token"
 // every user on the host).
 const GuardTokenEnv = "GUARD_TOKEN"
 
+// GuardEgressEnv controls whether the hosted Jev classifier may receive
+// untrusted content. Egress is enabled by default for backwards compatibility;
+// set GUARD_EGRESS_ENABLED=false to refuse classification rather than send data.
+const GuardEgressEnv = "GUARD_EGRESS_ENABLED"
+
+type egressDisabledClassifier struct{}
+
+func (egressDisabledClassifier) Name() string { return "disabled" }
+func (egressDisabledClassifier) Classify(context.Context, string) (guard.Signals, error) {
+	return guard.Signals{}, fmt.Errorf("hosted classifier egress is disabled (%s=false); no local classifier is configured", GuardEgressEnv)
+}
+
+func classifierEgressEnabled(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "false", "0", "no", "off":
+		return false
+	default:
+		return true
+	}
+}
+
 func main() {
 	var (
 		serve     = flag.String("serve", "", "address to serve HTTP on, e.g. :8768 (empty = CLI mode)")
@@ -72,7 +94,12 @@ func main() {
 	)
 	flag.Parse()
 
-	g := &guard.Guard{Classifier: guard.NewJev(), Policy: guard.DefaultPolicy()}
+	egressEnabled := classifierEgressEnabled(os.Getenv(GuardEgressEnv))
+	var classifier guard.Classifier = egressDisabledClassifier{}
+	if egressEnabled {
+		classifier = guard.NewJev()
+	}
+	g := &guard.Guard{Classifier: classifier, Policy: guard.DefaultPolicy()}
 	g.Policy.FailClosed = *fail
 
 	if *serve != "" {
@@ -81,7 +108,7 @@ func main() {
 			log.Fatalf("guardd: %v", err)
 		}
 		warnTokenProvenance(prov, *token)
-		serveHTTP(*serve, g, resolved)
+		serveHTTP(*serve, g, resolved, egressEnabled)
 		return
 	}
 
@@ -136,10 +163,14 @@ func authorized(r *http.Request, token string) bool {
 }
 
 // newHandler builds the HTTP surface: /healthz open, /check token-gated.
-func newHandler(g *guard.Guard, token string) http.Handler {
+func newHandler(g *guard.Guard, token string, egressEnabled bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.WriteString(w, "ok\n")
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(struct {
+			Status        string `json:"status"`
+			EgressEnabled bool   `json:"egress_enabled"`
+		}{Status: "ok", EgressEnabled: egressEnabled})
 	})
 	mux.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
 		// Auth before anything else: an unauthenticated request learns nothing,
@@ -169,13 +200,18 @@ func newHandler(g *guard.Guard, token string) http.Handler {
 	return mux
 }
 
-func serveHTTP(addr string, g *guard.Guard, token string) {
+func serveHTTP(addr string, g *guard.Guard, token string, egressEnabled bool) {
 	if err := requireToken(token); err != nil {
 		log.Fatalf("guardd: %v", err)
 	}
 	addr = normalizeBindAddr(addr)
+	if egressEnabled {
+		log.Printf("WARNING: classifier egress is enabled; untrusted content sent to /check is transmitted to the hosted Jev API outside this host. Set %s=false to disable egress (classification will fail closed without a local classifier).", GuardEgressEnv)
+	} else {
+		log.Printf("WARNING: classifier egress is DISABLED; /check will refuse classification because no local classifier is configured")
+	}
 	log.Printf("guardd listening on %s (POST /check [%s required], GET /healthz)", addr, OperatorTokenHeader)
-	if err := http.ListenAndServe(addr, newHandler(g, token)); err != nil {
+	if err := http.ListenAndServe(addr, newHandler(g, token, egressEnabled)); err != nil {
 		log.Fatalf("serve: %v", err)
 	}
 }

@@ -32,7 +32,7 @@ func stubGuard() *guard.Guard {
 // token with 401 and accepts the correct one with a JSON Result.
 func TestCheckRequiresOperatorToken(t *testing.T) {
 	const token = "s3cr3t-token"
-	srv := httptest.NewServer(newHandler(stubGuard(), token))
+	srv := httptest.NewServer(newHandler(stubGuard(), token, true))
 	defer srv.Close()
 
 	const body = `{"source":"inbox","channel":"crier","content":"hello"}`
@@ -96,7 +96,7 @@ func TestCheckRequiresOperatorToken(t *testing.T) {
 
 // AC2: /healthz stays open (no header) even when a token is configured.
 func TestHealthzStaysOpenWithTokenSet(t *testing.T) {
-	srv := httptest.NewServer(newHandler(stubGuard(), "s3cr3t-token"))
+	srv := httptest.NewServer(newHandler(stubGuard(), "s3cr3t-token", true))
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL + "/healthz")
@@ -108,15 +108,73 @@ func TestHealthzStaysOpenWithTokenSet(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (body: %q)", resp.StatusCode, strings.TrimSpace(string(raw)))
 	}
-	if got := strings.TrimSpace(string(raw)); got != "ok" {
-		t.Errorf("body = %q, want %q", got, "ok")
+	var health struct {
+		Status        string `json:"status"`
+		EgressEnabled bool   `json:"egress_enabled"`
+	}
+	if err := json.Unmarshal(raw, &health); err != nil {
+		t.Fatalf("health body is not JSON: %v (%q)", err, raw)
+	}
+	if health.Status != "ok" || !health.EgressEnabled {
+		t.Errorf("health = %+v, want status ok and egress_enabled true", health)
+	}
+}
+
+func TestDisabledEgressHealthAndCheckRefusal(t *testing.T) {
+	g := &guard.Guard{Classifier: egressDisabledClassifier{}, Policy: guard.DefaultPolicy()}
+	srv := httptest.NewServer(newHandler(g, "token", false))
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/healthz")
+	if err != nil {
+		t.Fatalf("get /healthz: %v", err)
+	}
+	var health struct {
+		EgressEnabled bool `json:"egress_enabled"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&health); err != nil {
+		_ = resp.Body.Close()
+		t.Fatalf("decode /healthz: %v", err)
+	}
+	_ = resp.Body.Close()
+	if health.EgressEnabled {
+		t.Fatal("health reports egress enabled while disabled")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, srv.URL+"/check", strings.NewReader(`{"content":"private content"}`))
+	if err != nil {
+		t.Fatalf("build request: %v", err)
+	}
+	req.Header.Set(OperatorTokenHeader, "token")
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("post /check: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	var result guard.Result
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("decode /check: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK || !result.Errored || result.Decision != guard.DecisionBlock || !strings.Contains(result.Reason, "no local classifier is configured") {
+		t.Fatalf("disabled egress result = status %d, %+v; want loud fail-closed refusal", resp.StatusCode, result)
+	}
+}
+
+func TestClassifierEgressSetting(t *testing.T) {
+	for _, tc := range []struct {
+		value string
+		want  bool
+	}{{"", true}, {"true", true}, {"false", false}, {"0", false}, {"off", false}, {"no", false}} {
+		if got := classifierEgressEnabled(tc.value); got != tc.want {
+			t.Errorf("classifierEgressEnabled(%q) = %v, want %v", tc.value, got, tc.want)
+		}
 	}
 }
 
 // A handler that is somehow built without a token must fail closed: an unset
 // secret authorizes nothing (startup refuses this case, this is the backstop).
 func TestCheckFailsClosedWithoutConfiguredToken(t *testing.T) {
-	srv := httptest.NewServer(newHandler(stubGuard(), ""))
+	srv := httptest.NewServer(newHandler(stubGuard(), "", false))
 	defer srv.Close()
 
 	req, err := http.NewRequest(http.MethodPost, srv.URL+"/check", strings.NewReader(`{"content":"hello"}`))
@@ -194,7 +252,7 @@ func postCheck(t *testing.T, url, token string) int {
 // authenticates /check exactly like the argv form — no argv secret involved.
 func TestServeWithTokenFromEnv(t *testing.T) {
 	const token = "env-secret-token"
-	srv := httptest.NewServer(newHandler(stubGuard(), token))
+	srv := httptest.NewServer(newHandler(stubGuard(), token, true))
 	defer srv.Close()
 
 	if got := postCheck(t, srv.URL, token); got != http.StatusOK {
@@ -320,7 +378,7 @@ func TestEmptyEnvIsNotAToken(t *testing.T) {
 // a 200 with the env token proves the served secret came from the env var.
 func TestEndToEndEnvTokenDrivesHandler(t *testing.T) {
 	const token = "e2e-env-secret"
-	srv := httptest.NewServer(newHandler(stubGuard(), token))
+	srv := httptest.NewServer(newHandler(stubGuard(), token, true))
 	defer srv.Close()
 
 	if got := postCheck(t, srv.URL, token); got != http.StatusOK {
