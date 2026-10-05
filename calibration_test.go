@@ -45,7 +45,7 @@ func loadCorpus(t *testing.T) []corpusRow {
 	if err != nil {
 		t.Fatalf("open corpus: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	var rows []corpusRow
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
