@@ -45,25 +45,26 @@ reveals nothing about the later stages:
 
 | # | Trigger | Status | Body | Code |
 |---|---------|--------|------|------|
-| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:148 |
-| 2 | Method other than `POST` | `405` | `POST only` | main.go:152 |
-| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:157 |
-| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:161 |
+| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:183 |
+| 2 | Method other than `POST` | `405` | `POST only` | main.go:187 |
+| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:192 |
+| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:196 |
 
 **Limits:**
 
 - **Body size**: capped at **8 MiB** via `io.LimitReader(r.Body, 8<<20)`
-  (main.go:156). A larger body is silently truncated mid-read; the truncation
+  (main.go:191). A larger body is silently truncated mid-read; the truncation
   breaks the JSON, so an oversized request surfaces as case 3 (`400 bad
   request: ...`), not a dedicated 413.
 - **Classification timeout**: **120s** per request via
-  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:164). The CLI
-  form uses the same 120s budget (main.go:97), so CLI and HTTP verdicts agree
+  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:199). The CLI
+  form uses the same 120s budget (main.go:128), so CLI and HTTP verdicts agree
   on timing too.
 
-**`GET /healthz`** — no auth, always `200` with body `ok\n` (main.go:141-143),
-so liveness probes work without the shared secret. It never classifies
-anything.
+**`GET /healthz`** — no auth, always `200` (main.go:172-178) with a JSON body
+`{"status":"ok","egress_enabled":<bool>}`, so liveness probes work without the
+shared secret. It never classifies anything. The `egress_enabled` field mirrors
+the `GUARD_EGRESS_ENABLED` startup flag.
 
 **Note on truncation ordering**: auth (case 1) is checked before the body is
 read, so an unauthenticated request cannot spend server resources reading a
