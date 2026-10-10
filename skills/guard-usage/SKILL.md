@@ -9,9 +9,9 @@ description: Use when integrating or running the guard message-security filter (
 One Go core, three consumption shapes, one `Result` contract. Route on
 `result.route` + `result.constraints`, never on `decision` alone.
 
-## Prerequisites (not in the README — learn from this)
+## Prerequisites
 
-- Go ≥1.24 to build (`go build ./...`); zero external deps.
+- Go ≥1.26.6 to build (`go build ./...` — go.mod declares `go 1.26.6`); zero external deps.
 - An OpenRouter API key for ANY classification (Jev decisions model at
   `openrouter.ai/api/alpha/decisions`). Key load order:
   `$OPENROUTER_API_KEY` → `~/.hermes/.env` → `~/9router-deploy/.env.shared`
@@ -68,9 +68,13 @@ Don't profile the Go code first — the network is the latency.
 
 - HTTP /check without `X-Operator-Token` → 401 by design; /healthz is open.
 - Fail-open (`fail_mode='open'`) does NOT deliver on outage: it returns
-  route=review, errored=True, constraints={} — a consumer that honours
-  constraints unconditionally strips tools/secrets during outages.
+  route=review, decision='error', errored=True, and
+  constraints=CONSTRAINTS_FAIL_OPEN (allow_tools/allow_secrets still granted
+  — GUARD-DF-001). The outage degrades to "a human looks" without silently
+  stripping tools/secrets from every task; `errored` ALWAYS gates unattended
+  delivery, so branch on `errored` and never auto-deliver, whatever
+  constraints say. (`fail_mode='closed'` raises instead.)
 - The Python kwarg is `endpoint=`, not `base_url=`; default endpoint from
   env `GUARD_ENDPOINT`, else `http://127.0.0.1:8768`.
 - Malformed JSON to /check → HTTP 400 with a Go json parse message (readable).
-- go.mod says go 1.24; newer toolchains are fine.
+- go.mod declares go 1.26.6; newer toolchains are fine.
