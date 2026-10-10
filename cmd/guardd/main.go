@@ -20,12 +20,16 @@
 //	guardd -serve :8768 -token s3cr3t        # argv (works, but warned: visible in ps)
 //
 // CLI exit codes: 0 for any verdict the guard served — including a normal
-// block (blocking is the guard working, not failing). Exit code 3 fires only
-// when the fail-closed guard_error verdict is produced (the guard could not
-// judge at all, e.g. no OpenRouter API key is configured), so callers keying
-// on the exit status can distinguish "classified, blocked" from "never
-// classified". With fail-closed disabled (-fail-closed=false or a per-source
-// policy override) a guard error still exits 0, since the verdict was served.
+// block (blocking is the guard working, not failing). Exit code 2 fires when
+// the guard could not judge at all (guard_error: no OpenRouter API key
+// configured, egress disabled, classifier failure): the error verdict is
+// still emitted with Result.Errored set, and the CLI exits 2 whichever way
+// the policy resolved it, so callers keying on the exit status can
+// distinguish "classified, blocked" from "never classified". Turning
+// fail-closed off (-fail-closed=false) only reshapes that error verdict in
+// the JSON — allow flagged for review instead of block+quarantine; the exit
+// code stays 2. Serving mode (/check) is unaffected: HTTP answers in-band
+// and the process keeps running.
 //
 // Zero dependencies, one static binary. task-router (Python) calls the HTTP
 // form; crier (Go) imports the package directly; shell scripts pipe through the
