@@ -155,3 +155,51 @@ connectors stay one-liners, which is what keeps the surface powerful.
 For agent-facing integration details the consumer docs don't repeat
 (prerequisites, key load order, `GUARD_ENDPOINT`, the `errored` verdict
 contract), see [skills/guard-usage/SKILL.md](../skills/guard-usage/SKILL.md).
+
+---
+
+## Operator configuration: classifier egress (`GUARD_EGRESS_ENABLED`)
+
+`guardd` classifies by sending content to the **hosted Jev API**, which runs
+outside this host. `GUARD_EGRESS_ENABLED` decides whether that network egress
+is allowed. It is read once at process start and applies to both serve mode
+(`-serve`) and CLI mode; there is no runtime reload — change the value, then
+restart `guardd`.
+
+**Default: enabled.** Leaving the variable unset keeps the backwards-
+compatible behaviour: every `/check` body may be transmitted to the hosted
+classifier.
+
+**Disabling:** set the value (case-insensitive, surrounding whitespace
+ignored) to one of `false`, `0`, `no`, `off`. Any other value — including an
+unrecognized word or an empty string — means **enabled**.
+
+- unset, or anything other than the four values below → egress **enabled**
+- `false`, `0`, `no`, `off` → egress **disabled**
+
+**Consequence of disabling: fail closed, no local classifier.** `guardd` has
+no local fallback classifier, so with egress off it does not scan anything —
+every classification returns an **errored verdict** (`provider: "disabled"`,
+`errored: true`) with reason `hosted classifier egress is disabled
+(GUARD_EGRESS_ENABLED=false); no local classifier is configured`. The guard's
+fail mode then decides the outcome:
+
+- **fail-closed (default, `-fail-closed=true`)** — `decision: "block"`,
+  `route: "quarantine"`: content is neither classified nor delivered.
+- **fail-open (`-fail-closed=false`)** — `decision: "allow"`,
+  `route: "review"`: delivery continues flagged, and consumers that honour
+  `errored` (see section 2 above) still route it to review instead of
+  auto-delivering.
+
+**Startup warnings.** `guardd` logs one of these lines at boot, so the mode
+is always visible in the service log:
+
+- egress enabled: `WARNING: classifier egress is enabled; untrusted content sent to /check is transmitted to the hosted Jev API outside this host. Set GUARD_EGRESS_ENABLED=false to disable egress (classification will fail closed without a local classifier).`
+- egress disabled: `WARNING: classifier egress is DISABLED; /check will refuse classification because no local classifier is configured`
+
+**Verify the live mode** without a token: `curl http://<guardd>/healthz`
+returns `"egress_enabled": true|false` alongside `"status": "ok"`.
+
+Operators with a strict no-egress posture should set
+`GUARD_EGRESS_ENABLED=false` **and** keep the default fail-closed policy, so
+the service blocks rather than silently forwarding everything to review.
