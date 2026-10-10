@@ -183,6 +183,10 @@ res := g.Check(ctx, guard.Input{Source: "github_pr", Content: raw})
 if res.Route != guard.RouteDeliver { /* honour res.Constraints */ }
 ```
 
+For Python callers, a pip-installable connector package lives in
+`connectors/python/` (`guard-client`): stdlib-only, speaks the HTTP shape
+above, same verdict contract as the Go client.
+
 The HTTP shape is authenticated. A shared secret that **every** `/check`
 request must present in the `X-Operator-Token` header is resolved by
 precedence **`GUARD_TOKEN` env > `-tokenfile` (must be 0600; group/world-
