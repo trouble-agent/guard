@@ -9,7 +9,7 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
 
 **Prerequisites**
 
-- **Go ≥ 1.24** to build (the repo itself declares Go 1.26 in `go.mod`).
+- **Go ≥ 1.26.6** to build (the repo itself declares Go 1.26.6 in `go.mod`).
 - **An OpenRouter API key is required for ANY classification.** Classification
   runs on the Jev decisions model via OpenRouter; with no key available, every
   verdict comes back as the fail-closed block shown below. A key is picked up
