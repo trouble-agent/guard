@@ -1,0 +1,65 @@
+{
+  "tick_id": "guard-foreman-2026-10-10-00-02-32",
+  "wave_budget": 10,
+  "dispatched_at": "2026-10-10T00:02:32Z",
+  "status": "recovered",
+  "workers": [
+    {
+      "task": "README-2",
+      "worktree": "/home/kara/worktrees/guard-README-2",
+      "branch": "wt/README-2",
+      "base_sha": "89253f9"
+    },
+    {
+      "task": "README-3",
+      "worktree": "/home/kara/worktrees/guard-README-3",
+      "branch": "wt/README-3",
+      "base_sha": "89253f9"
+    },
+    {
+      "task": "README-4",
+      "worktree": "/home/kara/worktrees/guard-README-4",
+      "branch": "wt/README-4",
+      "base_sha": "89253f9"
+    },
+    {
+      "task": "README-5",
+      "worktree": "/home/kara/worktrees/guard-README-5",
+      "branch": "wt/README-5",
+      "base_sha": "89253f9"
+    },
+    {
+      "task": "README-6",
+      "worktree": "/home/kara/worktrees/guard-README-6",
+      "branch": "wt/README-6",
+      "base_sha": "89253f9"
+    },
+    {
+      "task": "DOC-6",
+      "worktree": "/home/kara/worktrees/guard-DOC-6",
+      "branch": "wt/DOC-6",
+      "base_sha": "89253f9"
+    },
+    {
+      "task": "DOC-7",
+      "worktree": "/home/kara/worktrees/guard-DOC-7",
+      "branch": "wt/DOC-7",
+      "base_sha": "89253f9"
+    },
+    {
+      "task": "DOC-8",
+      "worktree": "/home/kara/worktrees/guard-DOC-8",
+      "branch": "wt/DOC-8",
+      "base_sha": "89253f9"
+    },
+    {
+      "task": "DOC-10",
+      "worktree": "/home/kara/worktrees/guard-DOC-10",
+      "branch": "wt/DOC-10",
+      "base_sha": "89253f9"
+    }
+  ],
+  "recovered_by": "guard-foreman-2026-10-10-08-01-05",
+  "finished_at": "2026-10-10T08:30:00Z",
+  "recovery_note": "6/8 branches already merged on main (zero-commit stale-base); wt/DOC-7 rebased+gated+merged (776aa6f); README-6 branch preserved unmerged (target not in wave scope); README-5/DOC-6 fixed pre-wave by acac6c8/47bd2d0"
+}
