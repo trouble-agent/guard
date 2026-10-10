@@ -284,3 +284,15 @@ from source (above) for other platforms.
 
 Agent-facing usage notes (prerequisites, key load order, the `errored`
 verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md).
+
+## Further docs
+
+- [Adoption guide](docs/ADOPTION.md) — the exact choke point where each
+  consumer (crier, task-router, shell) hooks the guard, and how its
+  connector is wired.
+- [Threshold calibration](docs/threshold-calibration.md) — measured
+  precision/recall of the default policy bands on a labelled corpus; the
+  numbers behind the accuracy and near-threshold claims above.
+
+CI runs the same build, vet, and test steps on every push and pull request
+(`.github/workflows/ci.yml`), plus a gitleaks secret scan.
