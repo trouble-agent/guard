@@ -240,11 +240,43 @@ Nothing in the pipeline requires touching another layer to grow.
 ```bash
 go build ./...                                   # library + CLI
 go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
+```
+
+## Testing
+
+```bash
 go test ./... -count=1
 ```
 
+The suite is plain `go test` — no external services required. The unit and
+policy tests run against a deterministic stub classifier, so they pass offline;
+the live end-to-end test (`TestLiveJevRoutesKnownCases`, `jev_live_test.go`)
+skips itself when no OpenRouter key is available (and under `-short`), so the
+suite stays runnable offline by default. CI runs the same build, vet, and test
+steps on every push and pull request (`.github/workflows/ci.yml`), plus a
+gitleaks secret scan.
+
+## Install (released binaries)
+
+Tagged releases ship static Linux binaries built by
+`.github/workflows/release.yml` (GoReleaser). See GitHub Releases for tagged
+versions: https://github.com/trouble-agent/guard/releases (first release:
+[v0.1.0](https://github.com/trouble-agent/guard/releases/tag/v0.1.0),
+2026-10-02; assets: `guard-linux-amd64.tar.gz`, `guard-linux-arm64.tar.gz`,
+`checksums.txt`).
+
+```bash
+curl -sL -o guard-linux-amd64.tar.gz \
+  https://github.com/trouble-agent/guard/releases/latest/download/guard-linux-amd64.tar.gz
+curl -sL -O \
+  https://github.com/trouble-agent/guard/releases/latest/download/checksums.txt
+sha256sum --ignore-missing -c checksums.txt
+tar xzf guard-linux-amd64.tar.gz
+./guardd -pretty -content "hello, world"   # verify the binary runs
+```
+
+Each tarball contains `guardd`, the README, and the LICENSE. Prefer building
+from source (above) for other platforms.
+
 Agent-facing usage notes (prerequisites, key load order, the `errored`
 verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md).
-
-CI runs the same build, vet, and test steps on every push and pull request
-(`.github/workflows/ci.yml`), plus a gitleaks secret scan.
