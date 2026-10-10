@@ -31,6 +31,10 @@ destination (`deliver | review | quarantine`); `constraints` is the capability
 set the handling agent may hold. A wrong verdict is then survivable: a false
 negative gets a tool-less reader, a false positive gets a slightly dumber one.
 
+One exception: when `errored` is set (an outage verdict — see Fail mode
+below), branch on `errored` first. `constraints` on an outage verdict is
+connector-specific and cannot tell an outage from a policy.
+
 ## HTTP contract
 
 Exact behaviour of `guardd -serve`'s `/check` endpoint (from `cmd/guardd/main.go`,
@@ -84,12 +88,36 @@ A guard that cannot produce a verdict must do something explicit:
 
 - **`closed`** — the check fails loudly; nothing is delivered. Use where a
   missed injection is worse than a stall (control paths, code-action ingress).
-- **`open`** — the check returns a **REVIEW** verdict with every capability
-  withheld. Use where availability is first-class (message buses): an outage
-  degrades to "a human looks", never to "no protection" or "work stops".
+- **`open`** — the check degrades to a flagged **REVIEW** verdict: `route`
+  review, `deliver` false, `errored` set. An outage becomes "a human looks" —
+  never "no protection", never "work stops", and never a silent allow. What
+  the outage verdict does with `constraints` is a per-connector choice
+  (below); whatever it says, a consumer running `open` must branch on
+  `errored` first and never auto-deliver an outage verdict.
 
 Both are implemented in every connector (`fail_mode=` in Python, `FailMode` in
-Go, `-fail-closed` in the CLI) and both are recorded on the result.
+Go, `-fail-closed` in the CLI) and both are recorded on the result. On outage
+capabilities the connectors deliberately diverge — this is documented, not
+hidden:
+
+| Connector | `open` outage verdict | `decision` | `constraints` |
+|---|---|---|---|
+| Python `guard_client.py` (`fail_mode='open'`) | `route='review'`, `errored=True` | `error` | **preserved** — `CONSTRAINTS_FAIL_OPEN` grants `allow_tools: true`, `allow_secrets: true` |
+| Go `client` (`FailOpen`) | `RouteReview`, `Errored: true` | `allow` | **withheld** — zero `Constraints{}`, every capability false |
+| `guardd` CLI (`-fail-closed=false`) | `route=review`, `errored` | `allow` | **withheld** — constraints stay all-false |
+
+Why the divergence: the Python connector serves task-router, whose doctrine
+is "fail-open is sacred; never block the scheduler" (GUARD-DF-001). An outage
+verdict that withheld capabilities was indistinguishable from a real
+block-all policy and silently stripped tools+secrets from every task for the
+whole outage — so the outage verdict PRESERVES capabilities and flags itself
+(`errored=True`, `decision='error'`) instead. The Go client (crier,
+hermes-dagger) keeps the conservative stance: an outage verdict never grants
+anything. Read that as one contract with two capability stances, not as
+drift: both return `route` review with `errored` set, and both require the
+consumer to gate on `errored`. Do not "reconcile" one side to the other
+without re-reading GUARD-DF-001 and both consumers' gating; a new connector
+picks one of the two stances and documents it.
 
 ## Adding a connector (this is the point)
 
@@ -100,8 +128,12 @@ To add language or framework N:
    the `Result`. That is the whole protocol.
 2. **A verdict view** — expose `route` and `constraints` as fields, plus one
    boolean (`deliver` / `IsSafe()`), so callers never parse the raw map.
-3. **Fail mode** — implement `closed` (raise/return error) and `open` (return a
-   REVIEW verdict with no capabilities). Do not invent a third behaviour.
+3. **Fail mode** — implement `closed` (raise/return error) and `open` (return
+   a flagged REVIEW verdict: `errored` set, never a silent allow). For the
+   outage verdict's `constraints`, pick one of the two existing stances —
+   withhold everything (Go client) or preserve-and-flag
+   (`CONSTRAINTS_FAIL_OPEN`, Python) — and document which you chose. Do not
+   invent a third behaviour.
 4. **A framework hook** (optional but encouraged) — a middleware/adapter at the
    consumer's ingress choke point, so guarding is a wrap, not a call site
    scattered through the code.
@@ -114,4 +146,8 @@ route), extend the **core** — not the connector. Connectors stay thin.
 - Do not reimplement classification in a connector. One core, many callers.
 - Do not ship a connector that returns "allow" when the service is unreachable
   and calls it fail-open. That is silent protection loss — use REVIEW.
-- Do not let a connector grant `allow_secrets`. No verdict path ever should.
+- Do not let a connector grant `allow_secrets` on a real verdict. No policy
+  path ever should. The deliberate exception is the Python fail-open outage
+  verdict, which preserves capabilities and flags the outage with
+  `errored=True` (see Fail mode above) — consumers gate on `errored`, not on
+  the grant.
