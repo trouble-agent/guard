@@ -46,6 +46,6 @@
 {"id":"DOC-7","status":"done","tick":"guard-foreman-2026-10-10-00-02-32","verdict":"merged+pushed (776aa6f, recovery tick)"}
 {"id":"DOC-8","status":"done","tick":"guard-foreman-2026-10-10-00-02-32","verdict":"merged+pushed"}
 {"id":"DOC-10","status":"done","tick":"guard-foreman-2026-10-10-00-02-32","verdict":"merged+pushed"}
-{"id":"README-5","status":"pending","tick":"guard-foreman-2026-10-10-00-02-32","note":"worker stalled no commit retry next tick"}
-{"id":"README-6","status":"pending","tick":"guard-foreman-2026-10-10-00-02-32","note":"worker stalled no commit retry next tick"}
-{"id":"DOC-6","status":"pending","tick":"guard-foreman-2026-10-10-00-02-32","note":"worker stalled no commit retry next tick"}
+{"id":"README-5","status":"done","tick":"guard-foreman-2026-10-10-08-01-05","note":"worker stalled no commit retry next tick","verdict":"pre-wave commit acac6c8 on main: Testing+Install sections added, verified in README.md"}
+{"id":"README-6","status":"done","tick":"guard-foreman-2026-10-10-08-01-05","note":"worker stalled no commit retry next tick","verdict":"merged+pushed 2377766 (recovery tick): docs-check Makefile target, make docs-check PASS"}
+{"id":"DOC-6","status":"done","tick":"guard-foreman-2026-10-10-08-01-05","note":"worker stalled no commit retry next tick","verdict":"pre-wave commit 47bd2d0 on main: stale exit-code comments in cmd/guardd/main.go corrected, verified"}
