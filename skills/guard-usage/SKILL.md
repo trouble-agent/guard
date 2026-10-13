@@ -18,6 +18,8 @@ One Go core, three consumption shapes, one `Result` contract. Route on
   (regex `sk-or-v1-…`, tried in order on 401/402/429). An expired key in the
   first file yields opaque `guard_error (fail-closed): key rejected: http 401`
   block verdicts — check `errored` in the Result when a block looks wrong.
+- Full prerequisite detail, key discovery, and a first-run walkthrough:
+  README.md "Quick Start". This file is the agent-facing summary.
 
 ## Entry points
 
