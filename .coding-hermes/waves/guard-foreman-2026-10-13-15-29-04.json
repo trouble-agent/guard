@@ -1,0 +1,5 @@
+{"scheduler_tick":"guard-foreman-2026-10-13-15-29-04","project":"guard","budget":4,"workers":[
+{"task":"DOC-2","worktree":"/home/kara/worktrees/guard-DOC-2","branch":"wt/DOC-2"},
+{"task":"DOC-6","worktree":"/home/kara/worktrees/guard-DOC-6","branch":"wt/DOC-6"},
+{"task":"DOC-7","worktree":"/home/kara/worktrees/guard-DOC-7","branch":"wt/DOC-7"},
+{"task":"DOC-8","worktree":"/home/kara/worktrees/guard-DOC-8","branch":"wt/DOC-8"}],"status":"dispatched"}
