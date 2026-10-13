@@ -28,8 +28,10 @@
 // distinguish "classified, blocked" from "never classified". Turning
 // fail-closed off (-fail-closed=false) only reshapes that error verdict in
 // the JSON — allow flagged for review instead of block+quarantine; the exit
-// code stays 2. Serving mode (/check) is unaffected: HTTP answers in-band
-// and the process keeps running.
+// code stays 2. Exit code 3 is not a guardd code at all: it belongs to the
+// Python connector (connectors/python/guard_client.py), whose scheme is
+// 0 deliver, 1 review, 2 quarantine, 3 no-verdict. Serving mode (/check) is
+// unaffected: HTTP answers in-band and the process keeps running.
 //
 // Zero dependencies, one static binary. task-router (Python) calls the HTTP
 // form; crier (Go) imports the package directly; shell scripts pipe through the
