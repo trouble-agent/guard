@@ -200,6 +200,25 @@ omitted host defaults to loopback, so `:8768` binds `127.0.0.1:8768` — pass
 `0.0.0.0:8768` (or an explicit host) to bind every interface deliberately. The
 CLI shapes (`stdin`, `-content`) are unaffected.
 
+### Classifier egress (`GUARD_EGRESS_ENABLED`)
+
+The hosted Jev classifier is a network call: content handed to `/check` or the
+CLI is transmitted to the hosted Jev API outside this host.
+`GUARD_EGRESS_ENABLED` is the operator kill switch. Default is **enabled**
+(serving with egress enabled prints a one-time warning to that effect). Set it
+to `false`, `0`, `no`, or `off` — case-insensitive, surrounding whitespace
+ignored; any other value, including unset/empty, means enabled — and guardd
+replaces the classifier with a disabled stub: nothing leaves the host. Serve
+mode then logs
+`WARNING: classifier egress is DISABLED; /check will refuse classification because no local classifier is configured`,
+and every `/check` request and CLI classification fails closed with the
+standard error verdict — `errored=true`, `route=quarantine`,
+`reason="guard_error (fail-closed): hosted classifier egress is disabled (GUARD_EGRESS_ENABLED=false); no local classifier is configured"`
+(see "Error verdicts" above). With `-fail-closed=false` the same error routes
+to `review` instead of `quarantine`; it is still an error verdict, never a
+classification. There is no local classifier: disabling egress always disables
+classification.
+
 ## Policy is data, in code
 
 ```go
