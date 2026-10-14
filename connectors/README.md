@@ -83,6 +83,64 @@ Go consumers that run in-process import the core and get zero network hops;
 Go consumers that share a `guardd` instance use `client`. Both return the same
 `guard.Result`, so switching between them is a one-line change.
 
+## Fail-open semantics
+
+There are two different failure boundaries: the `guardd` HTTP server talking to
+its classifier, and a connector talking to `guardd`. Do not confuse a `guardd`
+error verdict with a connector transport failure.
+
+**Classifier timeout/error inside guardd:** `POST /check` runs classification
+under a **120s request-context deadline**. This is hard-coded in the HTTP
+handler (and the one-shot CLI also uses 120s); the HTTP handler has no timeout
+flag or environment override. The Jev HTTP client has its own **90s default**
+when no custom client is supplied. If classification returns an error (including
+a deadline/transport failure), `/check` still returns **HTTP 200** with a JSON
+`Result` whose `errored` is true. Its decision/route follows the server policy:
+default `-fail-closed=true` yields `decision="block"`,
+`route="quarantine"`; `-fail-closed=false` yields `decision="allow"`,
+`route="review"`. Both include a `reason` beginning `guard_error (...)`; this
+is an in-band verdict, not an HTTP error response. (Sources:
+[`cmd/guardd/main.go:98-109`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:201-204`](../cmd/guardd/main.go),
+[`guard.go:153-167`](../guard.go),
+[`jev.go:161-164`](../jev.go).)
+
+**Connector timeout or unreachable guardd:** when no HTTP response can be
+obtained, there is no server status or body to report. The Go and Python clients
+apply their own `FailMode`/`fail_mode`: in `closed` mode Go returns an error and
+Python raises `GuardError`; in `open` mode each synthesizes a local REVIEW
+verdict with `errored=true` and a `guard_error (connector fail-open): ...`
+reason. These synthesized verdicts are not an HTTP response. Go withholds all
+capabilities; Python preserves its configured outage capabilities
+(`allow_tools=true`, `allow_secrets=true`). An `errored` result must never be
+auto-delivered. (Sources:
+[`client/client.go:80-137`](../client/client.go),
+[`connectors/python/guard_client.py:170-182`](python/guard_client.py),
+[`connectors/python/guard_client.py:200-230`](python/guard_client.py).)
+
+**HTTP errors from a reachable guardd:** for example, missing/invalid
+`X-Operator-Token` produces HTTP **401** with a plain-text
+`unauthorized: missing or invalid X-Operator-Token` body. Both connectors treat
+non-200 responses as check failures; fail-open mode then returns the same
+connector-local REVIEW verdict described above, while fail-closed returns/raises
+an error. This does not change guardd's response into a 200. (Sources:
+[`cmd/guardd/main.go:181-195`](../cmd/guardd/main.go),
+[`client/client.go:109-137`](../client/client.go),
+[`connectors/python/guard_client.py:200-230`](python/guard_client.py).)
+
+**Configuration:** guardd's HTTP classification deadline is fixed at 120s.
+The Go connector's timeout is configurable through `Client.Timeout` (zero uses
+120s); its failure mode is `Client.FailMode`. Python's timeout is configurable
+through the `timeout` constructor argument / CLI `--timeout` (default 120s),
+and its mode through `fail_mode` / CLI `--fail-open`. The server policy is
+configurable with `-fail-closed` (default true), affecting only the in-band
+classifier-error verdict, not the HTTP status. (Sources:
+[`cmd/guardd/main.go:98-109`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:201-204`](../cmd/guardd/main.go),
+[`client/client.go:40-64`](../client/client.go),
+[`connectors/python/guard_client.py:170-182`](python/guard_client.py),
+[`connectors/python/guard_client.py:270-287`](python/guard_client.py).)
+
 ## Fail mode — choose per surface, never by default
 
 A guard that cannot produce a verdict must do something explicit:
