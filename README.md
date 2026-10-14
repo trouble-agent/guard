@@ -382,6 +382,8 @@ verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md
 - [Release readiness](docs/release-readiness-2026-10-04.md) — the 2026-10-04
   re-verification of the v0.1.0 release: tag/commit linkage, published
   GitHub Release assets, and checksums.
+- [Connectors](connectors/README.md) — the language adapters that turn the
+  guard into a one-liner in each consumer stack.
 
 CI runs the same build, vet, and test steps on every push and pull request
 (`.github/workflows/ci.yml`), plus a gitleaks secret scan.
