@@ -61,10 +61,11 @@ reveals nothing about the later stages:
   form uses the same 120s budget (main.go:128), so CLI and HTTP verdicts agree
   on timing too.
 
-**`GET /healthz`** — no auth, always `200` (main.go:172-178) with a JSON body
-`{"status":"ok","egress_enabled":<bool>}`, so liveness probes work without the
-shared secret. It never classifies anything. The `egress_enabled` field mirrors
-the `GUARD_EGRESS_ENABLED` startup flag.
+**`/healthz`** — no auth, always `200` (GET and other methods are accepted; the
+handler does not restrict the method; `cmd/guardd/main.go:172-178`) with a JSON
+body `{"status":"ok","egress_enabled":<bool>}`, so liveness probes work without
+the shared secret. It never classifies anything. The `egress_enabled` field
+mirrors the `GUARD_EGRESS_ENABLED` startup flag.
 
 **Note on truncation ordering**: auth (case 1) is checked before the body is
 read, so an unauthenticated request cannot spend server resources reading a
