@@ -312,6 +312,8 @@ verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md
 - [Threshold calibration](docs/threshold-calibration.md) — measured
   precision/recall of the default policy bands on a labelled corpus; the
   numbers behind the accuracy and near-threshold claims above.
+- [Connectors](connectors/README.md) — the language adapters that turn the
+  guard into a one-liner in each consumer stack.
 
 CI runs the same build, vet, and test steps on every push and pull request
 (`.github/workflows/ci.yml`), plus a gitleaks secret scan.
