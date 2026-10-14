@@ -82,7 +82,7 @@ binary built in seconds; the wait was understanding the credential loading).
 
 ## What a new user needs that isn't documented
 
-- Go ≥1.24 and an OpenRouter API key are hard prerequisites; neither is stated.
+- Go ≥1.26.6 and an OpenRouter API key are hard prerequisites; neither is stated.
 - The key loading order (env → ~/.hermes/.env → 9router-deploy/.env.shared) is
   invisible; an expired key in the first file produces 401s with no hint that
   other files exist or are tried.
