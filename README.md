@@ -279,6 +279,31 @@ suite stays runnable offline by default. CI runs the same build, vet, and test
 steps on every push and pull request (`.github/workflows/ci.yml`), plus a
 gitleaks secret scan.
 
+### Makefile targets
+
+The `Makefile` wraps the common contributor commands. Every target below is
+declared in the Makefile's `.PHONY` list and runs as `make <target>`:
+
+| Target | What it runs | When you use it |
+|---|---|---|
+| `build` | `go build -o bin/guardd ./cmd/guardd` (`client/` is a library package — only `cmd/guardd` produces a binary) | You want the CLI binary locally |
+| `test` | `go test ./...` | Before every commit |
+| `vet` | `go vet ./...` | Static analysis alongside the tests |
+| `lint` | `golangci-lint run` if a `.golangci.yml` / `.golangci.yaml` config is present; prints a skip notice otherwise | Style pass before opening a PR |
+| `release` | `goreleaser release --snapshot --clean` | Building a local snapshot release artifact (no upload) |
+| `docs-check` | Replays this README's documented commands against the real binary (see below) | You touched the README, the guard's documented behavior, or the Go version claim |
+| `print-go-directive` | Prints the Go directive version the guard is built against | Consumed by `docs-check`; also handy for checking a version claim by hand |
+
+`make docs-check` is the README-drift gate. It re-runs the build command, the
+`printf … | guardd` invocation, and the fail-closed JSON example exactly as
+they appear in this README, compares the binary's output against the
+documented verdict, and checks the README's Go version claim against the
+directive reported by `make print-go-directive` — so docs and code drift apart
+fails at `make` time instead of sitting unnoticed in the docs. All keyless
+runs execute under `env -i` with a temporary `HOME`, so the check cannot pick
+up a live API key from the environment; the documented fail-closed behavior
+has to happen on its own.
+
 ## Install (released binaries)
 
 Tagged releases ship static Linux binaries built by
