@@ -1,0 +1,16 @@
+{
+  "tick": "guard-foreman-2026-10-14-16-52-02",
+  "project": "guard",
+  "repo": "github.com/trouble-agent/guard",
+  "budget": 8,
+  "workers": [
+    {"task": "README-3", "branch": "wt/README-3", "files": ["README.md"], "summary": "Reword README so it no longer claims a Python connector exists in this repo; state task-router is the Python caller via its own HTTP client"},
+    {"task": "README-4", "branch": "wt/README-4", "files": ["README.md"], "summary": "Add docs/ links (ADOPTION, threshold-calibration, release-readiness) wherever skills/guard-usage/SKILL.md is referenced"},
+    {"task": "README-5", "branch": "wt/README-5", "files": ["README.md"], "summary": "Reorder/augment README so testing appears in reading order; add install/deploy question incl. release/versioned install path"},
+    {"task": "DOC-12", "branch": "wt/DOC-12", "files": ["README.md", "Makefile"], "summary": "Document Makefile targets incl. make docs-check in README Build/Testing for contributors"},
+    {"task": "DOC-13", "branch": "wt/DOC-13", "files": ["README.md", "skills/guard-usage/SKILL.md"], "summary": "Document the -channel CLI flag in CLI examples (README consumption shapes + skills/guard-usage)"},
+    {"task": "DOC-14", "branch": "wt/DOC-14", "files": ["README.md"], "summary": "Link connectors/README.md from README Further docs section"}
+  ],
+  "independent": true,
+  "note": "All 6 rows are single/doc-only README edits with no depends_on edges among them. Each worker owns its row's edits; serial merge in order above; DOC-13 touches skills/guard-usage/SKILL.md, others README.md only (DOC-12 README section distinct). Commit prefix = row id. No push by workers."
+}
