@@ -104,4 +104,4 @@ docs-check: build
 	echo "docs-check: empty-stdin fail-closed rc=2 OK"; \
 	echo "docs-check: PASS"
 print-go-directive:
-	@echo 1.26.6
+	@awk '/^go /{print $$2}' go.mod

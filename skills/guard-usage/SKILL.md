@@ -11,7 +11,7 @@ One Go core, three consumption shapes, one `Result` contract. Route on
 
 ## Prerequisites
 
-- Go ≥1.26.6 to build (`go build ./...` — go.mod declares `go 1.26.6`); zero external deps.
+- Go ≥1.26.9 to build (`go build ./...` — go.mod declares `go 1.26.9`); zero external deps.
 - An OpenRouter API key for ANY classification (Jev decisions model at
   `openrouter.ai/api/alpha/decisions`). Key load order:
   `$OPENROUTER_API_KEY` → `~/.hermes/.env` → `~/9router-deploy/.env.shared`
@@ -81,4 +81,4 @@ Don't profile the Go code first — the network is the latency.
 - The Python kwarg is `endpoint=`, not `base_url=`; default endpoint from
   env `GUARD_ENDPOINT`, else `http://127.0.0.1:8768`.
 - Malformed JSON to /check → HTTP 400 with a Go json parse message (readable).
-- go.mod declares go 1.26.6; newer toolchains are fine.
+- go.mod declares go 1.26.9; newer toolchains are fine.
