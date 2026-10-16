@@ -75,3 +75,6 @@
 {"id":68,"event_type":"task_created","actor":"foreman","task_id":"DOC-17","timestamp":"2026-10-16T20:12:33Z","detail":"{\"id\":\"DOC-17\",\"status\":\"pending\"}"}
 {"id":69,"event_type":"task_created","actor":"foreman","task_id":"DOC-18","timestamp":"2026-10-16T20:12:33Z","detail":"{\"id\":\"DOC-18\",\"status\":\"pending\"}"}
 {"id":70,"event_type":"task_created","actor":"foreman","task_id":"DOC-19","timestamp":"2026-10-16T20:12:33Z","detail":"{\"id\":\"DOC-19\",\"status\":\"pending\"}"}
+{"id":71,"event_type":"task_created","actor":"guard-docs-lane","task_id":"DOC-15","timestamp":"2026-10-16T20:15:12Z","detail":"{\"tick\":\"guard-docs-2026-10-16-19-57-44\",\"lane\":\"guard-docs\",\"filed_by\":\"stand-in docs audit lane\"}"}
+{"id":72,"event_type":"task_created","actor":"guard-docs-lane","task_id":"DOC-16","timestamp":"2026-10-16T20:15:12Z","detail":"{\"tick\":\"guard-docs-2026-10-16-19-57-44\",\"lane\":\"guard-docs\",\"filed_by\":\"stand-in docs audit lane\"}"}
+{"id":73,"event_type":"task_created","actor":"guard-docs-lane","task_id":"DOC-17","timestamp":"2026-10-16T20:15:12Z","detail":"{\"tick\":\"guard-docs-2026-10-16-19-57-44\",\"lane\":\"guard-docs\",\"filed_by\":\"stand-in docs audit lane\"}"}
