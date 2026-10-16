@@ -45,3 +45,34 @@
 - **Board note:** tasks.jsonl tail shows DOC-2..DOC-10 'done' rows duplicating
   earlier 'pending' rows for the same ids (52 lines, dup-id pairs DOC-2/6/7/8/10,
   README-2..6) — status-by-id is ambiguous; foreman should reconcile.
+## 2026-10-16 — dogfood run 3 (tick guard-dogfood-2026-10-16-15-45-07, READ-ONLY lane)
+
+- **Verdict: SOUND** — angle = the `-channel` flag surface (documented 10-14
+  by DOC-13, never driven) + released-artifact check (v0.1.0) + fresh-box
+  install re-proof. Delta vs run 2 (b23aad1→aeb2f80): docs DOC-12/13/14,
+  README-3/4/5, SEC-GO-1269 go 1.26.9 bump — no runtime code changed.
+- **Fresh-box install leg (bunker-mvp agent guard-df-1016, destroyed,
+  residue recheck clean):** clone from PUBLIC origin → aeb2f80 (main tip) →
+  `go build ./cmd/guardd` 41s cold (go1.26.9 auto-download) → fail-closed
+  first-run rc=2 exact documented shape → bogus key rc=2 "key rejected:
+  http 401". INSTALL_SECONDS=44. pip connector FAILED verbatim (PEP 668
+  externally-managed-environment, Python 3.12.3); rescue
+  `--break-system-packages` green; connector CLI rc=3 connection-refused on
+  a serverless box = correct documented failure.
+- **Findings (SUGGESTED, lane read-only):** DF-G6 (P2, -channel/-source
+  accepted then silently discarded — classifier never sees the labels,
+  Result echoes neither, README:212 says "classifier label"; proven by a
+  5x5 matrix, verdicts identical); DF-G7 (P3, Jev model noise 0.46-0.53
+  straddles the 0.5 review threshold on a borderline payload — route flips
+  deliver↔review across identical replays); DF-G8 (P1, released v0.1.0
+  README lacks every post-tag user-facing contract: rc=2 exit codes, egress
+  kill-switch, -channel, go 1.26.9 security fix — fix direction = cut
+  v0.1.1, not doc edits); DF-G9 (P2, fresh-box pip install needs the PEP 668
+  footnote). DF-G4 re-proven fresh; DF-G1 premise holds (main.go:7).
+  Full evidence: docs/dogfood/2026-10-16-run3-findings.md (this commit).
+- **Perf:** headline CLI classification warm 391.0ms ± 39.0 (provider-bound,
+  same envelope as run 2's 394±13); cold ~0.85s; startup 2.8ms; local floor
+  3.0ms. **No PERF row** — nothing locally slow enough to feel; go 1.26.9
+  bump moved nothing.
+- **Board:** run 2's duplicate-status caveat RESOLVED by foreman (588a5dd,
+  10-14); last-occurrence census = 45 unique ids, 0 open rows.
