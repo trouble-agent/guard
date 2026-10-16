@@ -76,3 +76,45 @@
   bump moved nothing.
 - **Board:** run 2's duplicate-status caveat RESOLVED by foreman (588a5dd,
   10-14); last-occurrence census = 45 unique ids, 0 open rows.
+
+
+## 2026-10-16 — dogfood run 3b (tick guard-dogfood-2026-10-16-15-45-07, READ-ONLY lane; SECOND run under the same tick)
+
+- **Verdict: SOUND** (consistent with runs 1-3). Sibling run 3 (7a0aca3, committed
+  16:09:39Z mid-tick, agent guard-df-1016 DESTROYED) covered the -channel/-source
+  no-op surface (DF-G6), threshold jitter (DF-G7), released-artifact staleness
+  (DF-G8), PEP 668 connector friction (DF-G9), and a hand-walked fresh-box install
+  (44s). This run changed the ANGLE per the same-tick-sibling rule: the surfaces
+  run 3 did NOT touch.
+- **New surface 1 — `make docs-check` (the repo's own README-replay drift gate,
+  never driven by runs 1-2):** gate PASSES its replay legs live (README build +
+  stdin example replayed verbatim, empty-stdin rc=2 OK). New finding DF-G10 [P2]:
+  the gate's `print-go-directive` Makefile target is a hardcoded constant
+  (Makefile:106-107, `@echo 1.26.6`) while go.mod declares `go 1.26.9` since the
+  SEC-GO-1269 bump (a1b8ff3) — the gate built to catch stale Go-version claims now
+  rubber-stamps the stale claim; README.md:12 + skills/guard-usage/SKILL.md:14,84
+  still say 1.26.6 in-tree. Fix: parse go.mod (source of truth) instead of the
+  echo, then correct the three stale claims.
+- **New surface 2 — standard bunker-qa.sh battery (bunker-mvp agent 102dffc5,
+  TTL 4h, DESTROYED by collect, bunker list clean):** fresh-install OK (agent
+  distro go 1.26.5 < 1.26.9 floor; go.mod's toolchain directive auto-downloaded
+  go1.26.9 itself — the security bump works on a fresh box, no hand-install),
+  ci-pass OK (act 1 job green), upgrade OK (v0.1.0 -> HEAD clean), chaos-resource
+  PASS (3G cap), chaos-errorpath OK (rc=2 clean), chaos-disconnect UNVERIFIED
+  (zero output under network cut — battery cell gap, not a product verdict).
+  19 evidence rows. Full battery ~12min wall; install_seconds≈720 battery-side.
+- **Re-proofs at HEAD:** DF-G1 (main.go:7 still {input}; body {"input":...} ->
+  400 "content is required"), DF-G4 (9MiB -> 400 "bad request: unexpected EOF"),
+  DF-G5 (threshold-calibration.md:20-21 truncated aUdub3Jl example unchanged).
+  DF-G2 NARROWED: the raw decoder leak is HTTP-body-only; CLI stdin "not json"
+  classifies as plain text rc=0 — run 2's "CLI path identical" premise corrected
+  (no new row; scope of the old row's fix = http decode arm only).
+- **Category quality (real use):** direct injection block 0.98-0.99 quarantine;
+  ROT13-wrapped injection block w/ rot13 normalization (GUARD-DF-002 holds);
+  benign quarterly-report text allow->review 0.51 (matches the documented
+  11-of-33 benign-review band); base64 corpus payload mq-01 block 0.99.
+- **Perf:** headline CLI classification warm 405.2ms ± 68.7 (hyperfine 10 runs,
+  provider-bound Jev round-trip; user 15.1ms sys 9.0ms); fail-closed no-key 5.1ms;
+  no-key cold first run 193.8ms. **No PERF row** — only felt cost is the designed
+  classifier round-trip; matches runs 1-3's envelope.
+- **Full evidence:** docs/dogfood/2026-10-16-run3b-findings.md (this commit).
