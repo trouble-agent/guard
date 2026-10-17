@@ -41,3 +41,23 @@ Applying the requested material-change rule (commit subjects beginning `feat:` o
 - `git rev-list --count v0.1.0..HEAD`
 - `gh run list --limit 3 --json databaseId,headSha,status,conclusion,name,workflowName,event,createdAt,url`
 - `gh run view 37178936396 --json headSha,status,conclusion,jobs`
+
+## Update 2026-10-17 — released-artifact documentation gap (DOC-17)
+
+The cut in the "Proposed next version" section above still has not happened: as
+of 2026-10-17 `git ls-remote --tags origin` shows `refs/tags/v0.1.0` only, and
+the newest GitHub Release is still v0.1.0 (2026-10-02T19:28:24Z). The delta has
+grown from 37 commits (2026-10-04) to 135 (`git rev-list --count v0.1.0..HEAD`,
+2026-10-17), so the interval between the released artifact and
+`origin/main` now spans the egress kill switch (`GUARD_EGRESS_ENABLED`), the CLI
+exit-code contract (`rc=2`), token precedence (`GUARD_TOKEN` env > `-tokenfile`
+> `-token`) and the loopback `-serve` default, the `-channel` flag, and the Go
+`net/http` fix GO-2026-6617 (SEC-GO-1269).
+
+Because the release-cut decision belongs to the release lane (not the docs
+lane), this gap is documented instead of silently carried: `README.md`'s
+"Install (released binaries)" sections now carry a dated released-artifact
+notice naming the missing contracts and pointing readers at the build-from-
+source path, and the same notice is appended to the v0.1.0 GitHub Release
+notes. Cutting v0.2.0 removes the notice and makes the tarball README current
+again.

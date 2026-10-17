@@ -76,6 +76,19 @@ versions: https://github.com/trouble-agent/guard/releases (first release:
 2026-10-02; assets: `guard-linux-amd64.tar.gz`, `guard-linux-arm64.tar.gz`,
 `checksums.txt`).
 
+> **Released-artifact notice (2026-10-17).** The only tagged release,
+> **v0.1.0** (2026-10-02), predates every user-facing contract added since it
+> was cut, and the README bundled in its tarball (153 lines) documents that
+> older binary, not this one: it carries no `GUARD_EGRESS_ENABLED` classifier
+> egress kill switch, no CLI exit-code contract (`rc=2` on a fail-closed
+> error, `rc=0` on a classified run), no server token precedence
+> (`GUARD_TOKEN` env > `-tokenfile` > `-token`) and no loopback-by-default
+> `-serve` bind, and no `-channel` flag; the released binary also predates the
+> Go `net/http` security fix GO-2026-6617 (SEC-GO-1269). **Build from source
+> (Quick Start above)** to get the contracts documented here — the notice is
+> removed by the next tagged release (v0.2.0 is proposed in
+> [release readiness](docs/release-readiness-2026-10-04.md)).
+
 ```bash
 curl -sL -o guard-linux-amd64.tar.gz \
   https://github.com/trouble-agent/guard/releases/latest/download/guard-linux-amd64.tar.gz
@@ -354,6 +367,19 @@ versions: https://github.com/trouble-agent/guard/releases (first release:
 [v0.1.0](https://github.com/trouble-agent/guard/releases/tag/v0.1.0),
 2026-10-02; assets: `guard-linux-amd64.tar.gz`, `guard-linux-arm64.tar.gz`,
 `checksums.txt`).
+
+> **Released-artifact notice (2026-10-17).** The only tagged release,
+> **v0.1.0** (2026-10-02), predates every user-facing contract added since it
+> was cut, and the README bundled in its tarball (153 lines) documents that
+> older binary, not this one: it carries no `GUARD_EGRESS_ENABLED` classifier
+> egress kill switch, no CLI exit-code contract (`rc=2` on a fail-closed
+> error, `rc=0` on a classified run), no server token precedence
+> (`GUARD_TOKEN` env > `-tokenfile` > `-token`) and no loopback-by-default
+> `-serve` bind, and no `-channel` flag; the released binary also predates the
+> Go `net/http` security fix GO-2026-6617 (SEC-GO-1269). **Build from source
+> (Quick Start above)** to get the contracts documented here — the notice is
+> removed by the next tagged release (v0.2.0 is proposed in
+> [release readiness](docs/release-readiness-2026-10-04.md)).
 
 ```bash
 curl -sL -o guard-linux-amd64.tar.gz \
