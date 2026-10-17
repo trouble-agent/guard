@@ -45,24 +45,24 @@ reveals nothing about the later stages:
 
 | # | Trigger | Status | Body | Code |
 |---|---------|--------|------|------|
-| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:183 |
-| 2 | Method other than `POST` | `405` | `POST only` | main.go:187 |
-| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:192 |
-| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:196 |
+| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:185 |
+| 2 | Method other than `POST` | `405` | `POST only` | main.go:189 |
+| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:193-194 |
+| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:198 |
 
 **Limits:**
 
 - **Body size**: capped at **8 MiB** via `io.LimitReader(r.Body, 8<<20)`
-  (main.go:191). A larger body is silently truncated mid-read; the truncation
+  (main.go:193). A larger body is silently truncated mid-read; the truncation
   breaks the JSON, so an oversized request surfaces as case 3 (`400 bad
   request: ...`), not a dedicated 413.
 - **Classification timeout**: **120s** per request via
-  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:199). The CLI
-  form uses the same 120s budget (main.go:128), so CLI and HTTP verdicts agree
+  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:201). The CLI
+  form uses the same 120s budget (main.go:130), so CLI and HTTP verdicts agree
   on timing too.
 
 **`/healthz`** — no auth, always `200` (GET and other methods are accepted; the
-handler does not restrict the method; `cmd/guardd/main.go:172-178`) with a JSON
+handler does not restrict the method; `cmd/guardd/main.go:172-180`) with a JSON
 body `{"status":"ok","egress_enabled":<bool>}`, so liveness probes work without
 the shared secret. It never classifies anything. The `egress_enabled` field
 mirrors the `GUARD_EGRESS_ENABLED` startup flag.
@@ -101,7 +101,7 @@ default `-fail-closed=true` yields `decision="block"`,
 `route="quarantine"`; `-fail-closed=false` yields `decision="allow"`,
 `route="review"`. Both include a `reason` beginning `guard_error (...)`; this
 is an in-band verdict, not an HTTP error response. (Sources:
-[`cmd/guardd/main.go:98-109`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:92-118`](../cmd/guardd/main.go),
 [`cmd/guardd/main.go:201-204`](../cmd/guardd/main.go),
 [`guard.go:153-167`](../guard.go),
 [`jev.go:161-164`](../jev.go).)
@@ -125,7 +125,7 @@ auto-delivered. (Sources:
 non-200 responses as check failures; fail-open mode then returns the same
 connector-local REVIEW verdict described above, while fail-closed returns/raises
 an error. This does not change guardd's response into a 200. (Sources:
-[`cmd/guardd/main.go:181-195`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:184-198`](../cmd/guardd/main.go),
 [`client/client.go:109-137`](../client/client.go),
 [`connectors/python/guard_client.py:200-230`](python/guard_client.py).)
 
@@ -136,11 +136,11 @@ through the `timeout` constructor argument / CLI `--timeout` (default 120s),
 and its mode through `fail_mode` / CLI `--fail-open`. The server policy is
 configurable with `-fail-closed` (default true), affecting only the in-band
 classifier-error verdict, not the HTTP status. (Sources:
-[`cmd/guardd/main.go:98-109`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:92-118`](../cmd/guardd/main.go),
 [`cmd/guardd/main.go:201-204`](../cmd/guardd/main.go),
-[`client/client.go:40-64`](../client/client.go),
+[`client/client.go:53-64`](../client/client.go),
 [`connectors/python/guard_client.py:170-182`](python/guard_client.py),
-[`connectors/python/guard_client.py:270-287`](python/guard_client.py).)
+[`connectors/python/guard_client.py:264-287`](python/guard_client.py).)
 
 ## Fail mode — choose per surface, never by default
 

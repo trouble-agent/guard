@@ -102,6 +102,62 @@ docs-check: build
 	jq -e '.decision == "block" and .errored == true and (.reason | contains("fail-closed"))' "$$TMPHOME/empty.json" > /dev/null \
 	  || { echo "docs-check FAIL: empty-stdin run is not the fail-closed block verdict"; cat "$$TMPHOME/empty.json"; exit 1; }; \
 	echo "docs-check: empty-stdin fail-closed rc=2 OK"; \
+	echo "docs-check: checking connectors/README.md main.go line anchors (DOC-16)"; \
+	ANCHORS=$$(grep -oE 'main\.go:[0-9]+(-[0-9]+)?' connectors/README.md | sort -u); \
+	if [ -z "$$ANCHORS" ]; then \
+	  echo "docs-check FAIL: no main.go: anchors found in connectors/README.md — check ran on nothing (DOC-16)"; \
+	  exit 1; \
+	fi; \
+	MAINLINES=$$(wc -l < cmd/guardd/main.go); \
+	doctype_anchor_fail=0; \
+	for tok in $$ANCHORS; do \
+	  anchor_range="$${tok#main\.go:}"; \
+	  anchor_start="$${anchor_range%%-*}"; \
+	  anchor_end="$${anchor_range#*-}"; \
+	  if [ "$$anchor_range" = "$$anchor_end" ]; then anchor_end=""; fi; \
+	  anchor_line=$$(sed -n "$${anchor_start}p" cmd/guardd/main.go); \
+	  anchor_start_text="$$anchor_line"; \
+	  if [ -z "$$anchor_line" ]; then \
+	    echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is EMPTY/absent (cmd/guardd/main.go has $$MAINLINES lines)"; \
+	    doctype_anchor_fail=1; continue; \
+	  fi; \
+	  case "$$anchor_line" in \
+	    *'//'*[![:space:]]*) \
+	      echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is a comment, not the cited behaviour: '$$anchor_line'"; \
+	      doctype_anchor_fail=1; continue;; \
+	    esac; \
+	  case "$$anchor_line" in \
+	    ""|*[[:space:]]*) ;; \
+	    *) \
+	      echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is whitespace/blank, not the cited behaviour: '$$anchor_line'"; \
+	      doctype_anchor_fail=1; continue;; \
+	  esac; \
+	  case "$$anchor_line" in \
+	    '{'|'}') \
+	      echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is a lone brace line, not the cited behaviour: '$$anchor_line'"; \
+	      doctype_anchor_fail=1; continue;; \
+	  esac; \
+	  if [ -n "$$anchor_end" ]; then \
+	    if [ "$$anchor_start" -gt "$$anchor_end" ]; then \
+	      echo "docs-check FAIL: anchor $$tok range goes backwards"; \
+	      doctype_anchor_fail=1; continue; \
+	    fi; \
+	    if [ "$$anchor_end" -gt "$$MAINLINES" ]; then \
+	      echo "docs-check FAIL: anchor $$tok range end $$anchor_end past EOF ($$MAINLINES lines)"; \
+	      doctype_anchor_fail=1; continue; \
+	    fi; \
+	    anchor_line=$$(sed -n "$${anchor_end}p" cmd/guardd/main.go); \
+	    if [ -z "$$anchor_line" ]; then \
+	      echo "docs-check FAIL: anchor $$tok range end $$anchor_end is empty"; \
+	      doctype_anchor_fail=1; continue; \
+	    fi; \
+	  fi; \
+	  echo "docs-check: anchor $$tok ok: $$anchor_start: $$anchor_start_text$${anchor_end:+ ... $$anchor_end: $$(sed -n "$${anchor_end}p" cmd/guardd/main.go)}"; \
+	done; \
+	if [ "$$doctype_anchor_fail" -ne 0 ]; then \
+	  echo "docs-check FAIL: stale/incoherent main.go line anchors (DOC-16 — update connectors/README.md to current line numbers)"; \
+	  exit 1; \
+	fi; \
 	echo "docs-check: PASS"
 print-go-directive:
 	@awk '/^go /{print $$2}' go.mod
