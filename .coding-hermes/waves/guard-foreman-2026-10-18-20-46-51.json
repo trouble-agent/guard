@@ -1,7 +1,8 @@
 {
   "tick_id": "guard-foreman-2026-10-18-20-46-51",
   "started_at": "2026-10-18T20:46:51-05:00",
-  "status": "dispatched",
+  "finished_at": "2026-10-18T21:03:00Z",
+  "status": "complete",
   "wave_budget": 1,
   "workers": [
     {
@@ -9,8 +10,15 @@
       "worktree": "/home/kara/worktrees/guard-DOC-18",
       "branch": "wt/DOC-18",
       "base": "12e4e25c42f8018f79dfd55d11cf29f4dfebee93",
+      "rebased_onto": "402437736e5597a33539ce5451974dae644415ba",
       "model": "glm-5.3-flash",
-      "provider": "zai-glm-default"
+      "provider": "zai-glm-default",
+      "worker_commit": "d0b3216",
+      "merged_sha": "932f08b5",
+      "merge_mode": "ff-only",
+      "gates": "go build/vet/test -count=1 green; make docs-check PASS; gitreins tier1 PASS + tier2 PASS (verdict 885fa74e); CI success on exact head 932f08b",
+      "status": "merged"
     }
-  ]
+  ],
+  "notes": "Wave recovery tick: the inherited manifest (guard-foreman-2026-10-17-04-53-43, 0 workers) was already recovered and closed by tick guard-foreman-2026-10-17-12-55-44 (DOC-9 merged 0bcdb17); nothing left to recover. Board: DOC-15/DOC-17 remain failed-with-reason (workers exhausted budget with 0 commits under the api_server execute_code block) and stay open for re-dispatch. This tick dispatched one worker (WAVE_BUDGET=1)."
 }
