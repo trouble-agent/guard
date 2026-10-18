@@ -1,0 +1,11 @@
+{
+  "tick_id": "guard-foreman-2026-10-17-04-53-43",
+  "recovered_by": "guard-foreman-2026-10-17-12-55-44",
+  "recovered_at": "2026-10-18T01:37:32Z",
+  "original_workers": 0,
+  "status": "recovered",
+  "notes": "Wave manifest had 0 workers — nothing to recover.",
+  "recovered_workers": [
+    "DOC-9"
+  ]
+}
