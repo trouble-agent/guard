@@ -71,6 +71,103 @@ mirrors the `GUARD_EGRESS_ENABLED` startup flag.
 read, so an unauthenticated request cannot spend server resources reading a
 huge body.
 
+## Operational knobs (endpoint, token, timeout)
+
+The knobs a new integrator actually sets. Names are exact; defaults are what
+the code does today.
+
+**`GUARD_ENDPOINT`** — base URL of the guardd HTTP service. Default
+`http://127.0.0.1:8768` (loopback, port 8768). The Python connector resolves
+it as CLI `--endpoint` flag → `GUARD_ENDPOINT` environment variable → the
+built-in default ([`connectors/python/guard_client.py:264`](python/guard_client.py),
+[`connectors/python/guard_client.py:308-310`](python/guard_client.py)). The
+library form is `Guard(endpoint=...)`, falling back to the module default
+([`connectors/python/guard_client.py:38`](python/guard_client.py)), which
+snapshots `GUARD_ENDPOINT` at import time — set the variable before importing,
+or pass `endpoint=` explicitly, if you resolve late. The Go client has no
+environment default: `client.New(endpoint)` takes the URL explicitly
+([`client/client.go:63-65`](../client/client.go)).
+
+**`GUARD_TOKEN`** — the shared secret every `/check` must present as the
+`X-Operator-Token` header; guardd answers `401 unauthorized: missing or
+invalid X-Operator-Token` without it (see HTTP contract above). Clients
+resolve it explicit-argument first (Python `token=` constructor argument /
+`--token` flag, Go `Client.Token` field), else from the `GUARD_TOKEN`
+environment variable ([`connectors/python/guard_client.py:180`](python/guard_client.py),
+[`client/client.go:67-75`](../client/client.go)). There is no default value.
+
+**guardd's own token precedence (serving side)** — when `-serve` starts, it
+resolves the secret once at startup, env > tokenfile > argv
+([`cmd/guardd/main.go:112`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:243`](../cmd/guardd/main.go)):
+
+1. `GUARD_TOKEN` environment variable — preferred; it wins even when a
+   tokenfile is staged, so an operator can override ad hoc without editing
+   the file ([`cmd/guardd/main.go:247`](../cmd/guardd/main.go)).
+2. `-tokenfile <path>` — file contents, surrounding whitespace trimmed. The
+   file must be owner-only (`0400` or `0600`); group- or world-accessible
+   modes are refused at startup
+   ([`cmd/guardd/main.go:271-272`](../cmd/guardd/main.go)).
+3. `-token <secret>` — works, but guardd warns loudly on stderr: an argv
+   secret is world-readable via `ps` and `/proc/<pid>/cmdline`.
+
+With none of the three, guardd refuses to serve at all — it never runs an
+unauthenticated `/check`.
+
+**Timeout** — Python bounds each check with the `timeout` constructor
+argument (default `120.0` seconds) or the CLI `--timeout` flag (default 120)
+([`connectors/python/guard_client.py:172-175`](python/guard_client.py),
+[`connectors/python/guard_client.py:272-278`](python/guard_client.py)); the
+Go client's `New()` sets the same 120s ([`client/client.go:63-65`](../client/client.go)).
+guardd's own classification deadline is fixed at 120s (HTTP contract above).
+A timeout is a connector-side failure and follows the fail-mode rules below.
+
+**Fail mode** — Python: `fail_mode` constructor argument (`"closed"` is the
+default; `"open"` is the alternative) or the CLI `--fail-open` flag. In
+`open` mode any check failure (transport, timeout, HTTP error status, bad
+JSON — [`connectors/python/guard_client.py:212`](python/guard_client.py))
+becomes a flagged REVIEW verdict that preserves capabilities and sets
+`errored=True`; in `closed` mode the same failure raises `GuardError` and
+nothing is delivered. Full semantics and the Go/CLI comparison are in
+"Fail-open semantics" and "Fail mode" below.
+
+## Exit codes (two schemes — do not mix them)
+
+The Python CLI and the guardd CLI answer different questions with their exit
+statuses. Shell integrators must pick the map that matches the binary they
+invoked.
+
+**Python CLI** (`guard` console script from `connectors/python/`, or
+`python connectors/python/guard_client.py`) — the exit code branches on the
+verdict's `route`, so shell callers never parse JSON
+([`connectors/python/guard_client.py:290-293`](python/guard_client.py)):
+
+| Exit | Meaning |
+|---|---|
+| `0` | route `deliver` — safe to deliver unchanged |
+| `1` | route `review` — a human looks (includes the fail-open outage REVIEW verdict) |
+| `2` | route `quarantine` — blocked |
+| `3` | no verdict — `GuardError` was raised (transport failure, timeout, HTTP error status such as 401, malformed response JSON; any failure in `closed` fail mode). Nothing is delivered. |
+
+Usage errors (no content, unknown flag) exit with argparse's own code `2`
+plus a usage message on stderr, and print no verdict JSON on stdout —
+distinguishable from a quarantine verdict, which always prints the verdict
+JSON first.
+
+**guardd CLI** (one-shot `guardd`, content on stdin) — the exit code
+distinguishes *classified* from *never classified*, not the verdict's
+polarity ([`cmd/guardd/main.go:141`](../cmd/guardd/main.go)):
+
+| Exit | Meaning |
+|---|---|
+| `0` | any verdict the guard served — **including a normal `block`** (blocking is the guard working, not failing) |
+| `2` | `guard_error` — the guard could not judge at all (no classifier API key configured, egress disabled, classifier failure). The error verdict is still emitted as JSON with `errored: true`, and the exit is `2` whichever way `-fail-closed` resolved the decision. |
+
+So guardd's `2` does **not** mean quarantine, and guardd's CLI has no
+route-based four-way map — read `route` from the JSON when you need it.
+Serving mode (`/check`) has no exit code at all: it answers HTTP, and error
+verdicts arrive in-band with HTTP 200 (see Fail-open semantics).
+
 ## Available connectors
 
 | Consumer | Language | Connector | Transport |
