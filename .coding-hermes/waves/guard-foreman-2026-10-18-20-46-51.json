@@ -1,0 +1,16 @@
+{
+  "tick_id": "guard-foreman-2026-10-18-20-46-51",
+  "started_at": "2026-10-18T20:46:51-05:00",
+  "status": "dispatched",
+  "wave_budget": 1,
+  "workers": [
+    {
+      "task_id": "DOC-18",
+      "worktree": "/home/kara/worktrees/guard-DOC-18",
+      "branch": "wt/DOC-18",
+      "base": "12e4e25c42f8018f79dfd55d11cf29f4dfebee93",
+      "model": "glm-5.3-flash",
+      "provider": "zai-glm-default"
+    }
+  ]
+}
