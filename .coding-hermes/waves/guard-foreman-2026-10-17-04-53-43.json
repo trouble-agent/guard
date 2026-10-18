@@ -4,8 +4,9 @@
   "recovered_at": "2026-10-18T01:37:32Z",
   "original_workers": 0,
   "status": "recovered",
-  "notes": "Wave manifest had 0 workers — nothing to recover.",
+  "notes": "DOC-9 rebased onto main (conflict in connectors/README.md resolved --ours), gates green, fast-forward merged 0bcdb17, pushed. Stale worktrees DOC-11/15/16 removed. README-8 judge FAIL (correct - no work done), task deleted for re-dispatch.",
   "recovered_workers": [
     "DOC-9"
-  ]
+  ],
+  "merged_sha": "0bcdb17"
 }
