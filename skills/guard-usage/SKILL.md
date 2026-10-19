@@ -62,10 +62,11 @@ if not v.deliver: ...    # quarantine/review
 go build ./... && go vet ./... && go test ./... -count=1   # suite runs in ~5ms, no network needed
 ```
 
-## Performance (measured 2026-10-02)
+## Performance (measured 2026-10-16)
 
-~260–330 ms per verdict warm, ≈ all of it the Jev API round trip (user+sys
-≈ 20 ms locally). Cold first call 0.3–0.9 s. Cost ≈ $0.000027/verdict.
+~390–405 ms per verdict warm (dogfood 2026-10-16 run 3: 391.0 ± 39.0 ms;
+run 2 2026-10-13: 394.1 ± 12.7 ms), ≈ all of it the Jev API round trip
+(user+sys ≈ 20–25 ms locally). Cold first call ~0.85 s. Cost ≈ $0.000027/verdict.
 Don't profile the Go code first — the network is the latency.
 
 ## Pitfalls
