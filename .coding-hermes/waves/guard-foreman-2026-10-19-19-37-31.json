@@ -1,0 +1,27 @@
+{
+  "tick_id": "guard-foreman-2026-10-19-19-37-31",
+  "project": "guard",
+  "base_commit": "26c3fe687b2b03a48b7988f59b01753842c0834c",
+  "tasks": [
+    {
+      "id": "README-8",
+      "title": "P5 — README carries two verbatim Install sections (70-92, 349-369) and two Testing sections (94-109, 310-322); unify one of each and delete the duplicates",
+      "worktree": "~/worktrees/guard-README-8",
+      "branch": "wt/README-8",
+      "files": ["README.md"],
+      "result": "recovered verification-only: no unique branch commit; satisfied by d0aa50ed8a8293a2d81d1473875f9e705b1caa8e"
+    },
+    {
+      "id": "DOC-15-R3",
+      "title": "P5 — connectors/README.md HTTP-contract anchors have drifted: table cites main.go:183/187/192/196 for the 401/405/400-bad-request/content-required checks, which now sit at main.go:185/189/194/197",
+      "worktree": "~/worktrees/guard-DOC-15-R3",
+      "branch": "wt/DOC-15-R3",
+      "files": ["connectors/README.md"],
+      "result": "recovered verification-only: no unique branch commit; satisfied by a00533729958c464cbe5133e03077a1ec206b23d"
+    }
+  ],
+  "dispatched_at": "2026-10-19T19:37:31-05:00",
+  "model": "glm-5.3-flash",
+  "provider": "zai-glm-default",
+  "finished_at": "2026-10-19T21:09:35-05:00"
+}
