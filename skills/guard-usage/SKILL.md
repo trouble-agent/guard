@@ -64,9 +64,10 @@ go build ./... && go vet ./... && go test ./... -count=1   # suite runs in ~5ms,
 
 ## Performance (measured 2026-10-16)
 
-~390–405 ms per verdict warm (dogfood 2026-10-16 run 3: 391.0 ± 39.0 ms;
-run 2 2026-10-13: 394.1 ± 12.7 ms), ≈ all of it the Jev API round trip
-(user+sys ≈ 20–25 ms locally). Cold first call ~0.85 s. Cost ≈ $0.000027/verdict.
+~390–405 ms per verdict warm (sources: docs/dogfood/2026-10-16-run3-findings.md
+391.0 ± 39.0 ms; docs/dogfood/2026-10-13-run2-findings.md 394.1 ± 12.7 ms),
+≈ all of it the Jev API round trip (user+sys ≈ 20–25 ms locally). Cold first
+call ~0.85 s. Cost ≈ $0.000027/verdict.
 Don't profile the Go code first — the network is the latency.
 
 ## Pitfalls
