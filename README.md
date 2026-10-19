@@ -104,22 +104,51 @@ from source (above) for other platforms. Running a released binary is identical
 to a source build: pipe a message through `guardd`, or serve it with
 `guardd -serve` (token and bind-address setup in **Quick Start** above).
 
+Agent-facing usage notes (prerequisites, key load order, the `errored`
+verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md).
+
 ## Testing
 
 ```bash
 make test    # the whole suite: go test ./...
 ```
 
-No external services are required to run it: the unit and policy tests use a
-deterministic stub classifier and pass offline, and the live end-to-end test
-(`TestLiveJevRoutesKnownCases`, `jev_live_test.go`) — the one that exercises
-the real Jev classifier — skips itself when no OpenRouter key is available
-(and under `-short`), so the suite stays runnable offline by default. The
-sibling quality gates are `make vet`, `make lint`, and `make docs-check` (the
-last replays this README's documented commands). CI runs the same build, vet,
-and test steps on every push and pull request (`.github/workflows/ci.yml`),
-plus a gitleaks secret scan. The build itself is covered under
-[Build](#build).
+No external services are required to run it: the suite is plain `go test`
+(use `go test ./... -count=1` to bypass the test cache). The unit and policy
+tests use a deterministic stub classifier and pass offline, and the live
+end-to-end test (`TestLiveJevRoutesKnownCases`, `jev_live_test.go`) — the one
+that exercises the real Jev classifier — skips itself when no OpenRouter key
+is available (and under `-short`), so the suite stays runnable offline by
+default. The sibling quality gates are `make vet`, `make lint`, and
+`make docs-check` (the last replays this README's documented commands). CI
+runs the same build, vet, and test steps on every push and pull request
+(`.github/workflows/ci.yml`), plus a gitleaks secret scan. The build itself is
+covered under [Build](#build).
+
+### Makefile targets
+
+The `Makefile` wraps the common contributor commands. Every target below is
+declared in the Makefile's `.PHONY` list and runs as `make <target>`:
+
+| Target | What it runs | When you use it |
+|---|---|---|
+| `build` | `go build -o bin/guardd ./cmd/guardd` (`client/` is a library package — only `cmd/guardd` produces a binary) | You want the CLI binary locally |
+| `test` | `go test ./...` | Before every commit |
+| `vet` | `go vet ./...` | Static analysis alongside the tests |
+| `lint` | `golangci-lint run` if a `.golangci.yml` / `.golangci.yaml` config is present; prints a skip notice otherwise | Style pass before opening a PR |
+| `release` | `goreleaser release --snapshot --clean` | Building a local snapshot release artifact (no upload) |
+| `docs-check` | Replays this README's documented commands against the real binary (see below) | You touched the README, the guard's documented behavior, or the Go version claim |
+| `print-go-directive` | Prints the Go directive version the guard is built against | Consumed by `docs-check`; also handy for checking a version claim by hand |
+
+`make docs-check` is the README-drift gate. It re-runs the build command, the
+`printf … | guardd` invocation, and the fail-closed JSON example exactly as
+they appear in this README, compares the binary's output against the
+documented verdict, and checks the README's Go version claim against the
+directive reported by `make print-go-directive` — so docs and code drift apart
+fails at `make` time instead of sitting unnoticed in the docs. All keyless
+runs execute under `env -i` with a temporary `HOME`, so the check cannot pick
+up a live API key from the environment; the documented fail-closed behavior
+has to happen on its own.
 
 ## Why it exists
 
@@ -319,83 +348,6 @@ Nothing in the pipeline requires touching another layer to grow.
 go build ./...                                   # library + CLI
 go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
 ```
-
-## Testing
-
-```bash
-go test ./... -count=1
-```
-
-The suite is plain `go test` — no external services required. The unit and
-policy tests run against a deterministic stub classifier, so they pass offline;
-the live end-to-end test (`TestLiveJevRoutesKnownCases`, `jev_live_test.go`)
-skips itself when no OpenRouter key is available (and under `-short`), so the
-suite stays runnable offline by default. CI runs the same build, vet, and test
-steps on every push and pull request (`.github/workflows/ci.yml`), plus a
-gitleaks secret scan.
-
-### Makefile targets
-
-The `Makefile` wraps the common contributor commands. Every target below is
-declared in the Makefile's `.PHONY` list and runs as `make <target>`:
-
-| Target | What it runs | When you use it |
-|---|---|---|
-| `build` | `go build -o bin/guardd ./cmd/guardd` (`client/` is a library package — only `cmd/guardd` produces a binary) | You want the CLI binary locally |
-| `test` | `go test ./...` | Before every commit |
-| `vet` | `go vet ./...` | Static analysis alongside the tests |
-| `lint` | `golangci-lint run` if a `.golangci.yml` / `.golangci.yaml` config is present; prints a skip notice otherwise | Style pass before opening a PR |
-| `release` | `goreleaser release --snapshot --clean` | Building a local snapshot release artifact (no upload) |
-| `docs-check` | Replays this README's documented commands against the real binary (see below) | You touched the README, the guard's documented behavior, or the Go version claim |
-| `print-go-directive` | Prints the Go directive version the guard is built against | Consumed by `docs-check`; also handy for checking a version claim by hand |
-
-`make docs-check` is the README-drift gate. It re-runs the build command, the
-`printf … | guardd` invocation, and the fail-closed JSON example exactly as
-they appear in this README, compares the binary's output against the
-documented verdict, and checks the README's Go version claim against the
-directive reported by `make print-go-directive` — so docs and code drift apart
-fails at `make` time instead of sitting unnoticed in the docs. All keyless
-runs execute under `env -i` with a temporary `HOME`, so the check cannot pick
-up a live API key from the environment; the documented fail-closed behavior
-has to happen on its own.
-
-## Install (released binaries)
-
-Tagged releases ship static Linux binaries built by
-`.github/workflows/release.yml` (GoReleaser). See GitHub Releases for tagged
-versions: https://github.com/trouble-agent/guard/releases (first release:
-[v0.1.0](https://github.com/trouble-agent/guard/releases/tag/v0.1.0),
-2026-10-02; assets: `guard-linux-amd64.tar.gz`, `guard-linux-arm64.tar.gz`,
-`checksums.txt`).
-
-> **Released-artifact notice (2026-10-17).** The only tagged release,
-> **v0.1.0** (2026-10-02), predates every user-facing contract added since it
-> was cut, and the README bundled in its tarball (153 lines) documents that
-> older binary, not this one: it carries no `GUARD_EGRESS_ENABLED` classifier
-> egress kill switch, no CLI exit-code contract (`rc=2` on a fail-closed
-> error, `rc=0` on a classified run), no server token precedence
-> (`GUARD_TOKEN` env > `-tokenfile` > `-token`) and no loopback-by-default
-> `-serve` bind, and no `-channel` flag; the released binary also predates the
-> Go `net/http` security fix GO-2026-6617 (SEC-GO-1269). **Build from source
-> (Quick Start above)** to get the contracts documented here — the notice is
-> removed by the next tagged release (v0.2.0 is proposed in
-> [release readiness](docs/release-readiness-2026-10-04.md)).
-
-```bash
-curl -sL -o guard-linux-amd64.tar.gz \
-  https://github.com/trouble-agent/guard/releases/latest/download/guard-linux-amd64.tar.gz
-curl -sL -O \
-  https://github.com/trouble-agent/guard/releases/latest/download/checksums.txt
-sha256sum --ignore-missing -c checksums.txt
-tar xzf guard-linux-amd64.tar.gz
-./guardd -pretty -content "hello, world"   # verify the binary runs
-```
-
-Each tarball contains `guardd`, the README, and the LICENSE. Prefer building
-from source (above) for other platforms.
-
-Agent-facing usage notes (prerequisites, key load order, the `errored`
-verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md).
 
 ## Further docs
 
