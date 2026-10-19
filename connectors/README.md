@@ -35,6 +35,13 @@ One exception: when `errored` is set (an outage verdict — see Fail mode
 below), branch on `errored` first. `constraints` on an outage verdict is
 connector-specific and cannot tell an outage from a policy.
 
+**Quoted content is a downgrade, not an exemption.** When the score reaches
+the block band but the classifier is confident the content is a quotation or
+worked example (`sig.Quoted` >= `Policy.QuotedDowngrade`, default `0.80`),
+the quarantine is downgraded to `review` — never to `deliver`
+(`policy.go:88-94`). The score is not reduced and capabilities are not
+restored; the consumer still routes a human look.
+
 ## HTTP contract
 
 Exact behaviour of `guardd -serve`'s `/check` endpoint (from `cmd/guardd/main.go`,
