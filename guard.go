@@ -174,7 +174,7 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 		res.AttackClass = sig.Class
 		res.Patterns = []string{sig.Class}
 	}
-	g.Policy.apply(&res, sig)
+	g.Policy.apply(&res, sig, in.Source)
 
 	// Attribution (GUARD-DF-002): every transform in the chain runs on every
 	// message, so "applied" alone cannot say whether an encoding mattered.
@@ -187,7 +187,7 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 		rawSig, rawErr := g.Classifier.Classify(ctx, in.Content)
 		if rawErr == nil {
 			raw := Result{Policy: res.Policy}
-			g.Policy.apply(&raw, rawSig)
+			g.Policy.apply(&raw, rawSig, in.Source)
 			if raw.Route != res.Route {
 				res.LoadBearingNormalizations = append([]string(nil), applied...)
 			}

@@ -103,16 +103,31 @@ func TestFailOpenOnError(t *testing.T) {
 }
 
 func TestPerSourceOverrideTightens(t *testing.T) {
+	// Score 0.60 sits above the default review_at (0.50) and below the default
+	// block_at (0.85): under the base policy BOTH sources route to review. The
+	// webhook override (block_at=0.55) must push the webhook message to
+	// quarantine/block while the control source keeps the default route.
 	g := newGuard(Signals{Injection: 0.60}, nil)
-	// 0.60 delivers under the default bands (review_at=0.50 -> actually review).
-	// With a tightened override it must block.
 	g.Policy.Overrides = map[string]Override{"webhook": {BlockAt: 0.55}}
-	res := g.Check(context.Background(), Input{Source: "webhook", Content: "x"})
-	if res.Route != RouteReview && res.Route != RouteQuarantine {
-		t.Fatalf("override did not apply, got %s", res.Route)
+
+	webhook := g.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+	if webhook.Route != RouteQuarantine || webhook.Decision != DecisionBlock {
+		t.Fatalf("webhook override must tighten 0.60 to quarantine/block, got %s/%s", webhook.Route, webhook.Decision)
 	}
-	if res.Route == RouteDeliver {
-		t.Fatal("a tightened source must not deliver a 0.60 score")
+	if webhook.Constraints.AllowTools || webhook.Constraints.AllowSecrets {
+		t.Fatal("a quarantined override verdict must grant no capabilities")
+	}
+
+	control := g.Check(context.Background(), Input{Source: "inbox", Content: "x"})
+	if control.Route != RouteReview {
+		t.Fatalf("control source without an override must keep the default review route, got %s", control.Route)
+	}
+
+	// Same message with NO source must behave like the control: overrides are
+	// keyed by Input.Source and an empty source never selects one.
+	sourceless := g.Check(context.Background(), Input{Content: "x"})
+	if sourceless.Route != RouteReview {
+		t.Fatalf("empty source must keep the default review route, got %s", sourceless.Route)
 	}
 }
 

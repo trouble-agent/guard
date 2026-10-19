@@ -61,9 +61,10 @@ func (p Policy) bandsFor(source string) (blockAt, reviewAt float64, failClosed b
 }
 
 // apply fills the verdict fields from the signals. This is the whole decision
-// surface: numbers in, route + capabilities out.
-func (p Policy) apply(res *Result, sig Signals) {
-	blockAt, reviewAt, _ := p.bandsFor(res.Policy)
+// surface: numbers in, route + capabilities out. source selects the per-source
+// override (Input.Source); empty means no override.
+func (p Policy) apply(res *Result, sig Signals, source string) {
+	blockAt, reviewAt, _ := p.bandsFor(source)
 	score := sig.Score()
 
 	switch {
