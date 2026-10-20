@@ -28,7 +28,9 @@ release:
 .PHONY: docs-check
 docs-check: build
 	@set -e; \
-	GO_DIRECTIVE="$$($(MAKE) -s print-go-directive)"; \
+	command -v jq >/dev/null 2>&1 \
+	  || { echo "docs-check FAIL: jq was not found on PATH — this target shells out to jq (four times) to compare verdict JSON. Install jq and re-run (see README Prerequisites, GUARD-DF-004)."; exit 1; }; \
+	GO_DIRECTIVE="$$( $(MAKE) -s print-go-directive )"; \
 	echo "docs-check: go directive = $$GO_DIRECTIVE"; \
 	TMPHOME=$$(mktemp -d); \
 	had_root_guardd=0; if [ -f ./guardd ]; then had_root_guardd=1; fi; \
