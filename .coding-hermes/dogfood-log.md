@@ -206,3 +206,49 @@
   deliberately not repeated).
 - **Full evidence:** docs/dogfood/2026-10-19-run4b-second-angle.md (this commit). Scratch:
   ~/guard-df-run4/ (consumer, scans, ab-cli, http-battery, install-leg, gen.*).
+
+## 2026-10-19c — dogfood run 4c (tick guard-dogfood-2026-10-20-01-29-06, THIRD executor of the same tick: the published calibration numbers + all six normalisers + the battery ran for real)
+
+- **Verdict: SOUND** (no product defect found; one documentation-tool honesty gap and one battery-cell
+  gap filed). Run 4a = `b05b8da`, run 4b = `444446d`; this executor took the two surfaces neither had
+  driven: **the documented calibration replay** (docs/threshold-calibration.md:40-54) and **the six
+  documented normalisers as an evasion ladder** - plus the first REAL battery run for this repo.
+- **Published numbers reproduce EXACTLY at HEAD** (first live re-measure since 2026-10-04): confusion
+  attack 31 block/1 review, quoted 3 block/2 review, benign 21 allow/1 block/11 review; block band
+  tp=34 fp=1 fn=3 P=0.971 R=0.919; review-or-above tp=37 fp=12 fn=0 P=0.755 R=1.000; route agreement
+  attack 31/32, quoted 5/5, benign 21/33 - identical to docs/threshold-calibration.md. Named samples
+  moved within +-0.04 (so-08 0.78 vs 0.80, bn-06 0.87 vs 0.85, bn-18 0.84 vs 0.83; bn-30 0.47 vs 0.51
+  flipped band) while the band counts stayed identical, so the doc's aggregate claim holds and its
+  per-sample prose is a snapshot - recorded in the log only, no row (the doc's own Residuals already
+  expect drift).
+- **Evasion ladder, 14 payloads, no evasion:** direct, base64, hex, ROT13, URL-encoded, zero-width,
+  homoglyph and a homoglyph+zero-width mix all landed quarantine (0.98-0.99) where before
+  (0.98-0.99) - and the same eight again as BARE blobs with no English lead-in (0.98-0.99,
+  `attack_class=instruction_injection`). Only ROT13 reports `load_bearing_normalizations=["rot13"]`,
+  which is the field's documented meaning (the decode DROVE the verdict): for base64/hex/url/zero-width/
+  homoglyph the raw arm is caught too, so the decoder is not what carried those verdicts. First time
+  hex / URL-encoding / zero-width / homoglyph are driven by any recorded run.
+- **NEW findings (minted via board_next_id.py):**
+  GUARD-DF-012 [P3] the documented calibration replay prints a full precision/recall block for a run that
+  classified nothing - all-errored run: rc=0, `Block-band tp=0 fp=0 fn=37 precision=0.000 recall=0.000`,
+  the review arm contradicting it (fn=0 for the same run), `Route-agreement attack 32/32` reading as
+  success (fail-closed quarantine satisfies the attack route), zero warning text; the repo's own Go gate
+  (calibration_test.go:167-170) does fail loudly, so the script the doc points at is the weaker surface.
+  QA-GUARD-005 [P4] the battery's chaos-disconnect arm cannot run guard's suite at all: it runs the
+  native command under `GOPROXY=off GOTOOLCHAIN=local` (bunker-qa.sh:2482) and go answers `go.mod
+  requires go >= 1.26.9 (running go 1.26.5; GOTOOLCHAIN=local)` (reproduced locally, rc=2, 124-byte log),
+  so the cell grades UNVERIFIED (2nd consecutive run) and the vacuity branch prints no rc/log bytes.
+- **Install leg: the driver is FIXED and the battery RAN** (`bunker-qa.sh` mtime 20:59, the unescaped
+  `UI_PORTS` fragment now escaped; `__gen-remote` -> rc=0, 119,363 bytes). Full battery on fresh agent
+  `990d3b37` @ bunker-mvp: fresh-install OK, ci-pass OK (act 1 job green), upgrade OK (v0.1.0 tree ->
+  HEAD clean), chaos-resource PASS (3G cap), chaos-errorpath OK (rc=2), 4 N/A (no compose/UI/db),
+  chaos-disconnect UNVERIFIED (QA-GUARD-005), collect OK - agent destroyed by collect, no local key
+  left, list re-checked. So GUARD-DF-009 (SKIPPED-install-bunker) is FALSIFIED: the battery ships and
+  runs; event appended to that row for the foreman to close.
+- **Perf (Step 2b):** documented calibration replay = **37.3 s for 70 rows** (0.53 s/row, live Jev); the
+  all-errored negative leg = instant (local fail-closed, no network); battery wall ~4-5 min
+  (launch 02:00:22Z -> collect 02:06Z). No PERF row - every local path remains single-digit ms.
+- **Not exercised:** docker/UI/state chaos cells (N/A for this repo - no compose file, no web UI, no
+  db/state files), and a real classification on a bunker agent (no key there, by design).
+- **Full evidence:** docs/dogfood/2026-10-19-run4c-findings.md (this commit). Scratch:
+  ~/guard-df-run4/ (ladder*.py, disc-local.sh, out/{calibration*,ladder*,disc-*,gen-4c.*,qa-launch-4c.txt}).
