@@ -1,0 +1,19 @@
+{
+  "tick_id": "guard-foreman-2026-10-20-01-51-27",
+  "project": "guard",
+  "workdir": "/home/kara/trouble-agent/guard",
+  "base_commit": "a4507c7",
+  "wave_budget": 7,
+  "dispatched": 7,
+  "finished_at": "2026-10-20T10:48:00Z",
+  "recovery": true,
+  "work": [
+    {"id": "GUARD-DF-004", "status": "merged", "merge_commit": "26f73ef", "worktree": "~/worktrees/guard-GUARD-DF-004", "branch": "wt/GUARD-DF-004"},
+    {"id": "GUARD-DF-005", "status": "merged", "merge_commit": "90e5d6b", "worktree": "~/worktrees/guard-GUARD-DF-005", "branch": "wt/GUARD-DF-005"},
+    {"id": "GUARD-DF-007", "status": "merged", "merge_commit": "7f453e0", "worktree": "~/worktrees/guard-GUARD-DF-007", "branch": "wt/GUARD-DF-007"},
+    {"id": "GUARD-DF-006", "status": "verified", "implementation": "e858041", "worktree": "~/worktrees/guard-GUARD-DF-006", "branch": "wt/GUARD-DF-006", "notes": "no unique commits; fix on main"},
+    {"id": "GUARD-DF-008", "status": "merged", "implementation": "d63d5df via 54fc628", "worktree": "~/worktrees/guard-GUARD-DF-008", "branch": "wt/GUARD-DF-008", "notes": "recovered commit d63d5df, merged into main"},
+    {"id": "GUARD-DF-009", "status": "verified", "worktree": "~/worktrees/guard-GUARD-DF-009", "branch": "wt/GUARD-DF-009", "notes": "no fix needed (fleet QA tool bug)"},
+    {"id": "GUARD-DF-010", "status": "verified", "implementation": "2a2fc30", "worktree": "~/worktrees/guard-GUARD-DF-010", "branch": "wt/GUARD-DF-010", "notes": "fix on main"}
+  ]
+}
