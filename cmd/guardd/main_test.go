@@ -1,16 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/trouble-agent/guard"
 )
@@ -737,4 +742,142 @@ func mustReadAll(t *testing.T, r io.Reader) []byte {
 		t.Fatalf("read: %v", err)
 	}
 	return b
+}
+
+// ---------------------------------------------------------------------------
+// GUARD-DF-014: the readiness banner follows a successful bind, never precedes
+// it
+// ---------------------------------------------------------------------------
+
+// logCapture collects the standard logger's output. serveOn logs from the
+// serving goroutine while the test reads the buffer, so both sides take the lock.
+type logCapture struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (c *logCapture) Write(p []byte) (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.buf.Write(p)
+}
+
+func (c *logCapture) String() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.buf.String()
+}
+
+// captureLog points the standard logger at a capturing writer for the duration
+// of fn and returns what was logged. Log flags are cleared so the timestamp
+// prefix cannot make the assertions flaky.
+func captureLog(t *testing.T, fn func()) string {
+	t.Helper()
+	c := &logCapture{}
+	oldOut, oldFlags := log.Writer(), log.Flags()
+	log.SetOutput(c)
+	log.SetFlags(0)
+	defer func() {
+		log.SetOutput(oldOut)
+		log.SetFlags(oldFlags)
+	}()
+	fn()
+	return c.String()
+}
+
+// Acceptance (GUARD-DF-014): a failed bind prints no success banner. The port is
+// genuinely taken — a squatter holds it — so this is exactly the
+// second-guardd-on-a-used-port case the finding recorded, minus the process exit.
+func TestServeOnFailedBindPrintsNoBanner(t *testing.T) {
+	squatter, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("squat a port: %v", err)
+	}
+	defer func() { _ = squatter.Close() }()
+	addr := squatter.Addr().String()
+
+	var serveErr error
+	out := captureLog(t, func() {
+		serveErr = serveOn(addr, newHandler(stubGuard(), "tok", false), net.Listen)
+	})
+
+	if serveErr == nil {
+		t.Fatalf("serveOn on a taken port (%s) = nil error, want a bind failure", addr)
+	}
+	if !strings.Contains(serveErr.Error(), "address already in use") {
+		t.Fatalf("bind error = %q, want the address-already-in-use failure", serveErr)
+	}
+	if strings.Contains(out, "listening on") {
+		t.Fatalf("failed bind still printed the readiness banner: %q", out)
+	}
+	// A failed start must say which address failed (serveHTTP prints
+	// "serve: %v"), so the operator-visible line stays as diagnostic as before.
+	if !strings.Contains(serveErr.Error(), addr) {
+		t.Fatalf("bind error = %q, want it to name %s", serveErr, addr)
+	}
+}
+
+// The positive half: after a successful bind the banner names the address and
+// the handler handed to serve is reachable on that socket, so the ordering fix
+// did not cost the readiness signal it protects. The bind is injected for two
+// reasons: the test can read the address the kernel picked (":0"), and it can
+// assert the ordering directly — no banner may exist at the moment the bind is
+// called, which is the actual claim.
+func TestServeOnBannerOnlyAfterBind(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("pre-bind a listener: %v", err)
+	}
+	addr := ln.Addr().String()
+
+	c := &logCapture{}
+	oldOut, oldFlags := log.Writer(), log.Flags()
+	log.SetOutput(c)
+	log.SetFlags(0)
+	defer func() {
+		log.SetOutput(oldOut)
+		log.SetFlags(oldFlags)
+	}()
+
+	var gotNetwork, gotAddr string
+	bind := func(network, address string) (net.Listener, error) {
+		if s := c.String(); strings.Contains(s, "listening on") {
+			t.Errorf("banner logged before the bind returned: %q", s)
+		}
+		gotNetwork, gotAddr = network, address
+		return ln, nil
+	}
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- serveOn(addr, newHandler(stubGuard(), "tok", false), bind) }()
+
+	// The banner is emitted from the serving goroutine.
+	deadline := time.Now().Add(2 * time.Second)
+	for !strings.Contains(c.String(), "listening on") && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	want := fmt.Sprintf("guardd listening on %s (POST /check [%s required], GET /healthz)", addr, OperatorTokenHeader)
+	if got := c.String(); !strings.Contains(got, want) {
+		t.Fatalf("log = %q, want the documented readiness banner %q", got, want)
+	}
+	if gotNetwork != "tcp" || gotAddr != addr {
+		t.Fatalf("bind called with (%q, %q), want (\"tcp\", %q)", gotNetwork, gotAddr, addr)
+	}
+
+	// The socket the banner named is really serving: /healthz answers on it.
+	resp, err := http.Get("http://" + addr + "/healthz")
+	if err != nil {
+		t.Fatalf("get /healthz on the bound address: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200 from the address the banner named", resp.StatusCode)
+	}
+
+	_ = ln.Close()
+	select {
+	case <-errCh: // http.Serve returns the accept error from the closed listener.
+	case <-time.After(5 * time.Second):
+		t.Fatal("serveOn did not return after its listener was closed")
+	}
 }
