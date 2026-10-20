@@ -12,12 +12,19 @@ One Go core, three consumption shapes, one `Result` contract. Route on
 ## Prerequisites
 
 - Go ≥1.26.9 to build (`go build ./...` — go.mod declares `go 1.26.9`); zero external deps.
+  A newer toolchain downloads itself from the `go` directive's toolchain floor.
 - An OpenRouter API key for ANY classification (Jev decisions model at
   `openrouter.ai/api/alpha/decisions`). Key load order:
   `$OPENROUTER_API_KEY` → `~/.hermes/.env` → `~/9router-deploy/.env.shared`
   (regex `sk-or-v1-…`, tried in order on 401/402/429). An expired key in the
   first file yields opaque `guard_error (fail-closed): key rejected: http 401`
   block verdicts — check `errored` in the Result when a block looks wrong.
+- **`jq` for `make docs-check`** (the README-drift gate shells out to it at
+  `Makefile:84,86,89,102`). The gate does NOT check for the tool: on a machine
+  without jq it fails with `docs-check FAIL: could not parse README
+  fail-closed JSON block`, which points at correct docs instead of at the
+  missing tool (GUARD-DF-004; a GH Actions runner has jq preinstalled, so CI
+  stays green while a clean box fails).
 - Full prerequisite detail, key discovery, and a first-run walkthrough:
   README.md "Quick Start". This file is the agent-facing summary.
 
@@ -27,7 +34,9 @@ One Go core, three consumption shapes, one `Result` contract. Route on
 go build -o bin/guardd ./cmd/guardd
 printf '%s' "$msg" | ./bin/guardd                    # CLI, stdin
 ./bin/guardd -content "$msg" -source github_pr       # CLI, one-shot
-# -channel <label> — optional classifier label (e.g. crier|task-router; default: empty).
+# -channel <label> — currently an inert annotation: it is passed to
+# Input.Channel and no non-test code reads it, so it does not reach the
+# classifier or the Result (GUARD-DF-008d). Do not rely on it.
 ./bin/guardd -content "$msg" -source task-router -channel router
 ./bin/guardd -serve 127.0.0.1:8768 -tokenfile <0600-file>  # HTTP (preferred; or GUARD_TOKEN env)
 ./bin/guardd -serve 127.0.0.1:8768 -token <secret>         # dev: works but warns (token visible in ps)
@@ -42,6 +51,28 @@ if v.errored: ...        # outage path — check BEFORE honouring constraints (G
 if not v.deliver: ...    # quarantine/review
 ```
 
+## Policy and per-source overrides — read this before promising a tightening
+
+- `Policy` is a Go struct (`policy.go`): `BlockAt`, `ReviewAt`,
+  `QuotedDowngrade`, `FailClosed`, `Overrides map[string]Override`.
+- `Overrides` is keyed on **`Input.Source`** — never on the policy id. A key
+  that matches no source the caller passes is **silently ignored**: no error,
+  no warning, the base bands simply apply (GUARD-DF-007). A typo'd source label
+  (`"webook"`) disables the tightening invisibly.
+- **The served/CLI shapes cannot supply a Policy.** `cmd/guardd/main.go:108`
+  hardcodes `guard.DefaultPolicy()`, and there is no `-policy` flag, no
+  `GUARD_POLICY` env, and no policy-file loader. Per-source tightening is
+  reachable only from an in-process Go consumer that builds its own
+  `&guard.Guard{...}` (crier). A CLI or HTTP consumer — including
+  task-router's Python connector — has no knob for it, even though
+  `docs/threshold-calibration.md:111,156` recommends tightening a source with
+  an Override (GUARD-DF-005). Plan accordingly, or file it.
+- `QuotedDowngrade` (default 0.80) is live and verified: a score above
+  `BlockAt` on text the classifier reads as a quotation/example becomes
+  `route=review`, never deliver and never with capabilities restored. Three
+  independent phrasings (explicit "DO NOT FOLLOW THIS" wrapper, a fenced test
+  case, a canary string) scored 0.95–0.97 and all downgraded to review.
+
 ## Verdict semantics that matter
 
 - `route`: deliver | review | quarantine — the primary output.
@@ -55,32 +86,58 @@ if not v.deliver: ...    # quarantine/review
   changed the verdict — GUARD-DF-002 fix).
 - `attack_class` is noisy near the threshold — benign text often carries
   masquerade at 0.1–0.4. Trust `route`, not the label, at the margin.
+- **`duration_ms` and `cost_usd` describe the FIRST classifier call only.**
+  On any non-deliver verdict the guard re-classifies the raw input to attribute
+  normalisations, so a caught message costs **two** classifier calls and about
+  twice the wall time, while `duration_ms` stops before the second call
+  (`guard.go:154`) and `cost_usd` carries only the first `Signals`
+  (`guard.go:172`). Measured: caught verdicts 0.53–0.61 s wall with
+  `duration_ms` 263–362 vs deliver 0.25–0.29 s with 248–290 — the ranges
+  overlap, so the field cannot tell a one-call verdict from a two-call one
+  (GUARD-DF-006). Do not build latency/cost accounting on these fields alone;
+  time the call yourself or count calls with a stub endpoint.
 
 ## Run commands
 
 ```bash
 go build ./... && go vet ./... && go test ./... -count=1   # suite runs in ~5ms, no network needed
+make docs-check                                            # needs jq (see Prerequisites)
 ```
 
-## Performance (measured 2026-10-16)
+## Performance (measured 2026-10-19, HEAD bcb6002)
 
-~390–405 ms per verdict warm (sources: docs/dogfood/2026-10-16-run3-findings.md
-391.0 ± 39.0 ms; docs/dogfood/2026-10-13-run2-findings.md 394.1 ± 12.7 ms),
-≈ all of it the Jev API round trip (user+sys ≈ 20–25 ms locally). Cold first
-call ~0.85 s. Cost ≈ $0.000027/verdict.
+- deliver verdict, HTTP /check warm: **0.25–0.29 s** wall (5 runs), `duration_ms` 248–290.
+- caught verdict (block/review): **0.53–0.61 s** wall — two classifier calls by design.
+- local floor with `GUARD_EGRESS_ENABLED=false`: 0.00–0.01 s, rc=2.
+- cold first call ~0.85 s; cost ≈ $0.000027 per classifier call (so ≈ 2x that for
+  a caught message, which `cost_usd` does not show — GUARD-DF-006).
+
+≈ All of it is the Jev API round trip (user+sys ≈ 20–25 ms locally).
 Don't profile the Go code first — the network is the latency.
 
 ## Pitfalls
 
-- HTTP /check without `X-Operator-Token` → 401 by design; /healthz is open.
+- HTTP /check without `X-Operator-Token` → 401 by design; /healthz is open and
+  returns `{"status":"ok","egress_enabled":<bool>}`.
+- The `cmd/guardd/main.go` file-header usage comment says `POST /check {input}`;
+  the handler decodes `{content}`. Following the comment gives
+  `400 content is required` with no hint of the right key (GUARD-DF-008a).
 - Fail-open (`fail_mode='open'`) does NOT deliver on outage: it returns
   route=review, decision='error', errored=True, and
   constraints=CONSTRAINTS_FAIL_OPEN (allow_tools/allow_secrets still granted
   — GUARD-DF-001). The outage degrades to "a human looks" without silently
   stripping tools/secrets from every task; `errored` ALWAYS gates unattended
   delivery, so branch on `errored` and never auto-deliver, whatever
-  constraints say. (`fail_mode='closed'` raises instead.)
+  constraints say. (`fail_mode='closed'` raises instead.) The Go client's
+  `FailOpen` takes the opposite stance: route=review, errored=true, **every
+  capability withheld** — both are documented, do not "reconcile" them.
 - The Python kwarg is `endpoint=`, not `base_url=`; default endpoint from
-  env `GUARD_ENDPOINT`, else `http://127.0.0.1:8768`.
+  env `GUARD_ENDPOINT`, else `http://127.0.0.1:8768`. The module default
+  **snapshots `GUARD_ENDPOINT` at import time** — set the env before importing,
+  or pass `endpoint=` explicitly.
 - Malformed JSON to /check → HTTP 400 with a Go json parse message (readable).
+- A body over 8 MiB is truncated by `io.LimitReader` and surfaces as
+  `400 bad request: unexpected EOF` — the 8 MiB limit is not named in the
+  error (GUARD-DF-008c). The CLI's stdin path (`io.ReadAll(os.Stdin)`,
+  `main.go:123`) has NO cap at all (GUARD-DF-008b).
 - go.mod declares go 1.26.9; newer toolchains are fine.

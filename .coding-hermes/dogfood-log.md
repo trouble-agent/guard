@@ -118,3 +118,40 @@
   no-key cold first run 193.8ms. **No PERF row** — only felt cost is the designed
   classifier round-trip; matches runs 1-3's envelope.
 - **Full evidence:** docs/dogfood/2026-10-16-run3b-findings.md (this commit).
+
+## 2026-10-19 — dogfood run 4 (tick guard-dogfood-2026-10-20-01-29-06, HEAD bcb6002)
+
+- **Verdict: SHIPPABLE (core)** — every documented contract of all four consumption
+  shapes was driven live and matched the docs. Angle = the surface no run had touched:
+  the policy layer as an integrator configures it (per-source `Overrides` — the
+  REVIEW-GUARD-003 fix, landed 10-19 and never dogfooded — plus `QuotedDowngrade`),
+  the connector contract DOC-18/17-R3 documented on 10-18, and a fresh-machine install
+  leg. Delta vs run 3b (0b9db86): docs DOC-16/17/18/19 + README-8, code `d71b80c`.
+- **Fix re-proved from the consumer side:** `webhook` override BlockAt 0.55 at score
+  0.60 → quarantine/block; inbox and empty source keep the base review route.
+  `QuotedDowngrade` holds live on three independent quotation phrasings (0.97/0.97/0.95
+  above the 0.85 block band → review, never deliver, never quarantine).
+- **Contract matrix, all exact:** /healthz body, 401/405/400 bodies, 8 MiB truncation
+  behaviour, Python CLI exit codes 0/1/2/3, `--fail-open` outage verdict (decision
+  'error', constraints preserved), argparse usage rc=2 with no stdout JSON,
+  `--endpoint` vs GUARD_ENDPOINT precedence, the import-time env snapshot trap, Go
+  client FailOpen withholding capabilities. 5-way concurrency: all 200, no bleed.
+- **NEW findings (rows filed this tick, family GUARD-DF):** GUARD-DF-004 [P2] fresh-box
+  `make docs-check` fails on an undocumented `jq` dependency and misdiagnoses it as a
+  README JSON parse error (root-caused; rescue with jq in $HOME → rc=0); GUARD-DF-005
+  [P2] per-source Overrides unreachable from CLI/HTTP (main.go:108 hardcodes
+  DefaultPolicy) while docs/threshold-calibration.md:111,156 prescribes them;
+  GUARD-DF-006 [P3] the verdict's own `duration_ms`/`cost_usd` exclude the attribution
+  call (stub: 2 calls, cost 0.0010 reported vs 0.0020; live: caught wall 0.53-0.61s vs
+  duration_ms 263-362, overlapping the deliver range 248-290); GUARD-DF-007 [P4] an
+  Override key matching no source is silently ignored; GUARD-DF-008 [P3] roll-up of
+  run-2/3 findings still live and never filed (DF-G1, DF-G3, DF-G4, DF-G6 re-proved);
+  GUARD-DF-009 [P2] SKIPPED-install-bunker — `bunker-qa.sh` aborts its render
+  (`UI_PORTS: unbound variable` → 0-byte qa-run.sh), installability proved instead by a
+  hand-walked fresh-agent leg (INSTALL_SECONDS ~= 60, agent ae4ac4b7 destroyed).
+- **Perf:** deliver verdict 0.25-0.29s warm / caught 0.53-0.61s (2 classifier calls by
+  design); local floor 0.00-0.01s; docs-check 1-2s; tests 13s on a fresh box.
+  **No PERF row** — the only felt cost is the designed remote round trip; the 2x is
+  filed as the accounting gap (GUARD-DF-006), not as a slowdown.
+- **Full evidence:** docs/dogfood/2026-10-19-run4-findings.md (this commit). Scratch
+  consumer (outside the repo): ~/guard-integrator-1019/.
