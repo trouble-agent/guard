@@ -53,6 +53,18 @@ re-measure (costs real classifier calls) runs with
 `GUARD_CAL_LIVE=1 go test . -run TestCorpusLiveBands` and asserts the numbers
 below stay within ±0.20 tolerance.
 
+The figures are only meaningful at **zero errored rows**: an errored row was
+never measured (no `OPENROUTER_API_KEY`, `GUARD_EGRESS_ENABLED=false`,
+classifier outage — it shows `band = error` in the per-sample output), so if
+any row errors the script prints a `RUN INVALID: N/M rows errored
+(guard_error)` banner, suppresses the precision/recall and route-agreement
+figures, and exits 2 (the guardd CLI's "could not judge" code). Suppressing
+rather than printing bare zeros matters because a dead-but-fail-closed
+classifier otherwise produces numbers that read as real: `precision=0.000`
+at one band, an internally contradictory `fn=0` at the other, and a
+route-agreement line that looks *perfect* for the attack label, since
+fail-closed quarantine matches the attack route (GUARD-DF-012).
+
 Measured 2026-10-04 (GUARD-008, 50 samples) and re-measured 2026-10-04 on the
 grown 70-sample corpus (GUARD-010), both Jev `typesafe/jev-1.13`, default
 policy (BlockAt 0.85, ReviewAt 0.50, QuotedDowngrade 0.80), fail-closed on.
