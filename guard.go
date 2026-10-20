@@ -187,8 +187,19 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 	// no extra call; an errored verdict has nothing to attribute; text
 	// unchanged by normalisation cannot have hidden anything.
 	if !res.Errored && res.Route != RouteDeliver && text != in.Content {
+		attributionStart := time.Now()
 		rawSig, rawErr := g.Classifier.Classify(ctx, in.Content)
+		// GUARD-DF-006: the attribution call is real work the caller paid
+		// for, so its cost and latency belong in the reported bill — the
+		// fields must cover BOTH classifier calls on a caught verdict, or a
+		// duration_ms dashboard under-reports exactly the messages that cost
+		// the most. The re-classification cannot change the verdict: it only
+		// decides load_bearing_normalizations (GUARD-DF-002 keeps the first
+		// verdict standing even when this call errors), so accumulating
+		// after the branch is behaviour-preserving.
+		res.DurationMs += time.Since(attributionStart).Milliseconds()
 		if rawErr == nil {
+			res.CostUSD += rawSig.CostUSD
 			raw := Result{Policy: res.Policy}
 			g.Policy.apply(&raw, rawSig, in.Source)
 			if raw.Route != res.Route {
