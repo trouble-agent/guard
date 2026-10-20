@@ -42,6 +42,26 @@ Applying the requested material-change rule (commit subjects beginning `feat:` o
 - `gh run list --limit 3 --json databaseId,headSha,status,conclusion,name,workflowName,event,createdAt,url`
 - `gh run view 37178936396 --json headSha,status,conclusion,jobs`
 
+## Update 2026-10-20 — REVIEW-GUARD-004 (README notice completed)
+
+The 2026-10-17 README notice named five of the six contract gaps and the same
+day's release-notes warning named all six; two drifts remained in the repo
+README itself, fixed this update:
+
+- The notice now also names the normalization-attribution contract
+  (GUARD-DF-002): the v0.1.0 tarball README documents `normalizations` as
+  "why it was caught, visibly", which the current contract replaced with
+  `normalizations` (what ran) vs `load_bearing_normalizations` (what drove
+  the verdict).
+- The Install paragraph directly below the notice claimed "Running a
+  released binary is identical to a source build", contradicting the notice;
+  it now states the released binary is not interchangeable with a source
+  build and points at the notice for the missing contracts.
+- The notice now states the tarball's bundled README is a snapshot frozen at
+  tag time and cannot be corrected in place — cutting a release is an owner
+  decision — so the standing warning is the v0.1.0 release notes plus this
+  notice until the next tag.
+
 ## Update 2026-10-17 — released-artifact documentation gap (DOC-17)
 
 The cut in the "Proposed next version" section above still has not happened: as

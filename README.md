@@ -84,15 +84,23 @@ versions: https://github.com/trouble-agent/guard/releases (first release:
 2026-10-02; assets: `guard-linux-amd64.tar.gz`, `guard-linux-arm64.tar.gz`,
 `checksums.txt`).
 
-> **Released-artifact notice (2026-10-17).** The only tagged release,
-> **v0.1.0** (2026-10-02), predates every user-facing contract added since it
-> was cut, and the README bundled in its tarball (153 lines) documents that
-> older binary, not this one: it carries no `GUARD_EGRESS_ENABLED` classifier
-> egress kill switch, no CLI exit-code contract (`rc=2` on a fail-closed
-> error, `rc=0` on a classified run), no server token precedence
-> (`GUARD_TOKEN` env > `-tokenfile` > `-token`) and no loopback-by-default
-> `-serve` bind, and no `-channel` flag; the released binary also predates the
-> Go `net/http` security fix GO-2026-6617 (SEC-GO-1269). **Build from source
+> **Released-artifact notice (2026-10-17, updated 2026-10-20).** The only
+> tagged release, **v0.1.0** (2026-10-02), predates every user-facing contract
+> added since it was cut, and the README bundled in its tarball (153 lines)
+> documents that older binary, not this one: it carries no
+> `GUARD_EGRESS_ENABLED` classifier egress kill switch, no CLI exit-code
+> contract (`rc=2` on a fail-closed error, `rc=0` on a classified run), no
+> server token precedence (`GUARD_TOKEN` env > `-tokenfile` > `-token`) and
+> no loopback-by-default `-serve` bind, no `-channel` flag, and no
+> normalization-attribution semantics — the released docs describe
+> `normalizations` as "why it was caught, visibly", which the current
+> contract replaced with `normalizations` (what ran) vs
+> `load_bearing_normalizations` (what actually drove the verdict,
+> GUARD-DF-002); the released binary also predates the Go `net/http`
+> security fix GO-2026-6617 (SEC-GO-1269). The tarball's bundled README is a
+> snapshot frozen at tag time and cannot be corrected in place — cutting a
+> release is an owner decision — so the standing warning lives in the v0.1.0
+> release notes and in this notice until the next tag. **Build from source
 > (Quick Start above)** to get the contracts documented here — the notice is
 > removed by the next tagged release (v0.2.0 is proposed in
 > [release readiness](docs/release-readiness-2026-10-04.md)).
@@ -107,10 +115,13 @@ tar xzf guard-linux-amd64.tar.gz
 ./guardd -pretty -content "hello, world"   # verify the binary runs
 ```
 
-Each tarball contains `guardd`, the README, and the LICENSE. Prefer building
-from source (above) for other platforms. Running a released binary is identical
-to a source build: pipe a message through `guardd`, or serve it with
-`guardd -serve` (token and bind-address setup in **Quick Start** above).
+Each tarball contains `guardd`, the README, and the LICENSE. **A released
+binary is NOT interchangeable with a source build** — the notice above lists
+the contracts it lacks — so prefer building from source (Quick Start above)
+for the current contract set, and for other platforms. Running a released
+binary when you accept the older contract set: pipe a message through
+`guardd`, or serve it with `guardd -serve` (token and bind-address setup in
+**Quick Start** above).
 
 Agent-facing usage notes (prerequisites, key load order, the `errored`
 verdict contract): see [skills/guard-usage/SKILL.md](skills/guard-usage/SKILL.md).
