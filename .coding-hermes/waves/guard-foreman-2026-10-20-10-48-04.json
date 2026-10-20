@@ -1,0 +1,18 @@
+{
+  "tick_id": "guard-foreman-2026-10-20-10-48-04",
+  "project": "guard",
+  "workdir": "/home/kara/trouble-agent/guard",
+  "base_commit": "aab32dd",
+  "wave_budget": 12,
+  "dispatched": 6,
+  "tasks": [
+    {"id": "REVIEW-GUARD-004", "priority": "P2", "complexity": 2, "worktree": "/home/kara/worktrees/guard-REVIEW-GUARD-004", "branch": "wt/REVIEW-GUARD-004", "dispatch_pid": 935934, "dispatched_at": "2026-10-20T10:51:00Z"},
+    {"id": "GUARD-DF-011", "priority": "P4", "complexity": 2, "worktree": "/home/kara/worktrees/guard-GUARD-DF-011", "branch": "wt/GUARD-DF-011", "dispatch_pid": 939992, "dispatched_at": "2026-10-20T10:51:00Z"},
+    {"id": "GUARD-DF-012", "priority": "P3", "complexity": 2, "worktree": "/home/kara/worktrees/guard-GUARD-DF-012", "branch": "wt/GUARD-DF-012", "dispatch_pid": 940069, "dispatched_at": "2026-10-20T10:51:00Z"},
+    {"id": "QA-GUARD-005", "priority": "P4", "complexity": 2, "worktree": "/home/kara/worktrees/guard-QA-GUARD-005", "branch": "wt/QA-GUARD-005", "dispatch_pid": 940207, "dispatched_at": "2026-10-20T10:51:00Z"},
+    {"id": "GUARD-DF-013", "priority": "P4", "complexity": 1, "worktree": "/home/kara/worktrees/guard-GUARD-DF-013", "branch": "wt/GUARD-DF-013", "dispatch_pid": 940473, "dispatched_at": "2026-10-20T10:51:00Z"},
+    {"id": "GUARD-DF-014", "priority": "P4", "complexity": 1, "worktree": "/home/kara/worktrees/guard-GUARD-DF-014", "branch": "wt/GUARD-DF-014", "dispatch_pid": 940616, "dispatched_at": "2026-10-20T10:51:00Z"}
+  ],
+  "created_at": "2026-10-20T10:51:00-05:00",
+  "status": "dispatched_workers_running"
+}
