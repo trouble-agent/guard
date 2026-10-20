@@ -101,16 +101,15 @@ if not v.deliver: ...    # quarantine/review
   changed the verdict — GUARD-DF-002 fix).
 - `attack_class` is noisy near the threshold — benign text often carries
   masquerade at 0.1–0.4. Trust `route`, not the label, at the margin.
-- **`duration_ms` and `cost_usd` describe the FIRST classifier call only.**
-  On any non-deliver verdict the guard re-classifies the raw input to attribute
-  normalisations, so a caught message costs **two** classifier calls and about
-  twice the wall time, while `duration_ms` stops before the second call
-  (`guard.go:154`) and `cost_usd` carries only the first `Signals`
-  (`guard.go:172`). Measured: caught verdicts 0.53–0.61 s wall with
-  `duration_ms` 263–362 vs deliver 0.25–0.29 s with 248–290 — the ranges
-  overlap, so the field cannot tell a one-call verdict from a two-call one
-  (GUARD-DF-006). Do not build latency/cost accounting on these fields alone;
-  time the call yourself or count calls with a stub endpoint.
+- **`duration_ms` and `cost_usd` cover ALL classifier calls the verdict
+  caused** (accumulated accounting since e858041, the GUARD-DF-006 fix). On a
+  non-deliver verdict the guard re-classifies the raw input to attribute
+  normalisations (skipped when the verdict errored or normalisation changed
+  nothing), so a caught message costs **two** classifier calls, about twice
+  the wall time, and reports ≈2x the cost — the fields are the full bill for
+  the message, not the first call. Measured: caught verdicts 0.53–0.61 s wall
+  vs deliver 0.25–0.29 s. Don't read the fields as per-call values: to time
+  or count an individual call, measure it yourself or use a stub endpoint.
 
 ## Run commands
 
@@ -124,8 +123,8 @@ make docs-check                                            # needs jq (see Prere
 - deliver verdict, HTTP /check warm: **0.25–0.29 s** wall (5 runs), `duration_ms` 248–290.
 - caught verdict (block/review): **0.53–0.61 s** wall — two classifier calls by design.
 - local floor with `GUARD_EGRESS_ENABLED=false`: 0.00–0.01 s, rc=2.
-- cold first call ~0.85 s; cost ≈ $0.000027 per classifier call (so ≈ 2x that for
-  a caught message, which `cost_usd` does not show — GUARD-DF-006).
+- cold first call ~0.85 s; cost ≈ $0.000027 per classifier call — a caught
+  message's `cost_usd` reports both calls (≈2x) since e858041.
 
 ≈ All of it is the Jev API round trip (user+sys ≈ 20–25 ms locally).
 Don't profile the Go code first — the network is the latency.
