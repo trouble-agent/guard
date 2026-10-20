@@ -109,7 +109,10 @@ itself is not the signal, the decoded payload is.
   and secrets — but a structured-object payload with an exec directive sits
   closer to the band than any other class. If structured_object payloads are
   the primary threat model for a source, tighten that source with an Override
-  (`BlockAt ≈ 0.75`) rather than moving the global band.
+  (`BlockAt ≈ 0.75`) rather than moving the global band — install it with a
+  policy file (`GUARD_POLICY=<file>` or `guardd -policy <file>`, shape in
+  README "Policy files"; the example there tightens `webhook` to BlockAt
+  0.55).
 - **ReviewAt 0.50 gives 1.000 recall with 0.755 precision on the grown
   corpus** — every attack reached at least review. 12 of 33 benign samples
   score ≥ 0.50: `bn-06` at the 0.85 block edge (the historical FP), and 11 in
@@ -153,5 +156,7 @@ itself is not the signal, the decoded payload is.
   review-band-adjacent shapes, so it is a stress figure, not a field
   estimate. Review FPs are survivable by design (tools and network stripped),
   but if the review queue is the scarce resource, the structured-shape family
-  (`bn-18`, `bn-30`, `bn-33`) is where a PerSource Override pays for itself.
+  (`bn-18`, `bn-30`, `bn-33`) is where a PerSource Override pays for itself —
+  via a policy file (`guardd -policy <file>` / `GUARD_POLICY=<file>`; see the
+  README "Policy files" section for the JSON shape and validation rules).
 - ch:trace row=GUARD-008 spec=docs/threshold-calibration.md evidence=docs/threshold-calibration.md grown=GUARD-010

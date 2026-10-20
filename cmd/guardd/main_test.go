@@ -439,3 +439,302 @@ func TestWarnTokenProvenanceQuietForPreferredForms(t *testing.T) {
 		}
 	}
 }
+
+// --- GUARD-DF-005: the policy file surface (-policy / GUARD_POLICY) ---
+
+// scoreClassifier returns a fixed score from every Classify call, so a policy
+// change can be observed as a route change without the hosted model.
+type scoreClassifier struct {
+	score float64
+}
+
+func (c scoreClassifier) Name() string { return "score-stub" }
+func (c scoreClassifier) Classify(context.Context, string) (guard.Signals, error) {
+	return guard.Signals{Injection: c.score, Class: "instruction_injection", Model: "score-stub"}, nil
+}
+
+// writePolicyFile is the policy analogue of writeTokenFile.
+func writePolicyFile(t *testing.T, body string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "policy.json")
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatalf("write policy file: %v", err)
+	}
+	return path
+}
+
+const webhookOverridePolicy = `{
+  "id": "tight-webhook",
+  "block_at": 0.85,
+  "review_at": 0.50,
+  "quoted_downgrade": 0.80,
+  "fail_closed": true,
+  "overrides": {
+    "webhook": {"block_at": 0.55, "review_at": 0.40}
+  }
+}`
+
+// AC: no file named anywhere -> the shipped default policy, provenance
+// policyDefault.
+func TestResolvePolicyDefaultWhenNothingNamed(t *testing.T) {
+	pol, prov, err := resolvePolicy("", "")
+	if err != nil {
+		t.Fatalf("resolvePolicy(empty) = %v", err)
+	}
+	if prov != policyDefault {
+		t.Fatalf("provenance = %v, want policyDefault", prov)
+	}
+	if pol.ID != "default" || pol.BlockAt != 0.85 || pol.ReviewAt != 0.50 {
+		t.Fatalf("policy = %+v, want the shipped default bands", pol)
+	}
+}
+
+// AC: GUARD_POLICY env loads the file; -policy wins when both are set (the
+// ad-hoc override shape, mirroring the token precedence).
+func TestResolvePolicyPrecedenceFlagOverEnv(t *testing.T) {
+	envPath := writePolicyFile(t, webhookOverridePolicy)
+	flagPath := writePolicyFile(t, `{"id":"flag-table","block_at":0.9,"review_at":0.5}`)
+
+	pol, prov, err := resolvePolicy(envPath, "")
+	if err != nil || prov != policyFromEnv || pol.ID != "tight-webhook" {
+		t.Fatalf("resolvePolicy(env) = (%+v, %v, %v), want env table", pol, prov, err)
+	}
+	pol, prov, err = resolvePolicy(envPath, flagPath)
+	if err != nil || prov != policyFromFlag || pol.ID != "flag-table" {
+		t.Fatalf("resolvePolicy(flag) = (%+v, %v, %v), want flag table", pol, prov, err)
+	}
+}
+
+// AC: a missing file is a startup failure, never a silent fall-back to the
+// default bands — an operator tightening a source must not run with the
+// looser table while believing the override is live.
+func TestResolvePolicyMissingFileRefused(t *testing.T) {
+	if _, _, err := resolvePolicy("", filepath.Join(t.TempDir(), "nope.json")); err == nil {
+		t.Fatal("resolvePolicy(missing file) = nil error, want refusal")
+	}
+}
+
+// AC: the loader accepts exactly the documented guard.Policy JSON shape and
+// an overrides entry that survives the round trip.
+func TestLoadPolicyFileRoundTrip(t *testing.T) {
+	path := writePolicyFile(t, webhookOverridePolicy)
+	pol, err := loadPolicyFile(path)
+	if err != nil {
+		t.Fatalf("loadPolicyFile = %v", err)
+	}
+	o, ok := pol.Overrides["webhook"]
+	if !ok {
+		t.Fatalf("overrides missing the webhook entry: %+v", pol.Overrides)
+	}
+	if o.BlockAt != 0.55 || o.ReviewAt != 0.40 {
+		t.Fatalf("webhook override = %+v, want block 0.55 / review 0.40", o)
+	}
+}
+
+// Validation: bands are probabilities, so a table that can never fire —
+// out-of-range SET bands, an inverted review>block pair, on the policy itself
+// or on any override's effective pair — is refused at load, not discovered in
+// production.
+func TestLoadPolicyFileValidation(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+		want string
+	}{
+		{"block_at over 1", `{"block_at":1.5,"review_at":0.5}`, "out of range"},
+		{"review_at negative", `{"block_at":0.85,"review_at":-1}`, "out of range"},
+		{"inverted bands", `{"block_at":0.5,"review_at":0.85}`, "review_at=0.85 > block_at=0.5"},
+		{"override inverted", `{"block_at":0.85,"review_at":0.5,"overrides":{"webhook":{"block_at":0.30,"review_at":0.40}}}`, "override webhook"},
+		{"override block over 1", `{"block_at":0.85,"review_at":0.5,"overrides":{"webhook":{"block_at":1.7}}}`, "out of range"},
+		{"not JSON", `{"block_at":`, "not valid guard.Policy JSON"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := loadPolicyFile(writePolicyFile(t, tc.body))
+			if err == nil {
+				t.Fatalf("loadPolicyFile(%s) = nil error, want refusal naming %q", tc.body, tc.want)
+			}
+			if !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %q, want it to name %q", err, tc.want)
+			}
+		})
+	}
+}
+
+// A minimal file — global bands and quoted_downgrade omitted, one override
+// naming only block_at — is VALID: the global fields inherit the shipped
+// defaults (a zero block_at would quarantine every score; a zero
+// quoted_downgrade would downgrade every quarantine), and an override band ≤0
+// means "not set" exactly as bandsFor reads it. This is the README
+// "github_pr" example shape.
+func TestLoadPolicyFileMinimalShapeInheritsDefaults(t *testing.T) {
+	pol, err := loadPolicyFile(writePolicyFile(t, `{"id":"minimal","overrides":{"github_pr":{"block_at":0.75}}}`))
+	if err != nil {
+		t.Fatalf("loadPolicyFile(minimal) = %v", err)
+	}
+	def := guard.DefaultPolicy()
+	if pol.BlockAt != def.BlockAt || pol.ReviewAt != def.ReviewAt || pol.QuotedDowngrade != def.QuotedDowngrade {
+		t.Fatalf("policy = %+v, want inherited defaults %+v", pol, def)
+	}
+
+	// And the tightening still works from the minimal file: 0.76 from
+	// github_pr clears the override's 0.75 but not the inherited 0.85, so it
+	// quarantines — while the same score from another source stays review.
+	g := &guard.Guard{Classifier: scoreClassifier{score: 0.76}, Policy: pol}
+	if res := g.Check(context.Background(), guard.Input{Source: "github_pr", Content: "x"}); res.Route != guard.RouteQuarantine {
+		t.Fatalf("github_pr @0.76 = %s, want quarantine", res.Route)
+	}
+	if res := g.Check(context.Background(), guard.Input{Source: "inbox", Content: "x"}); res.Route != guard.RouteReview {
+		t.Fatalf("inbox @0.76 = %s, want review (inherited default bands)", res.Route)
+	}
+}
+
+// AC6: a loaded policy with an Overrides entry actually takes effect —
+// a webhook-source input scoring 0.60 is QUARANTINED by the tightened
+// override while the default table would only review it. This is the
+// behavioural proof that REVIEW-GUARD-003's per-source tightening is
+// reachable from guardd now, not just from an in-process Go consumer.
+func TestLoadedPolicyOverrideTightensWebhookSource(t *testing.T) {
+	path := writePolicyFile(t, webhookOverridePolicy)
+	pol, err := loadPolicyFile(path)
+	if err != nil {
+		t.Fatalf("loadPolicyFile = %v", err)
+	}
+	g := &guard.Guard{Classifier: scoreClassifier{score: 0.60}, Policy: pol}
+
+	res := g.Check(context.Background(), guard.Input{Source: "webhook", Content: "payload"})
+	if res.Route != guard.RouteQuarantine || res.Decision != guard.DecisionBlock {
+		t.Fatalf("webhook @0.60 with override = %s/%s, want quarantine/block", res.Decision, res.Route)
+	}
+	if res.RiskLevel != guard.RiskHigh {
+		t.Fatalf("risk = %s, want high on the quarantine route", res.RiskLevel)
+	}
+	if res.Policy != "tight-webhook" {
+		t.Fatalf("verdict policy = %q, want the loaded file's id", res.Policy)
+	}
+
+	// Same score, other source: the override must NOT leak across sources.
+	res = g.Check(context.Background(), guard.Input{Source: "inbox", Content: "payload"})
+	if res.Route != guard.RouteReview {
+		t.Fatalf("inbox @0.60 with override = %s, want review (default bands)", res.Route)
+	}
+}
+
+// AC6 through the served surface: a guardd whose policy came from a file
+// quarantines the webhook hit and reviews the same score from another
+// source, on the live /check handler.
+func TestLoadedPolicyOverrideDrivesServedCheck(t *testing.T) {
+	pol, err := loadPolicyFile(writePolicyFile(t, webhookOverridePolicy))
+	if err != nil {
+		t.Fatalf("loadPolicyFile = %v", err)
+	}
+	srv := httptest.NewServer(newHandler(&guard.Guard{Classifier: scoreClassifier{score: 0.60}, Policy: pol}, "tok", false))
+	defer srv.Close()
+
+	post := func(source string) guard.Result {
+		t.Helper()
+		body := fmt.Sprintf(`{"source":%q,"content":"payload"}`, source)
+		req, err := http.NewRequest(http.MethodPost, srv.URL+"/check", strings.NewReader(body))
+		if err != nil {
+			t.Fatalf("build request: %v", err)
+		}
+		req.Header.Set(OperatorTokenHeader, "tok")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("post /check: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		raw, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("status = %d (body %q)", resp.StatusCode, strings.TrimSpace(string(raw)))
+		}
+		var res guard.Result
+		if err := json.Unmarshal(raw, &res); err != nil {
+			t.Fatalf("decode Result: %v (body %q)", err, raw)
+		}
+		return res
+	}
+
+	if res := post("webhook"); res.Route != guard.RouteQuarantine {
+		t.Fatalf("served webhook @0.60 = %s, want quarantine from the loaded override", res.Route)
+	}
+	if res := post("inbox"); res.Route != guard.RouteReview {
+		t.Fatalf("served inbox @0.60 = %s, want review (default bands)", res.Route)
+	}
+}
+
+// A file that leaves quoted_downgrade out inherits the default 0.80: the
+// zero value would re-route EVERY quarantine to review (sig.Quoted >= 0 is
+// always true), so omission must not read as "disable".
+func TestLoadPolicyFileQuotedDowngradeInheritsDefault(t *testing.T) {
+	pol, err := loadPolicyFile(writePolicyFile(t, `{"id":"qd","block_at":0.85,"review_at":0.5}`))
+	if err != nil {
+		t.Fatalf("loadPolicyFile = %v", err)
+	}
+	if pol.QuotedDowngrade != guard.DefaultPolicy().QuotedDowngrade {
+		t.Fatalf("quoted_downgrade = %v, want the shipped %v", pol.QuotedDowngrade, guard.DefaultPolicy().QuotedDowngrade)
+	}
+
+	// Behavioural half: with Quoted below the (inherited) threshold, an
+	// over-band score stays quarantined; at/above it, quarantine downgrades
+	// to review — never to deliver.
+	g := &guard.Guard{Classifier: scoreClassifier{score: 0.90}, Policy: pol}
+	g.Classifier = quotedClassifier{inner: scoreClassifier{score: 0.90}, quoted: 0.10}
+	if res := g.Check(context.Background(), guard.Input{Content: "x"}); res.Route != guard.RouteQuarantine {
+		t.Fatalf("quoted 0.10 @0.90 = %s, want quarantine (below the inherited downgrade)", res.Route)
+	}
+	g.Classifier = quotedClassifier{inner: scoreClassifier{score: 0.90}, quoted: 0.90}
+	if res := g.Check(context.Background(), guard.Input{Content: "x"}); res.Route != guard.RouteReview {
+		t.Fatalf("quoted 0.90 @0.90 = %s, want review (downgrade fired), got %s", res.Route, res.Route)
+	}
+}
+
+// quotedClassifier wraps a classifier and stamps a Quoted probability, so the
+// downgrade path can be exercised without the hosted model.
+type quotedClassifier struct {
+	inner  scoreClassifier
+	quoted float64
+}
+
+func (c quotedClassifier) Name() string { return "quoted-stub" }
+func (c quotedClassifier) Classify(ctx context.Context, content string) (guard.Signals, error) {
+	sig, err := c.inner.Classify(ctx, content)
+	sig.Quoted = c.quoted
+	return sig, err
+}
+
+// The provenance line lands on stderr with the table id and override count,
+// so a mispointed -policy is visible in unit/service logs next to the token
+// provenance.
+func TestWarnPolicyProvenanceLines(t *testing.T) {
+	cases := []struct {
+		prov policyProvenance
+		pol  guard.Policy
+		want string
+	}{
+		{policyFromFlag, guard.Policy{ID: "tight-webhook", Overrides: map[string]guard.Override{"webhook": {}}}, `"tight-webhook", 1 override(s)`},
+		{policyFromEnv, guard.Policy{ID: "env-table"}, GuardPolicyFileEnv},
+		{policyDefault, guard.Policy{ID: "default"}, "policy loaded from default"},
+	}
+	for _, tc := range cases {
+		r, w, _ := os.Pipe()
+		orig := os.Stderr
+		os.Stderr = w
+		warnPolicyProvenance(tc.prov, tc.pol)
+		os.Stderr = orig
+		_ = w.Close()
+		out := string(mustReadAll(t, r))
+		if !strings.Contains(out, tc.want) {
+			t.Errorf("provenance %v output %q missing %q", tc.prov, out, tc.want)
+		}
+	}
+}
+
+func mustReadAll(t *testing.T, r io.Reader) []byte {
+	t.Helper()
+	b, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	return b
+}

@@ -32,6 +32,7 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
 go build ./cmd/guardd          # produces ./guardd
 printf '%s' "hello, world" | ./guardd          # CLI: classify via stdin
 GUARD_TOKEN=s3cr3t ./guardd -serve :8768       # or serve over HTTP
+GUARD_POLICY=policy.json ./guardd -serve :8768 # serve with per-source overrides (see "Policy files" below)
 ```
 
 **First run with no key — this is the expected, correct (fail-closed) result**
@@ -264,6 +265,8 @@ guardd -content "$message" -source github_pr -channel crier -pretty   # -channel
 GUARD_TOKEN="$GUARD_TOKEN" guardd -serve :8768           # env (recommended: token never in argv)
 guardd -serve :8768 -tokenfile /run/secrets/guard.token  # or a 0600 token file
 guardd -serve :8768 -token "$GUARD_TOKEN"                # dev: works, but warns (token visible in ps)
+GUARD_POLICY=/etc/guard/policy.json guardd -serve :8768  # policy file: per-source overrides, custom bands
+guardd -serve :8768 -policy /etc/guard/policy.json       # same, via flag (wins over GUARD_POLICY)
 curl -s localhost:8768/check \
   -H "X-Operator-Token: $GUARD_TOKEN" \
   -d '{"source":"inbox","channel":"crier","content":"..."}'
@@ -290,6 +293,59 @@ with it prints a warning to stderr. `-serve` takes the bind address: an
 omitted host defaults to loopback, so `:8768` binds `127.0.0.1:8768` — pass
 `0.0.0.0:8768` (or an explicit host) to bind every interface deliberately. The
 CLI shapes (`stdin`, `-content`) are unaffected.
+
+### Policy files (`-policy` / `GUARD_POLICY`)
+
+The default decision table (`guard.DefaultPolicy()`: block ≥ 0.85, review ≥
+0.50) is the same for every source. To tighten one source — e.g. webhook
+deliveries, where the threshold calibration says a per-source Override is the
+right tool — name a policy file:
+
+```bash
+GUARD_POLICY=/etc/guard/policy.json guardd -serve :8768  # env
+guardd -serve :8768 -policy /etc/guard/policy.json       # flag (wins over the env var)
+```
+
+The file is JSON matching the `guard.Policy` struct:
+
+```json
+{
+  "id": "tight-webhook",
+  "block_at": 0.85,
+  "review_at": 0.50,
+  "quoted_downgrade": 0.80,
+  "fail_closed": true,
+  "overrides": {
+    "webhook":   {"block_at": 0.55, "review_at": 0.40},
+    "github_pr": {"block_at": 0.75}
+  }
+}
+```
+
+- `id` — policy name recorded on every verdict (`policy` field); an empty id
+  keeps `"default"` so verdicts stay attributable.
+- `block_at` / `review_at` — the global score bands (classifier scores in
+  (0, 1]).
+- `quoted_downgrade` — the Quoted confidence at which a quarantine is
+  downgraded to review. Leave it out and the shipped default (0.80) applies:
+  a literal `0` is indistinguishable from "omitted" in JSON, and a 0 would
+  otherwise downgrade EVERY quarantine (the comparison is `Quoted >= 0`,
+  always true). To run without the downgrade, set it to `1.0`.
+- `fail_closed` — the error stance; `-fail-closed=false` still overrides it
+  on the command line.
+- `overrides` — per-source tables keyed by the `source` the caller supplies
+  (`-source` on the CLI, `source` in the `/check` body). Each entry may set
+  `block_at`, `review_at`, `fail_closed`; unset fields inherit the policy's
+  own values. An unknown source simply gets the global bands.
+
+Loading is strict: a named file that is missing, is not valid
+`guard.Policy` JSON, carries a band outside (0, 1], or pairs
+`review_at > block_at` (on the policy or on any override) is a startup
+failure — guardd refuses to run with a looser table than the operator meant
+to install. The resolved table is announced on stderr
+(`guardd: policy loaded from -policy (id "…", N override(s))`). The
+`-policy` flag and `GUARD_POLICY` apply to the CLI shape too, so a shell
+pipeline can run under the same table the service does.
 
 ### Classifier egress (`GUARD_EGRESS_ENABLED`)
 
