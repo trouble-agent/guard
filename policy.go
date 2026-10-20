@@ -60,6 +60,16 @@ func (p Policy) bandsFor(source string) (blockAt, reviewAt float64, failClosed b
 	return
 }
 
+// failClosedFor is the error-path stance for one source: the policy's
+// FailClosed unless that source's Override sets its own. It resolves through
+// bandsFor, so the error path and the score path always agree on what an
+// override means (GUARD-DF-010: apply() discarded the per-source value and
+// Guard.Check keyed on the policy-level switch only).
+func (p Policy) failClosedFor(source string) bool {
+	_, _, fc := p.bandsFor(source)
+	return fc
+}
+
 // apply fills the verdict fields from the signals. This is the whole decision
 // surface: numbers in, route + capabilities out. source selects the per-source
 // override (Input.Source); empty means no override.

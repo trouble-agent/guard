@@ -155,7 +155,10 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 	if err != nil {
 		res.Errored = true
 		res.RiskLevel = RiskMedium
-		if g.Policy.FailClosed {
+		// GUARD-DF-010: the fail-closed stance is per-source — an Override
+		// may loosen (or tighten) what an error means for its source, the
+		// same way it overrides the score bands.
+		if g.Policy.failClosedFor(in.Source) {
 			res.Decision = DecisionBlock
 			res.Route = RouteQuarantine
 			res.Reason = "guard_error (fail-closed): " + err.Error()

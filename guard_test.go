@@ -15,6 +15,19 @@ package guard
 // variant to the classified text, an encoded injection is flagged only via
 // its decoded form — which is exactly the load-bearing case.
 
+// Tests for per-source fail-closed, added by GUARD-DF-010.
+//
+// The defect: bandsFor resolved Override.FailClosed per source, but apply()
+// discarded it (`blockAt, reviewAt, _ := p.bandsFor(source)`) and the
+// Guard.Check error path keyed on g.Policy.FailClosed only. With a failing
+// classifier under a fail-closed policy, source=webhook (override
+// FailClosed=false) was byte-identical to source=inbox: the per-source
+// fail-open was ignored. The fix exposes failClosedFor(source) and routes the
+// error path through the same per-source resolution the score path uses.
+//
+// The stub answers every Classify call with an error — the error path is the
+// whole surface under test.
+
 import (
 	"context"
 	"encoding/json"
@@ -194,4 +207,75 @@ func contains(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// failingClassifier errors on every call, pinning the Guard.Check error path.
+type failingClassifier struct{}
+
+func (failingClassifier) Name() string { return "failing-stub" }
+func (failingClassifier) Classify(context.Context, string) (Signals, error) {
+	return Signals{}, errors.New("classifier outage")
+}
+
+// TestGuardPerSourceFailClosedOnError: the acceptance matrix for GUARD-DF-010.
+// Policy-level FailClosed stays true, but the webhook override opts that one
+// source into fail-open. On a classifier error the webhook verdict must route
+// to review (fail-open, flagged) while the inbox control stays quarantine
+// (fail-closed) — the per-source switch must be honored, not just the
+// policy-level one.
+func TestGuardPerSourceFailClosedOnError(t *testing.T) {
+	failOpen := false
+	g := &Guard{
+		Classifier: failingClassifier{},
+		Policy: Policy{
+			ID:         "default",
+			BlockAt:    0.85,
+			ReviewAt:   0.50,
+			FailClosed: true,
+			Overrides: map[string]Override{
+				"webhook": {FailClosed: &failOpen},
+			},
+		},
+	}
+
+	webhook := g.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+	if !webhook.Errored {
+		t.Fatal("classifier error must be recorded on the webhook verdict")
+	}
+	if webhook.Route != RouteReview || webhook.Decision != DecisionAllow {
+		t.Fatalf("webhook override FailClosed=false must fail open to review/allow, got %s/%s (%s)", webhook.Route, webhook.Decision, webhook.Reason)
+	}
+	if webhook.Constraints.AllowTools || webhook.Constraints.AllowNetwork || webhook.Constraints.AllowSecrets {
+		t.Fatal("a fail-open error verdict must still grant no capabilities")
+	}
+
+	inbox := g.Check(context.Background(), Input{Source: "inbox", Content: "x"})
+	if !inbox.Errored {
+		t.Fatal("classifier error must be recorded on the inbox verdict")
+	}
+	if inbox.Route != RouteQuarantine || inbox.Decision != DecisionBlock {
+		t.Fatalf("inbox (no override, policy fail-closed) must stay quarantine/block, got %s/%s (%s)", inbox.Route, inbox.Decision, inbox.Reason)
+	}
+}
+
+// TestGuardPerSourceFailClosedTightensOnError: the mirror direction. A
+// fail-open policy with a webhook override opting INTO fail-closed must
+// quarantine on error while the control source fails open to review.
+func TestGuardPerSourceFailClosedTightensOnError(t *testing.T) {
+	failClosed := true
+	g := newGuard(Signals{}, errors.New("classifier outage"))
+	g.Policy.FailClosed = false
+	g.Policy.Overrides = map[string]Override{
+		"webhook": {FailClosed: &failClosed},
+	}
+
+	webhook := g.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+	if webhook.Route != RouteQuarantine || webhook.Decision != DecisionBlock {
+		t.Fatalf("webhook override FailClosed=true must tighten to quarantine/block, got %s/%s (%s)", webhook.Route, webhook.Decision, webhook.Reason)
+	}
+
+	inbox := g.Check(context.Background(), Input{Source: "inbox", Content: "x"})
+	if inbox.Route != RouteReview || inbox.Decision != DecisionAllow {
+		t.Fatalf("inbox (policy fail-open, no override) must stay review/allow, got %s/%s (%s)", inbox.Route, inbox.Decision, inbox.Reason)
+	}
 }
