@@ -316,6 +316,25 @@ guard.Policy{
 }
 ```
 
+Override keys are **`Input.Source` values** — `"webhook"`, `"inbox"`,
+`"github_pr"`, whatever your callers send in the `source` field. They are never
+policy IDs: `Overrides{"default": ...}` matches no message even under a policy
+whose ID is `"default"`. A key no source ever selects is inert, and the library
+will not invent a signal for it at verdict time. Two ways to catch a typo
+(`"webook"`) before it costs you a tightening:
+
+```go
+// Construction time: name every source your consumer sends; a non-empty
+// result is a config error.
+if dead := policy.ValidateOverrideKeys("webhook", "inbox", "github_pr"); len(dead) > 0 {
+    return fmt.Errorf("policy %s: override keys %v match no source", policy.ID, dead)
+}
+
+// Runtime: a Guard with Warnf set warns once, naming the dead keys, the
+// first time a Check fails to select a key.
+g := &guard.Guard{Classifier: cls, Policy: policy, Warnf: log.Printf}
+```
+
 ## Extending it (the point of the design)
 
 | Layer | Interface | Add today |

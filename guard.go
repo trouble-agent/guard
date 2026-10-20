@@ -139,6 +139,12 @@ type Guard struct {
 	Classifier  Classifier
 	Policy      Policy
 	Normalizers []Normalizer
+
+	// Warnf receives configuration warnings (GUARD-DF-007: an Overrides key
+	// matching no Input.Source is silently inert). Nil — the zero value —
+	// keeps today's behaviour: no warnings, verdicts unchanged. A CLI/server
+	// embedder sets e.g. Warnf: log.Printf.
+	Warnf func(format string, args ...any)
 }
 
 // Check classifies one message. It never returns an error: an error becomes a
@@ -146,6 +152,14 @@ type Guard struct {
 func (g *Guard) Check(ctx context.Context, in Input) Result {
 	start := time.Now()
 	res := Result{Provider: g.Classifier.Name(), Policy: g.Policy.ID, Constraints: Constraints{}}
+
+	// Config honesty (GUARD-DF-007): an Overrides key no source ever selects
+	// is inert. Before anything else, watch the key set against the sources
+	// seen on the wire and warn (once per dead key) about the ones that
+	// remain unselected. Advisory — it never changes a verdict — and it fires
+	// before the error return, because a config that can never take effect
+	// deserves a signal even when the classifier is down.
+	WarnUnknownOverrideKeys(g.Policy, g.Warnf, in.Source)
 
 	text, applied := NormalizeAll(in.Content, g.Normalizers)
 	res.Normalizations = applied

@@ -1,5 +1,11 @@
 package guard
 
+import (
+	"fmt"
+	"sort"
+	"sync"
+)
+
 // Policy is the deterministic decision table. The classifier produces numbers;
 // the policy turns numbers into a route. Keeping this in CODE (not in a prompt)
 // is what lets thresholds be tuned, tested and diffed without touching a model.
@@ -22,6 +28,13 @@ type Policy struct {
 
 	// Overrides lets a high-sensitivity source tighten the bands without a new
 	// policy. Absent entry = this policy's bands.
+	//
+	// Keys are Input.Source values ("github_pr", "inbox", "webhook", ...).
+	// They are NOT policy IDs: Overrides{"default": ...} never matches a
+	// message, not even under a policy whose ID is "default". A key no source
+	// ever sends is inert and silent at this layer — ValidateOverrideKeys
+	// checks it up front, and a Guard with Warnf set warns (once) the first
+	// time a Check fails to select a key.
 	Overrides map[string]Override `json:"overrides,omitempty"`
 }
 
@@ -58,6 +71,105 @@ func (p Policy) bandsFor(source string) (blockAt, reviewAt float64, failClosed b
 		}
 	}
 	return
+}
+
+// overrideWatches caches, per policy+key-set, which override keys real traffic
+// has already contradicted. Map key is the policy fingerprint (ID + sorted
+// key set, sortedOverrides); the value is a set of dead keys already warned
+// about. Guards across processes start empty: the first Check that sees
+// traffic selects keys, anything still unwarned and unmatched gets exactly
+// one warning.
+var overrideWatches sync.Map
+
+// sortedOverrides fingerprints a policy's override key set so the warn-once
+// cache cannot leak between different policies that share an ID.
+func sortedOverrides(p Policy) []string {
+	keys := make([]string, 0, len(p.Overrides))
+	for k := range p.Overrides {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// unknownOverrideKeys returns the sorted subset of override keys that no
+// source in sources selects. sources is the caller's declared source set
+// (ValidateOverrideKeys); an empty sources set means every key is unproven.
+// The runtime warn-once path does its own live bookkeeping (see
+// WarnUnknownOverrideKeys) instead of calling this.
+func unknownOverrideKeys(p Policy, sources []string) []string {
+	if len(p.Overrides) == 0 {
+		return nil
+	}
+	seen := make(map[string]bool, len(sources))
+	for _, s := range sources {
+		seen[s] = true
+	}
+	var unknown []string
+	for _, k := range sortedOverrides(p) {
+		if !seen[k] {
+			unknown = append(unknown, k)
+		}
+	}
+	return unknown
+}
+
+// WarnUnknownOverrideKeys checks p's override keys against the sources seen so
+// far and warns (via warn, when non-nil) once, naming every key that no
+// source has ever selected. Advisory only: it never changes a verdict.
+//
+// The watch record is the once-guard and it accumulates positively: a key is
+// marked seen the moment any call's sources select it (proven live), and
+// marked handled the moment a warning names it — so each key is named at most
+// once per policy+key-set, no matter how the calls interleave (the claim is
+// stored before warn runs). Later calls naming other sources cannot resurrect
+// an already-selected key; the unknown set only ever shrinks. Empty Overrides
+// is always a no-op.
+func WarnUnknownOverrideKeys(p Policy, warn func(format string, args ...any), sources ...string) {
+	if len(p.Overrides) == 0 || warn == nil {
+		return
+	}
+	fingerprint := fmt.Sprintf("%s|%v", p.ID, sortedOverrides(p))
+	w, _ := overrideWatches.LoadOrStore(fingerprint, &sync.Map{})
+	watched := w.(*sync.Map)
+
+	// Prove keys live: this call's sources that actually select an override
+	// are permanently good, so later traffic on other sources cannot
+	// re-flag them.
+	for _, s := range sources {
+		if _, isKey := p.Overrides[s]; isKey {
+			watched.Store(s, true)
+		}
+	}
+
+	var unknown []string
+	for _, k := range sortedOverrides(p) {
+		if _, handled := watched.Load(k); !handled {
+			unknown = append(unknown, k)
+		}
+	}
+	if len(unknown) == 0 {
+		return
+	}
+	// Claim-then-warn: mark every dead key handled before invoking warn, so
+	// interleaved calls yield exactly one warning per policy+key-set.
+	for _, k := range unknown {
+		watched.Store(k, true)
+	}
+	warn("GUARD: policy %q: override key(s) %v not selected by any source seen so far — "+
+		"the override is inert (a typo, or the old policy-ID spelling). "+
+		"Keys are Input.Source values, never policy IDs. Use ValidateOverrideKeys to fail fast.",
+		p.ID, unknown)
+}
+
+// ValidateOverrideKeys is the construction-time check: it returns the sorted
+// override keys that none of the given sources will ever select. An empty
+// result means every key is matched by a declared source. Feed it the full set
+// of sources your consumer sends and treat a non-empty result as a config
+// error — GUARD-DF-007: an Overrides key matching no Input.Source is inert,
+// and this makes the inertness nameable before the first message.
+func (p Policy) ValidateOverrideKeys(sources ...string) []string {
+	return unknownOverrideKeys(p, sources)
 }
 
 // apply fills the verdict fields from the signals. This is the whole decision
