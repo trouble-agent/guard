@@ -59,14 +59,21 @@ if not v.deliver: ...    # quarantine/review
   that matches no source the caller passes is **silently ignored**: no error,
   no warning, the base bands simply apply (GUARD-DF-007). A typo'd source label
   (`"webook"`) disables the tightening invisibly.
-- **The served/CLI shapes cannot supply a Policy.** `cmd/guardd/main.go:108`
-  hardcodes `guard.DefaultPolicy()`, and there is no `-policy` flag, no
-  `GUARD_POLICY` env, and no policy-file loader. Per-source tightening is
-  reachable only from an in-process Go consumer that builds its own
-  `&guard.Guard{...}` (crier). A CLI or HTTP consumer — including
-  task-router's Python connector — has no knob for it, even though
-  `docs/threshold-calibration.md:111,156` recommends tightening a source with
-  an Override (GUARD-DF-005). Plan accordingly, or file it.
+- **The served/CLI shapes CAN supply a Policy** (GUARD-DF-005 landed):
+  `-policy <file>` or `GUARD_POLICY=<file>` loads a policy file (JSON matching
+  `guard.Policy`), validated strictly at startup — bands in (0,1],
+  `review_at <= block_at`, omitted global fields inheriting the shipped
+  defaults — and guardd refuses to run on a bad file instead of falling back to
+  looser bands (`cmd/guardd/main.go`, `resolvePolicy`/`loadPolicyFile`). With
+  no file named, guardd runs `guard.DefaultPolicy()`. An in-process Go consumer
+  (crier) still builds its own `&guard.Guard{...}`.
+- **A verdict reports which row of the table decided it** (GUARD-DF-011):
+  `override_source` names the `Overrides` key the message selected (absent =
+  the policy's own bands decided) and `effective_block_at` /
+  `effective_review_at` are the bands that were actually compared — on error
+  verdicts too, since the selected row is what resolves the fail-closed stance.
+  That is how you verify a tightening fired from the audit trail instead of
+  inferring it from the policy file.
 - `QuotedDowngrade` (default 0.80) is live and verified: a score above
   `BlockAt` on text the classifier reads as a quotation/example becomes
   `route=review`, never deliver and never with capabilities restored. Three
@@ -77,8 +84,16 @@ if not v.deliver: ...    # quarantine/review
 
 - `route`: deliver | review | quarantine — the primary output.
 - `constraints`: allow_tools/network/secrets for the handling agent.
+- `policy` / `override_source` / `effective_block_at` / `effective_review_at`:
+  the table that judged the message, the `Overrides` row INSIDE it that decided
+  this verdict (absent when the policy's own bands did), and the bands actually
+  compared (GUARD-DF-011). Two verdicts produced under different bands are
+  distinguishable from the JSON alone — a tightened source no longer looks like
+  the base bands.
 - `errored: true` ⇒ every other field describes the ERROR verdict, not a
-  classification (attack_class is absent, score is 0).
+  classification (attack_class is absent, score is 0). `policy`,
+  `override_source` and the `effective_*` bands are still meaningful: they name
+  the row that resolved the fail-closed/fail-open stance.
 - `normalizations` includes `rot13` on ~every result: ROT13 is applied
   unconditionally by design; the field means "transform ran", NOT "this
   payload was encoded". "Caught by an encoding" reads from

@@ -565,7 +565,7 @@ func TestLoadPolicyFileValidation(t *testing.T) {
 // naming only block_at — is VALID: the global fields inherit the shipped
 // defaults (a zero block_at would quarantine every score; a zero
 // quoted_downgrade would downgrade every quarantine), and an override band ≤0
-// means "not set" exactly as bandsFor reads it. This is the README
+// means "not set" exactly as Policy.selectFor reads it. This is the README
 // "github_pr" example shape.
 func TestLoadPolicyFileMinimalShapeInheritsDefaults(t *testing.T) {
 	pol, err := loadPolicyFile(writePolicyFile(t, `{"id":"minimal","overrides":{"github_pr":{"block_at":0.75}}}`))

@@ -108,6 +108,43 @@ def test_parses_verdict_without_load_bearing(stub):
     assert v.load_bearing_normalizations == []
 
 
+# --- GUARD-DF-011: the reported selection (override_source / effective_* bands)
+
+
+def test_parses_reported_override_selection(stub):
+    # A verdict that names the Override row which decided it, with the bands
+    # that row carried: a Python consumer must be able to answer "why did this
+    # route differ?" from the verdict alone (the ceiling on `policy` alone).
+    _Stub.response = {
+        "route": "quarantine",
+        "decision": "block",
+        "risk_level": "high",
+        "score": 0.60,
+        "policy": "tight-webhook",
+        "override_source": "webhook",
+        "effective_block_at": 0.55,
+        "effective_review_at": 0.40,
+    }
+    v = Guard(endpoint=stub).check("x")
+    assert v.policy == "tight-webhook"
+    assert v.override_source == "webhook"
+    assert v.effective_block_at == 0.55
+    assert v.effective_review_at == 0.40
+    # ...and it survives to the CLI's wire form.
+    assert v.to_dict()["override_source"] == "webhook"
+    assert v.to_dict()["effective_block_at"] == 0.55
+
+
+def test_parses_verdict_without_reported_selection(stub):
+    # Base-band verdict (or an old server): no override_source key and no
+    # effective bands -> empty string / zero defaults, never a KeyError.
+    _Stub.response = {"route": "deliver", "decision": "allow", "policy": "default"}
+    v = Guard(endpoint=stub).check("x")
+    assert v.override_source == ""
+    assert v.effective_block_at == 0.0
+    assert v.effective_review_at == 0.0
+
+
 def test_deliver_true_for_benign(stub):
     _Stub.response = {
         "route": "deliver",

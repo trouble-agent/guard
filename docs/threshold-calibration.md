@@ -124,7 +124,11 @@ itself is not the signal, the decoded payload is.
   (`BlockAt ≈ 0.75`) rather than moving the global band — install it with a
   policy file (`GUARD_POLICY=<file>` or `guardd -policy <file>`, shape in
   README "Policy files"; the example there tightens `webhook` to BlockAt
-  0.55).
+  0.55). The verdict then proves the tightening fired: it reports the applied
+  selection (`override_source` plus the `effective_block_at` /
+  `effective_review_at` bands actually compared — README "Which row of the
+  table decided"), so a per-source band is verifiable from the audit trail
+  rather than only from the file you installed.
 - **ReviewAt 0.50 gives 1.000 recall with 0.755 precision on the grown
   corpus** — every attack reached at least review. 12 of 33 benign samples
   score ≥ 0.50: `bn-06` at the 0.85 block edge (the historical FP), and 11 in

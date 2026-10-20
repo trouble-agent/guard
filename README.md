@@ -44,6 +44,8 @@ GUARD_POLICY=policy.json ./guardd -serve :8768 # serve with per-source overrides
   "route": "quarantine",
   "reason": "guard_error (fail-closed): no openrouter api key available",
   "policy": "default",
+  "effective_block_at": 0.85,
+  "effective_review_at": 0.5,
   "provider": "jev",
   "score": 0,
   "errored": true,
@@ -209,7 +211,11 @@ that architecture:
   "matched_patterns": ["instruction_injection"],
   "attack_class": "instruction_injection",
   "score": 0.98,
-  "policy": "default",
+  "policy": "default",              // the decision table that judged this message
+  "override_source": "webhook",     // the Policy.Overrides row that decided it — ABSENT
+                                    // when the policy's own bands did (GUARD-DF-011)
+  "effective_block_at": 0.55,       // the bands actually compared: the policy's own, or
+  "effective_review_at": 0.40,      // the selected Override's (never omitted)
   "provider": "jev",
   "model": "typesafe/jev-1.13-20260917",
   "constraints": {                  // what the handling agent may hold
@@ -229,6 +235,30 @@ destination can afford to be wrong far more often than one that gates content:
 a false negative gets a reader holding no tools and no secrets, a false positive
 gets a slightly dumber reader. That is what makes the filter safe to deploy at
 90% accuracy instead of 99%.
+
+### Which row of the table decided (`override_source`, `effective_*`)
+
+`policy` names the table; it does not say which row of that table produced this
+verdict. Once a per-source Override is in play the two can diverge: a tightened
+`webhook` and an unoverridden source route the same score differently while
+`policy`, `decision`, `risk_level` and the `reason` wording all stay identical.
+So the verdict also reports the SELECTION that was applied:
+
+- `override_source` — the `Policy.Overrides` key this message selected (the
+  `source` the caller sent). Absent when the policy's own bands decided, so an
+  old consumer never sees the key and a present key always means "an Override
+  row decided this".
+- `effective_block_at` / `effective_review_at` — the bands that were actually
+  compared: the policy's own, or the selected Override's. Never omitted, so an
+  absent key can never be misread as a zero band.
+
+Two verdicts produced under different bands are therefore distinguishable from
+the JSON alone: the 0.60 webhook message that quarantined carries
+`override_source: "webhook"` with `effective_block_at: 0.55`, while a control
+source on the base bands carries neither key and reports 0.85/0.50. Both fields
+appear on error verdicts too — the selected row is what resolved the fail-closed
+stance — and the Python connector mirrors them (`Verdict.override_source`,
+`Verdict.effective_block_at`, `Verdict.effective_review_at`).
 
 ### normalizations: what ran vs what mattered
 
@@ -250,7 +280,11 @@ On any classifier failure the verdict is a DIFFERENT shape: `errored=true`,
 `risk_level=medium`, `decision=block|allow`, `route=quarantine|review` (block +
 quarantine when the policy fails closed, allow + review when it fails open), and
 `reason="guard_error (fail-closed|fail-open): <err>"`. An error verdict carries
-NO `score`, NO `attack_class`, and NO `model`. Integrators: check `errored`
+NO `score`, NO `attack_class`, and NO `model`. It DOES carry the resolved row:
+`effective_block_at` / `effective_review_at` always, plus `override_source` when
+a per-source Override was selected — which is what tells you whether that
+source's fail-closed (or fail-open) stance came from the policy or from its
+Override entry. Integrators: check `errored`
 before trusting any other field of a block verdict — an outage looks like a
 block, but it is a different shape, and a consumer that parses the success
 shape unconditionally will mis-handle it.
@@ -347,7 +381,11 @@ The file is JSON matching the `guard.Policy` struct:
 - `overrides` — per-source tables keyed by the `source` the caller supplies
   (`-source` on the CLI, `source` in the `/check` body). Each entry may set
   `block_at`, `review_at`, `fail_closed`; unset fields inherit the policy's
-  own values. An unknown source simply gets the global bands.
+  own values. An unknown source simply gets the global bands. The verdict names
+  the entry that decided it — `override_source` carries the key and
+  `effective_block_at` / `effective_review_at` the bands it used (see "Which
+  row of the table decided" above), so a misfiring Override is visible in the
+  audit trail instead of only in this file.
 
 Loading is strict: a named file that is missing, is not valid
 `guard.Policy` JSON, carries a band outside (0, 1], or pairs
@@ -389,6 +427,10 @@ guard.Policy{
     },
 }
 ```
+
+A verdict decided by that `webhook` row says so: `override_source: "webhook"`
+with `effective_block_at: 0.55` — and an errored verdict carries the same two
+fields, since the selected row is what resolved its fail-closed stance.
 
 Override keys are **`Input.Source` values** — `"webhook"`, `"inbox"`,
 `"github_pr"`, whatever your callers send in the `source` field. They are never

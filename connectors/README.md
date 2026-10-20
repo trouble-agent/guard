@@ -20,11 +20,18 @@ Response — the `Result`:
   "decision": "block", "risk_level": "high",
   "route": "quarantine",
   "attack_class": "instruction_injection", "score": 0.98,
+  "policy": "tight-webhook", "override_source": "webhook",
+  "effective_block_at": 0.55, "effective_review_at": 0.40,
   "constraints": { "allow_tools": false, "allow_network": false, "allow_secrets": false },
   "normalizations": ["rot13"], "load_bearing_normalizations": ["rot13"],
   "provider": "jev", "model": "…", "cost_usd": 0.000027
 }
 ```
+
+`policy` names the decision table; `override_source` names the row INSIDE it that
+decided this verdict (absent when the policy's own bands did) and
+`effective_block_at` / `effective_review_at` are the bands actually compared
+(GUARD-DF-011). See README "Which row of the table decided".
 
 **Bind to `route` and `constraints`, not to `decision`.** `route` is the
 destination (`deliver | review | quarantine`); `constraints` is the capability
@@ -39,7 +46,7 @@ connector-specific and cannot tell an outage from a policy.
 the block band but the classifier is confident the content is a quotation or
 worked example (`sig.Quoted` >= `Policy.QuotedDowngrade`, default `0.80`),
 the quarantine is downgraded to `review` — never to `deliver`
-(`policy.go:88-94`). The score is not reduced and capabilities are not
+(`policy.go:243-249`). The score is not reduced and capabilities are not
 restored; the consumer still routes a human look.
 
 ## HTTP contract
@@ -207,7 +214,7 @@ default `-fail-closed=true` yields `decision="block"`,
 is an in-band verdict, not an HTTP error response. (Sources:
 [`cmd/guardd/main.go:128-144`](../cmd/guardd/main.go),
 [`cmd/guardd/main.go:236-239`](../cmd/guardd/main.go),
-[`guard.go:153-167`](../guard.go),
+[`guard.go:192-216`](../guard.go),
 [`jev.go:161-164`](../jev.go).)
 
 **Connector timeout or unreachable guardd:** when no HTTP response can be

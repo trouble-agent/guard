@@ -2,6 +2,7 @@ package guard
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -335,5 +336,219 @@ func TestValidateOverrideKeys(t *testing.T) {
 	}
 	if got := policy.ValidateOverrideKeys(); !reflect.DeepEqual(got, []string{"default", "webhook", "webook"}) {
 		t.Fatalf("no sources means every key is unknown: %v", got)
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// GUARD-DF-011: the verdict must report the selection that decided it.
+//
+// The defect: apply() resolved the per-source Override (via bandsFor), used
+// the bands and threw the provenance away — Guard.Check stamped
+// res.Policy = g.Policy.ID and apply wrote only the three generic band
+// wordings. A webhook Override that quarantined a 0.60 message produced a
+// verdict indistinguishable from a base-band block at 0.90 in every field but
+// `score`, so "why was this 0.60 webhook message quarantined?" had no answer
+// in the JSON. The fix reports the applied selection: override_source (the
+// Override row that was SELECTED) plus effective_block_at / effective_review_at
+// (the bands that were actually compared).
+//
+// The policy literal used below is the README "Policy files" example
+// (tight-webhook: global 0.85/0.50, webhook override 0.55/0.40).
+// ─────────────────────────────────────────────────────────────────────────
+
+func readmeOverridePolicy() Policy {
+	p := DefaultPolicy()
+	p.ID = "tight-webhook"
+	p.Overrides = map[string]Override{
+		"webhook":   {BlockAt: 0.55, ReviewAt: 0.40},
+		"github_pr": {BlockAt: 0.75},
+	}
+	return p
+}
+
+// TestVerdictReportsAppliedOverride: with an Override selected the verdict
+// names it and reports the bands it carried; without one it names neither and
+// reports the policy's own bands. Same message, same score, both directions.
+func TestVerdictReportsAppliedOverride(t *testing.T) {
+	g := newGuard(Signals{Injection: 0.60}, nil)
+	g.Policy = readmeOverridePolicy()
+
+	webhook := g.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+	if webhook.Route != RouteQuarantine {
+		t.Fatalf("webhook (override block_at 0.55 vs score 0.60) must quarantine, got %s", webhook.Route)
+	}
+	if webhook.OverrideSource != "webhook" {
+		t.Errorf("override_source = %q, want %q: the verdict must name the Override that decided it", webhook.OverrideSource, "webhook")
+	}
+	if webhook.EffectiveBlockAt != 0.55 || webhook.EffectiveReviewAt != 0.40 {
+		t.Errorf("effective bands = %v/%v, want the Override's 0.55/0.40", webhook.EffectiveBlockAt, webhook.EffectiveReviewAt)
+	}
+
+	inbox := g.Check(context.Background(), Input{Source: "inbox", Content: "x"})
+	if inbox.Route != RouteReview {
+		t.Fatalf("inbox (no Override) must review on the base bands, got %s", inbox.Route)
+	}
+	if inbox.OverrideSource != "" {
+		t.Errorf("override_source = %q, want empty: no Override entry matched inbox", inbox.OverrideSource)
+	}
+	if inbox.EffectiveBlockAt != 0.85 || inbox.EffectiveReviewAt != 0.50 {
+		t.Errorf("effective bands = %v/%v, want the policy's own 0.85/0.50", inbox.EffectiveBlockAt, inbox.EffectiveReviewAt)
+	}
+	if webhook.Policy != "tight-webhook" || inbox.Policy != "tight-webhook" {
+		t.Errorf("policy = %q/%q, want both verdicts to name the table (tight-webhook)", webhook.Policy, inbox.Policy)
+	}
+}
+
+// TestOverrideVerdictDistinguishableFromBaseBandBlock pins the indistinguish-
+// ability the row reported: an Override-tightened quarantine and a base-band
+// quarantine agree on every field a pre-fix consumer could read (decision,
+// route, risk, reason wording, policy id) — only `score` and the score's
+// provenance differ. The new fields are what break the tie, so they must
+// differ even when the verdict fields match.
+func TestOverrideVerdictDistinguishableFromBaseBandBlock(t *testing.T) {
+	g := newGuard(Signals{Injection: 0.60}, nil)
+	g.Policy = readmeOverridePolicy()
+	tightened := g.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+
+	base := newGuard(Signals{Injection: 0.90}, nil)
+	base.Policy = readmeOverridePolicy()
+	baseBlock := base.Check(context.Background(), Input{Source: "inbox", Content: "x"})
+
+	// Premise: the two blocks are the same verdict except for the score, which
+	// is exactly why the applied selection has to be reported.
+	if tightened.Route != baseBlock.Route ||
+		tightened.Decision != baseBlock.Decision ||
+		tightened.RiskLevel != baseBlock.RiskLevel ||
+		tightened.Reason != baseBlock.Reason ||
+		tightened.Policy != baseBlock.Policy {
+		t.Fatalf("premise failed: the tightened block and the base-band block are not verdict-identical:\n tightened=%+v\n base=%+v",
+			tightened, baseBlock)
+	}
+	if tightened.OverrideSource == baseBlock.OverrideSource {
+		t.Errorf("override_source = %q on both the tightened and the base-band block: the applied selection is not reported",
+			tightened.OverrideSource)
+	}
+	if tightened.EffectiveBlockAt == baseBlock.EffectiveBlockAt {
+		t.Errorf("effective_block_at = %v on both verdicts, want the Override's band (0.55) to differ from the policy's (0.85)",
+			tightened.EffectiveBlockAt)
+	}
+}
+
+// TestVerdictsUnderDifferentBandsDifferInJSON is the row's acceptance test:
+// the two verdicts must be distinguishable from the JSON alone — no policy
+// file, no route knowledge, no out-of-band explanation.
+func TestVerdictsUnderDifferentBandsDifferInJSON(t *testing.T) {
+	g := newGuard(Signals{Injection: 0.60}, nil)
+	g.Policy = readmeOverridePolicy()
+
+	webhook := g.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+	inbox := g.Check(context.Background(), Input{Source: "inbox", Content: "x"})
+
+	// Guard against a vacuous pass: the two verdicts must genuinely route
+	// differently, else there is nothing to distinguish.
+	if webhook.Route == inbox.Route {
+		t.Fatalf("premise failed: both sources routed to %s under webhook=%v/%v inbox=%v/%v",
+			webhook.Route, webhook.EffectiveBlockAt, webhook.EffectiveReviewAt, inbox.EffectiveBlockAt, inbox.EffectiveReviewAt)
+	}
+
+	webhookJSON, err := json.Marshal(webhook)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inboxJSON, err := json.Marshal(inbox)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(webhookJSON) == string(inboxJSON) {
+		t.Fatalf("the two verdicts serialise identically: %s", webhookJSON)
+	}
+
+	var webhookDoc, inboxDoc map[string]any
+	if err := json.Unmarshal(webhookJSON, &webhookDoc); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(inboxJSON, &inboxDoc); err != nil {
+		t.Fatal(err)
+	}
+
+	// Every one of the reported-selection fields must differ between the two
+	// documents: the source that was selected, and both bands compared.
+	for _, field := range []string{"override_source", "effective_block_at", "effective_review_at"} {
+		if reflect.DeepEqual(webhookDoc[field], inboxDoc[field]) {
+			t.Errorf("%s = %v in BOTH verdicts — the applied selection is not reported (webhook=%s inbox=%s)",
+				field, webhookDoc[field], webhookJSON, inboxJSON)
+		}
+	}
+	if webhookDoc["override_source"] != "webhook" {
+		t.Errorf("override_source = %v, want \"webhook\"", webhookDoc["override_source"])
+	}
+	if webhookDoc["effective_block_at"] != 0.55 || webhookDoc["effective_review_at"] != 0.40 {
+		t.Errorf("webhook effective bands = %v/%v, want 0.55/0.40",
+			webhookDoc["effective_block_at"], webhookDoc["effective_review_at"])
+	}
+	if webhookDoc["score"].(float64) < webhookDoc["effective_block_at"].(float64) {
+		t.Errorf("webhook score = %v is under the reported block band %v: the reported band must be the one that caught it",
+			webhookDoc["score"], webhookDoc["effective_block_at"])
+	}
+	if webhookDoc["effective_block_at"].(float64) >= 0.85 {
+		t.Errorf("webhook effective_block_at = %v, want a band tighter than the policy's own 0.85 (with the policy's band this score would not have been caught)",
+			webhookDoc["effective_block_at"])
+	}
+	// The control verdict keeps the base bands and carries no selection key at
+	// all (omitempty), so an old consumer seeing no override_source can rely on
+	// it meaning "the policy's own bands decided".
+	if _, present := inboxDoc["override_source"]; present {
+		t.Errorf("control verdict carries override_source=%v, want the key absent when no Override matched", inboxDoc["override_source"])
+	}
+	if inboxDoc["effective_block_at"] != 0.85 || inboxDoc["effective_review_at"] != 0.50 {
+		t.Errorf("control effective bands = %v/%v, want the policy's 0.85/0.50",
+			inboxDoc["effective_block_at"], inboxDoc["effective_review_at"])
+	}
+}
+
+// TestEffectiveBandsAreTheBandsCompared: the reported numbers must be the ones
+// the switch actually used, not a copy of the policy's. A score sitting EXACTLY
+// on the Override's band must fire it (>=), and the same score under a source
+// without the Override must fall to the other side — for both bands.
+func TestEffectiveBandsAreTheBandsCompared(t *testing.T) {
+	atBlock := newGuard(Signals{Injection: 0.55}, nil)
+	atBlock.Policy = readmeOverridePolicy()
+	if got := atBlock.Check(context.Background(), Input{Source: "webhook", Content: "x"}); got.Route != RouteQuarantine || got.EffectiveBlockAt != 0.55 {
+		t.Errorf("score==override block_at 0.55: got route %s (effective_block_at %v), want quarantine at 0.55", got.Route, got.EffectiveBlockAt)
+	}
+	if got := atBlock.Check(context.Background(), Input{Source: "inbox", Content: "x"}); got.Route != RouteReview || got.EffectiveBlockAt != 0.85 {
+		t.Errorf("same score, base bands: got route %s (effective_block_at %v), want review at 0.85", got.Route, got.EffectiveBlockAt)
+	}
+
+	atReview := newGuard(Signals{Injection: 0.40}, nil)
+	atReview.Policy = readmeOverridePolicy()
+	if got := atReview.Check(context.Background(), Input{Source: "webhook", Content: "x"}); got.Route != RouteReview || got.EffectiveReviewAt != 0.40 {
+		t.Errorf("score==override review_at 0.40: got route %s (effective_review_at %v), want review at 0.40", got.Route, got.EffectiveReviewAt)
+	}
+	if got := atReview.Check(context.Background(), Input{Source: "inbox", Content: "x"}); got.Route != RouteDeliver || got.EffectiveReviewAt != 0.50 {
+		t.Errorf("same score, base bands: got route %s (effective_review_at %v), want deliver at 0.50", got.Route, got.EffectiveReviewAt)
+	}
+}
+
+// TestSelectedOverrideWithInheritedFieldsIsStillNamed pins the semantics of
+// override_source: it names the row that was SELECTED, which is not the same
+// thing as "a value changed". An entry that inherits every band is still the
+// row that decided the verdict, and the effective bands show it changed
+// nothing — the alternative reading (report only a numeric difference) would
+// leave the operator unable to see that the source's row was reached at all.
+func TestSelectedOverrideWithInheritedFieldsIsStillNamed(t *testing.T) {
+	p := DefaultPolicy()
+	p.ID = "df011-inherit"
+	p.Overrides = map[string]Override{"inbox": {}}
+	g := newGuard(Signals{Injection: 0.60}, nil)
+	g.Policy = p
+
+	res := g.Check(context.Background(), Input{Source: "inbox", Content: "x"})
+	if res.OverrideSource != "inbox" {
+		t.Errorf("override_source = %q, want \"inbox\": the selected row must be named even when it inherits every band", res.OverrideSource)
+	}
+	if res.EffectiveBlockAt != 0.85 || res.EffectiveReviewAt != 0.50 {
+		t.Errorf("effective bands = %v/%v, want the inherited 0.85/0.50 (the entry sets nothing)",
+			res.EffectiveBlockAt, res.EffectiveReviewAt)
 	}
 }

@@ -57,30 +57,53 @@ func DefaultPolicy() Policy {
 	}
 }
 
-func (p Policy) bandsFor(source string) (blockAt, reviewAt float64, failClosed bool) {
-	blockAt, reviewAt, failClosed = p.BlockAt, p.ReviewAt, p.FailClosed
-	if o, ok := p.Overrides[source]; ok {
-		if o.BlockAt > 0 {
-			blockAt = o.BlockAt
-		}
-		if o.ReviewAt > 0 {
-			reviewAt = o.ReviewAt
-		}
-		if o.FailClosed != nil {
-			failClosed = *o.FailClosed
-		}
-	}
-	return
+// selection is the decision table RESOLVED for one message: the bands and the
+// error stance that actually govern it, plus the per-source Override that
+// produced them (Source == "" when the policy's own values did).
+//
+// Resolving the table once, with its provenance attached, is what lets a
+// verdict name the row that decided it (GUARD-DF-011): the effective numbers
+// used to be computed inline and then discarded, so an Override that rerouted
+// a message left no trace in the JSON — a webhook quarantine at 0.60 looked
+// byte-identical to a base-band block at 0.90. Both the score path (apply) and
+// the error path (Guard.Check) resolve through here, so the two can never
+// disagree about what an Override means for a source (GUARD-DF-010).
+type selection struct {
+	BlockAt    float64
+	ReviewAt   float64
+	FailClosed bool
+	Source     string // the Override key this message SELECTED; "" = policy bands
 }
 
-// failClosedFor is the error-path stance for one source: the policy's
-// FailClosed unless that source's Override sets its own. It resolves through
-// bandsFor, so the error path and the score path always agree on what an
-// override means (GUARD-DF-010: apply() discarded the per-source value and
-// Guard.Check keyed on the policy-level switch only).
-func (p Policy) failClosedFor(source string) bool {
-	_, _, fc := p.bandsFor(source)
-	return fc
+// selectFor resolves p for one source: the policy's own bands and stance
+// unless that source's Override entry changes them. A source with no entry —
+// and the empty source, which is only ever matched by an Override explicitly
+// keyed "" — gets the base table. Inside an entry, a field <= 0 means "not
+// set" and inherits, the convention the policy-file loader validates against.
+//
+// Source is set the moment the key is SELECTED, even when every field is
+// inherited: the verdict then says which row of the table decided it, and the
+// effective numbers it reports show what that row changed. (An entry that
+// inherits everything is still an entry an operator wrote;
+// ValidateOverrideKeys and the Warnf watch are what catch keys no source ever
+// selects.)
+func (p Policy) selectFor(source string) selection {
+	sel := selection{BlockAt: p.BlockAt, ReviewAt: p.ReviewAt, FailClosed: p.FailClosed}
+	o, ok := p.Overrides[source]
+	if !ok {
+		return sel
+	}
+	sel.Source = source
+	if o.BlockAt > 0 {
+		sel.BlockAt = o.BlockAt
+	}
+	if o.ReviewAt > 0 {
+		sel.ReviewAt = o.ReviewAt
+	}
+	if o.FailClosed != nil {
+		sel.FailClosed = *o.FailClosed
+	}
+	return sel
 }
 
 // overrideWatches caches, per policy+key-set, which override keys real traffic
@@ -186,7 +209,17 @@ func (p Policy) ValidateOverrideKeys(sources ...string) []string {
 // surface: numbers in, route + capabilities out. source selects the per-source
 // override (Input.Source); empty means no override.
 func (p Policy) apply(res *Result, sig Signals, source string) {
-	blockAt, reviewAt, _ := p.bandsFor(source)
+	sel := p.selectFor(source)
+	blockAt, reviewAt := sel.BlockAt, sel.ReviewAt
+
+	// Record the row of the table that decided this verdict (GUARD-DF-011).
+	// The policy id alone cannot answer "why did this route differ?" once an
+	// Override is in play, and the three band wordings below are generic by
+	// design, so the applied selection travels with the verdict: which
+	// Override was selected, and the bands that were actually compared.
+	res.OverrideSource = sel.Source
+	res.EffectiveBlockAt, res.EffectiveReviewAt = blockAt, reviewAt
+
 	score := sig.Score()
 
 	switch {

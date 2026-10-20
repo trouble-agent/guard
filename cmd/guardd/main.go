@@ -368,10 +368,10 @@ func resolvePolicy(envPath, flagPath string) (guard.Policy, policyProvenance, er
 //   - the effective block_at / review_at pair — global and per override —
 //     must lie in (0, 1] (bands are classifier scores) with review_at <=
 //     block_at; an inverted pair would make the review band unreachable;
-//   - an override band ≤ 0 means "not set" (the same convention bandsFor
-//     uses to inherit the policy's value), so range checks apply to the
-//     override's EFFECTIVE pair: whatever the entry sets is checked,
-//     inherited components arrive already validated.
+//   - an override band ≤ 0 means "not set" (the same convention
+//     Policy.selectFor uses to inherit the policy's value), so range checks
+//     apply to the override's EFFECTIVE pair: whatever the entry sets is
+//     checked, inherited components arrive already validated.
 //
 // Omitted fields inherit the shipped default where the policy layer itself
 // would otherwise read a fatal zero: a 0 block_at would quarantine EVERY

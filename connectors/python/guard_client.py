@@ -54,6 +54,15 @@ class Verdict:
     attack_class: str = ""
     score: float = 0.0
     policy: str = ""
+    # The Policy.Overrides key this message SELECTED (the `source` that was
+    # sent); empty = the policy's own bands decided. GUARD-DF-011: `policy`
+    # alone cannot say which row of the table produced the verdict.
+    override_source: str = ""
+    # The bands that were actually compared — the policy's own, or the selected
+    # Override's — and never omitted on the wire (a band is a fact of the
+    # verdict, not an absence).
+    effective_block_at: float = 0.0
+    effective_review_at: float = 0.0
     provider: str = ""
     model: str = ""
     errored: bool = False
@@ -90,6 +99,9 @@ class Verdict:
             attack_class=d.get("attack_class", ""),
             score=d.get("score", 0.0),
             policy=d.get("policy", ""),
+            override_source=d.get("override_source", ""),
+            effective_block_at=d.get("effective_block_at", 0.0),
+            effective_review_at=d.get("effective_review_at", 0.0),
             provider=d.get("provider", ""),
             model=d.get("model", ""),
             errored=bool(d.get("errored", False)),
@@ -115,6 +127,9 @@ class Verdict:
                 "attack_class": self.attack_class,
                 "score": self.score,
                 "policy": self.policy,
+                "override_source": self.override_source,
+                "effective_block_at": self.effective_block_at,
+                "effective_review_at": self.effective_review_at,
                 "provider": self.provider,
                 "model": self.model,
                 "errored": self.errored,

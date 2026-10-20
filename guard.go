@@ -77,12 +77,35 @@ type Input struct {
 // Result is the full guard outcome for one message. Field names and value
 // spaces match crier's Result so one consumer shape serves every integration.
 type Result struct {
-	Decision    Decision    `json:"decision"`
-	RiskLevel   RiskLevel   `json:"risk_level"`
-	Route       Route       `json:"route"`
-	Reason      string      `json:"reason,omitempty"`
-	Patterns    []string    `json:"matched_patterns,omitempty"`
-	Policy      string      `json:"policy,omitempty"`
+	Decision  Decision  `json:"decision"`
+	RiskLevel RiskLevel `json:"risk_level"`
+	Route     Route     `json:"route"`
+	Reason    string    `json:"reason,omitempty"`
+	Patterns  []string  `json:"matched_patterns,omitempty"`
+	// Policy names the decision table that judged this message. On its own it
+	// does NOT say which row of that table decided the verdict: a per-source
+	// Override can reroute a message while `policy` stays the same id.
+	//
+	// OverrideSource is that missing half (GUARD-DF-011): the Policy.Overrides
+	// key this message SELECTED (the Input.Source it was keyed by), so an
+	// operator can tell "the webhook row tightened this" from "the base bands
+	// decided it". Absent/empty = no Override entry matched — an Override keyed
+	// "" (only selectable by a sourceless message) cannot be shown under
+	// omitempty either way; ValidateOverrideKeys is what keeps that config out.
+	Policy         string `json:"policy,omitempty"`
+	OverrideSource string `json:"override_source,omitempty"`
+
+	// EffectiveBlockAt / EffectiveReviewAt are the bands that ACTUALLY decided
+	// this verdict: the policy's own values, or the selected Override's
+	// (GUARD-DF-011). Together with OverrideSource they answer "why did this
+	// route differ?" from the verdict alone — two messages that routed
+	// differently under different bands are distinguishable without the policy
+	// file in hand. Reported on error verdicts too (the row in force is what
+	// resolved the fail-closed stance), so these are never omitted: a band is
+	// a fact of the verdict, not an absence.
+	EffectiveBlockAt  float64 `json:"effective_block_at"`
+	EffectiveReviewAt float64 `json:"effective_review_at"`
+
 	Provider    string      `json:"provider,omitempty"`
 	Model       string      `json:"model,omitempty"`
 	AttackClass string      `json:"attack_class,omitempty"`
@@ -172,7 +195,17 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 		// GUARD-DF-010: the fail-closed stance is per-source — an Override
 		// may loosen (or tighten) what an error means for its source, the
 		// same way it overrides the score bands.
-		if g.Policy.failClosedFor(in.Source) {
+		//
+		// GUARD-DF-011: the error verdict reports the same resolved row the
+		// score path does — which Override was selected and the bands it
+		// carries — so "why did THIS source fail closed?" is answerable from
+		// the verdict, not only from the policy file. Resolution goes through
+		// selectFor, the shared per-source path, so an error verdict and a
+		// scored verdict can never disagree about what an Override means.
+		sel := g.Policy.selectFor(in.Source)
+		res.OverrideSource = sel.Source
+		res.EffectiveBlockAt, res.EffectiveReviewAt = sel.BlockAt, sel.ReviewAt
+		if sel.FailClosed {
 			res.Decision = DecisionBlock
 			res.Route = RouteQuarantine
 			res.Reason = "guard_error (fail-closed): " + err.Error()

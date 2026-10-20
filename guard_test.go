@@ -22,8 +22,10 @@ package guard
 // Guard.Check error path keyed on g.Policy.FailClosed only. With a failing
 // classifier under a fail-closed policy, source=webhook (override
 // FailClosed=false) was byte-identical to source=inbox: the per-source
-// fail-open was ignored. The fix exposes failClosedFor(source) and routes the
-// error path through the same per-source resolution the score path uses.
+// fail-open was ignored. The fix routes the error path through the same
+// per-source resolution the score path uses (today: Policy.selectFor, which
+// GUARD-DF-011 made the single resolution path for both — and which is also
+// what a verdict now reports back as override_source/effective_* bands).
 //
 // The stub answers every Classify call with an error — the error path is the
 // whole surface under test.
@@ -305,6 +307,121 @@ func contains(list []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// GUARD-DF-011 (error path): an errored verdict reports which row of the
+// decision table resolved its fail-closed stance, under the same
+// override_source / effective_* fields the score path reports. GUARD-DF-010
+// made the stance per-source; without this, "why did webhook fail OPEN while
+// inbox failed closed?" was answerable only from the policy file.
+// ─────────────────────────────────────────────────────────────────────────
+
+// TestErrorVerdictReportsAppliedOverride: a failing classifier under a
+// fail-closed policy with a webhook override (FailClosed=false) must name
+// "webhook" on the errored verdict and report the bands that row carries,
+// while the control source reports neither.
+func TestErrorVerdictReportsAppliedOverride(t *testing.T) {
+	failOpen := false
+	pol := Policy{
+		ID:         "df011-error-path",
+		BlockAt:    0.85,
+		ReviewAt:   0.50,
+		FailClosed: true,
+		Overrides: map[string]Override{
+			"webhook": {BlockAt: 0.55, FailClosed: &failOpen},
+		},
+	}
+	g := &Guard{Classifier: failingClassifier{}, Policy: pol}
+
+	webhook := g.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+	if !webhook.Errored {
+		t.Fatal("classifier outage must be recorded on the webhook verdict")
+	}
+	if webhook.OverrideSource != "webhook" {
+		t.Errorf("override_source = %q, want \"webhook\": the errored verdict must name the Override that resolved its stance", webhook.OverrideSource)
+	}
+	if webhook.EffectiveBlockAt != 0.55 || webhook.EffectiveReviewAt != 0.50 {
+		t.Errorf("effective bands = %v/%v, want the Override's 0.55 and the inherited 0.50",
+			webhook.EffectiveBlockAt, webhook.EffectiveReviewAt)
+	}
+
+	inbox := g.Check(context.Background(), Input{Source: "inbox", Content: "x"})
+	if inbox.OverrideSource != "" {
+		t.Errorf("override_source = %q, want empty: no Override entry matched inbox", inbox.OverrideSource)
+	}
+	if inbox.EffectiveBlockAt != 0.85 || inbox.EffectiveReviewAt != 0.50 {
+		t.Errorf("inbox effective bands = %v/%v, want the policy's 0.85/0.50", inbox.EffectiveBlockAt, inbox.EffectiveReviewAt)
+	}
+}
+
+// TestErrorAndScorePathAgreeOnSelection: the score path (apply) and the error
+// path (Check) must resolve the SAME row for the same source — the reported
+// selection is what proves they cannot disagree, since both go through
+// Policy.selectFor. A bands-only override (no fail_closed) is the case that
+// keeps the two paths honest about the effective numbers.
+func TestErrorAndScorePathAgreeOnSelection(t *testing.T) {
+	pol := Policy{
+		ID:         "df011-agree",
+		BlockAt:    0.85,
+		ReviewAt:   0.50,
+		FailClosed: true,
+		Overrides:  map[string]Override{"webhook": {BlockAt: 0.55}},
+	}
+	failing := &Guard{Classifier: failingClassifier{}, Policy: pol}
+	scoring := &Guard{Classifier: stubClassifier{sig: Signals{Injection: 0.60}}, Policy: pol}
+
+	errRes := failing.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+	scoreRes := scoring.Check(context.Background(), Input{Source: "webhook", Content: "x"})
+	if !errRes.Errored || scoreRes.Errored {
+		t.Fatalf("premise failed: errRes.Errored=%v scoreRes.Errored=%v", errRes.Errored, scoreRes.Errored)
+	}
+	if errRes.OverrideSource != scoreRes.OverrideSource {
+		t.Errorf("override_source diverges between paths: error=%q score=%q", errRes.OverrideSource, scoreRes.OverrideSource)
+	}
+	if errRes.EffectiveBlockAt != scoreRes.EffectiveBlockAt || errRes.EffectiveReviewAt != scoreRes.EffectiveReviewAt {
+		t.Errorf("effective bands diverge between paths: error=%v/%v score=%v/%v",
+			errRes.EffectiveBlockAt, errRes.EffectiveReviewAt, scoreRes.EffectiveBlockAt, scoreRes.EffectiveReviewAt)
+	}
+	// Both must name the Override row, and it must be the tightened band.
+	if scoreRes.OverrideSource != "webhook" || scoreRes.EffectiveBlockAt != 0.55 {
+		t.Errorf("score verdict = source %q / block_at %v, want webhook / 0.55", scoreRes.OverrideSource, scoreRes.EffectiveBlockAt)
+	}
+}
+
+// TestResultSelectionJSONShape pins the wire contract of the reported
+// selection: override_source stays ABSENT when the policy's own bands decided
+// (omitempty — a consumer that never sees an override reads today's document),
+// while the effective bands are always present, because "which bands were
+// compared" is a fact of every verdict, not an optional extra.
+func TestResultSelectionJSONShape(t *testing.T) {
+	base, err := json.Marshal(Result{Policy: "p", EffectiveBlockAt: 0.85, EffectiveReviewAt: 0.5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(base), "override_source") {
+		t.Errorf("json = %s, want no override_source key when no Override was selected", base)
+	}
+	if !strings.Contains(string(base), `"effective_block_at":0.85`) || !strings.Contains(string(base), `"effective_review_at":0.5`) {
+		t.Errorf("json = %s, want effective_block_at/effective_review_at always present", base)
+	}
+	// No omitempty on the bands: even the zero value serialises its key, so an
+	// absent field can never be misread as a zero band (and vice versa).
+	zero, err := json.Marshal(Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(zero), `"effective_block_at":0`) || !strings.Contains(string(zero), `"effective_review_at":0`) {
+		t.Errorf("json = %s, want the effective bands present even at their zero value (no omitempty)", zero)
+	}
+
+	overridden, err := json.Marshal(Result{Policy: "p", OverrideSource: "webhook", EffectiveBlockAt: 0.55, EffectiveReviewAt: 0.4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(overridden), `"override_source":"webhook"`) {
+		t.Errorf("json = %s, want override_source key naming the selected Override", overridden)
+	}
 }
 
 // failingClassifier errors on every call, pinning the Guard.Check error path.
