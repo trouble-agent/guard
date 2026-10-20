@@ -19,6 +19,18 @@
 //	guardd -serve :8768 -tokenfile f         # 0600 file (group/world-readable refused)
 //	guardd -serve :8768 -token s3cr3t        # argv (works, but warned: visible in ps)
 //
+// The decision table comes from guard.DefaultPolicy() unless a policy file is
+// named — JSON matching guard.Policy, so per-source Overrides are installable
+// without writing Go:
+//
+//	GUARD_POLICY=/etc/guard/policy.json guardd -serve :8768
+//	guardd -serve :8768 -policy /etc/guard/policy.json  # flag wins over the env var
+//
+// A named file that is missing or invalid (bad JSON, band outside (0,1], or
+// review_at > block_at on the policy or any override) is a startup failure —
+// never a silent fall-back to the default bands. The package doc comment on
+// guard.Policy and README.md ("Policy files") document the JSON shape.
+//
 // CLI exit codes: 0 for any verdict the guard served — including a normal
 // block (blocking is the guard working, not failing). Exit code 2 fires when
 // the guard could not judge at all (guard_error: no OpenRouter API key
@@ -71,6 +83,23 @@ const GuardTokenEnv = "GUARD_TOKEN"
 // set GUARD_EGRESS_ENABLED=false to refuse classification rather than send data.
 const GuardEgressEnv = "GUARD_EGRESS_ENABLED"
 
+// GuardPolicyFileEnv names a policy file (JSON matching guard.Policy) for both
+// the CLI and the served surface, so per-source Overrides — the tightening
+// docs/threshold-calibration.md tells operators to use — are installable
+// without writing Go. The -policy flag wins over the env var.
+const GuardPolicyFileEnv = "GUARD_POLICY"
+
+// policyProvenance says where this run's decision table came from, so the
+// launcher can say which bands are live (and which file to edit to change
+// them).
+type policyProvenance int
+
+const (
+	policyDefault  policyProvenance = iota // no file named: guard.DefaultPolicy()
+	policyFromEnv                          // GUARD_POLICY=<path>
+	policyFromFlag                         // -policy <path>
+)
+
 type egressDisabledClassifier struct{}
 
 func (egressDisabledClassifier) Name() string { return "disabled" }
@@ -95,6 +124,7 @@ func main() {
 		content   = flag.String("content", "", "content to classify (empty = read stdin)")
 		source    = flag.String("source", "", "source label, e.g. github_pr (drives policy overrides)")
 		channel   = flag.String("channel", "", "channel label, e.g. crier|task-router")
+		policy    = flag.String("policy", "", "path to a policy file (JSON matching guard.Policy) overriding the default bands; GUARD_POLICY=<path> also works; -policy wins")
 		fail      = flag.Bool("fail-closed", true, "block on guard error (false = deliver flagged)")
 		pretty    = flag.Bool("pretty", false, "indent the JSON output")
 	)
@@ -105,8 +135,13 @@ func main() {
 	if egressEnabled {
 		classifier = guard.NewJev()
 	}
-	g := &guard.Guard{Classifier: classifier, Policy: guard.DefaultPolicy()}
-	g.Policy.FailClosed = *fail
+	pol, policyProv, err := resolvePolicy(os.Getenv(GuardPolicyFileEnv), *policy)
+	if err != nil {
+		log.Fatalf("guardd: %v", err)
+	}
+	warnPolicyProvenance(policyProv, pol)
+	pol.FailClosed = *fail
+	g := &guard.Guard{Classifier: classifier, Policy: pol}
 
 	if *serve != "" {
 		resolved, prov, err := resolveToken(os.Getenv(GuardTokenEnv), *tokenfile, *token)
@@ -301,6 +336,119 @@ func warnTokenProvenance(prov tokenProvenance, argvToken string) {
 		fmt.Fprintf(os.Stderr, "guardd: token loaded from %s\n", GuardTokenEnv)
 	case tokenFromTokenFile:
 		fmt.Fprintf(os.Stderr, "guardd: token loaded from tokenfile\n")
+	}
+}
+
+// resolvePolicy picks the run's decision table: the shipped default unless a
+// policy file is named, via GUARD_POLICY env or the -policy flag (flag wins —
+// same ad-hoc override shape as the token precedence). A named file that is
+// missing or invalid is a startup failure, never a silent fall-back to the
+// default bands: an operator tightening a source would otherwise run with the
+// looser table while believing the override is live.
+func resolvePolicy(envPath, flagPath string) (guard.Policy, policyProvenance, error) {
+	path, prov := "", policyDefault
+	switch {
+	case flagPath != "":
+		path, prov = flagPath, policyFromFlag
+	case envPath != "":
+		path, prov = envPath, policyFromEnv
+	default:
+		return guard.DefaultPolicy(), policyDefault, nil
+	}
+	pol, err := loadPolicyFile(path)
+	if err != nil {
+		return guard.Policy{}, prov, err
+	}
+	return pol, prov, nil
+}
+
+// loadPolicyFile reads a policy file: JSON matching guard.Policy
+// (README "Policy files" documents the shape). Validation:
+//
+//   - the effective block_at / review_at pair — global and per override —
+//     must lie in (0, 1] (bands are classifier scores) with review_at <=
+//     block_at; an inverted pair would make the review band unreachable;
+//   - an override band ≤ 0 means "not set" (the same convention bandsFor
+//     uses to inherit the policy's value), so range checks apply to the
+//     override's EFFECTIVE pair: whatever the entry sets is checked,
+//     inherited components arrive already validated.
+//
+// Omitted fields inherit the shipped default where the policy layer itself
+// would otherwise read a fatal zero: a 0 block_at would quarantine EVERY
+// score (>= 0 is always true), a 0 quoted_downgrade would re-route every
+// quarantine to review (sig.Quoted >= 0 is always true) — so a file that
+// leaves block_at / review_at / quoted_downgrade out gets DefaultPolicy's
+// values. An empty id keeps "default" so verdicts stay attributable. Note
+// that in JSON a literal 0 is indistinguishable from "omitted"; to run
+// without the quotation downgrade, set quoted_downgrade to 1.0 (Quoted is a
+// probability, so only a certainty fires it).
+func loadPolicyFile(path string) (guard.Policy, error) {
+	var pol guard.Policy
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return guard.Policy{}, fmt.Errorf("policy file: %w", err)
+	}
+	dec := json.NewDecoder(bytes.NewReader(b))
+	if err := dec.Decode(&pol); err != nil {
+		return guard.Policy{}, fmt.Errorf("policy file %s: not valid guard.Policy JSON: %w", path, err)
+	}
+	def := guard.DefaultPolicy()
+	if pol.ID == "" {
+		pol.ID = "default"
+	}
+	if pol.BlockAt == 0 {
+		pol.BlockAt = def.BlockAt
+	}
+	if pol.ReviewAt == 0 {
+		pol.ReviewAt = def.ReviewAt
+	}
+	if pol.QuotedDowngrade == 0 {
+		pol.QuotedDowngrade = def.QuotedDowngrade
+	}
+	if err := validateBands(path, "policy", pol.BlockAt, pol.ReviewAt); err != nil {
+		return guard.Policy{}, err
+	}
+	for src, o := range pol.Overrides {
+		effBlock, effReview := pol.BlockAt, pol.ReviewAt
+		if o.BlockAt > 0 {
+			effBlock = o.BlockAt
+		}
+		if o.ReviewAt > 0 {
+			effReview = o.ReviewAt
+		}
+		if err := validateBands(path, "override "+src+" (effective)", effBlock, effReview); err != nil {
+			return guard.Policy{}, err
+		}
+	}
+	return pol, nil
+}
+
+// validateBands enforces the (0,1] range and review<=block on one band pair.
+// A score is a probability, so a band outside it can never fire — and a
+// review band above the block band would silently swallow the review route.
+func validateBands(path, what string, blockAt, reviewAt float64) error {
+	for name, v := range map[string]float64{"block_at": blockAt, "review_at": reviewAt} {
+		if v <= 0 || v > 1 {
+			return fmt.Errorf("policy file %s: %s %s=%v out of range (0,1] — bands are classifier scores; refusing to serve a table that can never fire", path, what, name, v)
+		}
+	}
+	if reviewAt > blockAt {
+		return fmt.Errorf("policy file %s: %s review_at=%v > block_at=%v — an inverted pair makes the review band unreachable; refusing", path, what, reviewAt, blockAt)
+	}
+	return nil
+}
+
+// warnPolicyProvenance records where the decision table came from. The flag
+// form is fine (a path, not a secret) but still worth one stderr line so a
+// mispointed -policy is visible in unit logs next to the token provenance.
+func warnPolicyProvenance(prov policyProvenance, pol guard.Policy) {
+	switch prov {
+	case policyFromFlag:
+		fmt.Fprintf(os.Stderr, "guardd: policy loaded from -policy (id %q, %d override(s))\n", pol.ID, len(pol.Overrides))
+	case policyFromEnv:
+		fmt.Fprintf(os.Stderr, "guardd: policy loaded from %s (id %q, %d override(s))\n", GuardPolicyFileEnv, pol.ID, len(pol.Overrides))
+	default:
+		fmt.Fprintf(os.Stderr, "guardd: policy loaded from default (id %q)\n", pol.ID)
 	}
 }
 
