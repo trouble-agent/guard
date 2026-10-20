@@ -252,3 +252,59 @@
   db/state files), and a real classification on a bunker agent (no key there, by design).
 - **Full evidence:** docs/dogfood/2026-10-19-run4c-findings.md (this commit). Scratch:
   ~/guard-df-run4/ (ladder*.py, disc-local.sh, out/{calibration*,ladder*,disc-*,gen-4c.*,qa-launch-4c.txt}).
+
+## 2026-10-19d — dogfood run 4d (tick guard-dogfood-2026-10-20-01-29-06, FOURTH executor of the same tick: both landed fixes re-proved + the operator/parity surface)
+
+- **Verdict: SOUND.** This executor was delta-driven: the tick's own rows were FIXED while it ran
+  (`2a2fc30` GUARD-DF-010, `e858041` GUARD-DF-006, `6836cc8` trace carrier), so the real-use pass
+  became the independent re-proof of both fixes on a clean `git archive` build of HEAD 6836cc8
+  (never the dirty working tree -- a sibling lane's in-flight edits were present in the checkout at
+  the start of this run and were gone by the end, so they are neither measured nor judged here).
+- **GUARD-DF-010 (per-source `Override.FailClosed`) VERIFIED** from the consumer side, 10 cases on
+  a determinant stub classifier: fail-closed policy + `webhook:{FailClosed:false}` -> webhook
+  `review/allow` reason "(fail-open)" while the inbox control and the empty source stay
+  `quarantine/block`; the mirror (fail-open policy + `webhook:{FailClosed:true}`) -> webhook
+  quarantines, control fails open; both fields on one override coexist (error -> fail-open review,
+  score 0.60 -> quarantine); the score path is untouched; a source with no override keeps the
+  policy stance. Event appended to the row.
+- **GUARD-DF-006 (attribution accounting) RE-PROVED with a before/after pair:** the shipped
+  `JevClassifier` pointed at a local stub (cost 0.0010/call, 120 ms attribution lag) now reports
+  deliver 1 call cost 0.0010 == true 0.0010, and quarantine 2 calls cost 0.0020 == true 0.0020
+  (run 4b measured 0.0010 reported vs 0.0020 true on the pre-fix build) with `duration_ms` 240
+  covering the attribution lag. Event appended to the row.
+- **NEW findings (minted):** GUARD-DF-013 [P4] `skills/guard-usage/SKILL.md` still documents the
+  pre-fix semantics ('duration_ms and cost_usd describe the FIRST classifier call only') -- a
+  paragraph dogfood run 4b wrote and `e858041` invalidated; the fix commit itself flags it as out
+  of scope. GUARD-DF-014 [P4] `guardd` logs `listening on <addr>` BEFORE the bind, so a port
+  conflict prints the success banner and then `serve: listen tcp ...: bind: address already in use`
+  with rc=1 -- a readiness-looking line for a server that never listened.
+- **Operator ladder, all documented legs hold:** no token -> rc=1 with the exact refusal text;
+  `-tokenfile` mode 0644 -> rc=1 "mode 0644 is too open (group/world bits set); chmod 600 it first";
+  0600 accepted ("token loaded from tokenfile"); `GUARD_TOKEN` beats a staged tokenfile (env token
+  200, file token 401 on the same server); bare `:port` binds 127.0.0.1 only, explicit `0.0.0.0:port`
+  binds `*`; `-token` on argv prints the loud ps-visibility warning; `GUARD_EGRESS_ENABLED=false`
+  serves with the documented WARNING, `/healthz` reports `egress_enabled:false`, `/check` answers
+  the in-band error verdict with HTTP 200 and the process keeps serving. `/healthz` accepts every
+  method (GET/POST/PUT/DELETE/OPTIONS/PATCH/HEAD -> 200, as documented); `/check` is 401-before-405
+  (auth first); `/nope` and `/check/` 404; empty body -> 400 `bad request: EOF`; `{"content":null}`
+  -> 400 `content is required`.
+- **In-process vs HTTP parity: the documented "one-line change" holds.** Same input through the
+  in-process core and through `client.New(...).Check` against a live `guardd`: route, decision,
+  risk, errored, policy, provider, attack_class and constraints agree on all three payloads
+  (benign deliver / injection quarantine / quoted review). The HTTP hop cost is in the noise
+  (-88 ms, -9 ms, +5 ms against a 240-555 ms remote classifier), so the documented zero-hop
+  in-process advantage is unmeasurable at this latency -- no PERF row.
+- **Install leg:** `bunker-qa.sh` renders (rc=0, 119,363 bytes) and the FULL battery ran on a fresh
+  agent `3ea7d415` @ bunker-mvp at HEAD `6836cc8`: repo-head OK, toolchain-bootstrap OK,
+  fresh-install OK, ci-pass OK (act 1 job green), upgrade OK (v0.1.0 tree -> HEAD reinstall clean),
+  chaos-resource PASS (3G cap), chaos-errorpath OK (rc=2), 4 cells N/A by repo shape,
+  chaos-disconnect UNVERIFIED (third consecutive observation -- QA-GUARD-005), collect OK, agent
+  destroyed by collect. Event appended to QA-GUARD-005.
+- **Perf (Step 2b):** startup-to-first-200-/healthz **13-15 ms** (5 fresh processes; the operator's
+  "can I send traffic" number); CLI local floor 3.8 ms +- 0.4 (hyperfine, 10 runs); clean-copy
+  suite 4.0 s; battery wall ~4 min. **No PERF row** -- nothing a user would feel.
+- **Not exercised:** the docker/UI/state chaos cells (N/A by repo shape), a real classification on
+  a bunker agent (no key there by design), and the sibling lane's in-flight edits (uncommitted and
+  then withdrawn -- explicitly NOT measured, as they were never part of HEAD).
+- **Full evidence:** docs/dogfood/2026-10-19-run4d-findings.md (this commit). Scratch:
+  ~/guard-df-run4/{consumer-4d,parity-4d,stubprobe-4d,ops-ladder.sh,parity.sh,startup-4d.sh,clean-copy*.sh}.
