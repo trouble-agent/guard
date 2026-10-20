@@ -113,15 +113,15 @@ environment variable ([`connectors/python/guard_client.py:180`](python/guard_cli
 **guardd's own token precedence (serving side)** — when `-serve` starts, it
 resolves the secret once at startup, env > tokenfile > argv
 ([`cmd/guardd/main.go:148`](../cmd/guardd/main.go),
-[`cmd/guardd/main.go:278`](../cmd/guardd/main.go)):
+[`cmd/guardd/main.go:305`](../cmd/guardd/main.go)):
 
 1. `GUARD_TOKEN` environment variable — preferred; it wins even when a
    tokenfile is staged, so an operator can override ad hoc without editing
-   the file ([`cmd/guardd/main.go:280-281`](../cmd/guardd/main.go)).
+   the file ([`cmd/guardd/main.go:307-308`](../cmd/guardd/main.go)).
 2. `-tokenfile <path>` — file contents, surrounding whitespace trimmed. The
    file must be owner-only (`0400` or `0600`); group- or world-accessible
    modes are refused at startup
-   ([`cmd/guardd/main.go:306-308`](../cmd/guardd/main.go)).
+   ([`cmd/guardd/main.go:333-335`](../cmd/guardd/main.go)).
 3. `-token <secret>` — works, but guardd warns loudly on stderr: an argv
    secret is world-readable via `ps` and `/proc/<pid>/cmdline`.
 

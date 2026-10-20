@@ -337,7 +337,10 @@ puts the secret in the process list (`ps`, `/proc/<pid>/cmdline`), so serving
 with it prints a warning to stderr. `-serve` takes the bind address: an
 omitted host defaults to loopback, so `:8768` binds `127.0.0.1:8768` — pass
 `0.0.0.0:8768` (or an explicit host) to bind every interface deliberately. The
-CLI shapes (`stdin`, `-content`) are unaffected.
+`listening on <addr>` line is logged only once the socket is bound, so a failed
+bind (a taken port, say) prints just `serve: listen tcp <addr>: bind: address
+already in use` and exits 1 — the startup banner is never a false green for a
+server that never listened. The CLI shapes (`stdin`, `-content`) are unaffected.
 
 ### Policy files (`-policy` / `GUARD_POLICY`)
 

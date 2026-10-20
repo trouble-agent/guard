@@ -251,10 +251,37 @@ func serveHTTP(addr string, g *guard.Guard, token string, egressEnabled bool) {
 	} else {
 		log.Printf("WARNING: classifier egress is DISABLED; /check will refuse classification because no local classifier is configured")
 	}
-	log.Printf("guardd listening on %s (POST /check [%s required], GET /healthz)", addr, OperatorTokenHeader)
-	if err := http.ListenAndServe(addr, newHandler(g, token, egressEnabled)); err != nil {
+	if err := serve(addr, newHandler(g, token, egressEnabled)); err != nil {
 		log.Fatalf("serve: %v", err)
 	}
+}
+
+// serve binds addr and only then announces readiness on the log.
+//
+// GUARD-DF-014: the readiness banner used to be logged before the socket
+// existed, so a second guardd on a taken port printed
+// "guardd listening on <addr>" and then the bind error, and a launcher, unit
+// file or log-scraper keying on that line read a failed start as a healthy one.
+// Binding first makes the banner a promise the process can keep: nothing is
+// logged as listening unless something is listening. The bind error is returned
+// to the caller, which exits 1 — a failed start says nothing but the failure.
+func serve(addr string, h http.Handler) error {
+	return serveOn(addr, h, net.Listen)
+}
+
+// serveOn is serve with the bind injected, so the banner's ordering relative to
+// the bind can be tested without the process exiting (serveHTTP's failure path
+// is log.Fatalf, which no in-process test can survive).
+func serveOn(addr string, h http.Handler, listen func(network, address string) (net.Listener, error)) error {
+	ln, err := listen("tcp", addr)
+	if err != nil {
+		// No socket, no banner. The error is returned verbatim so the
+		// operator-visible line stays exactly the bind failure
+		// ("serve: listen tcp <addr>: bind: address already in use").
+		return err
+	}
+	log.Printf("guardd listening on %s (POST /check [%s required], GET /healthz)", addr, OperatorTokenHeader)
+	return http.Serve(ln, h)
 }
 
 // tokenProvenance says where the serving token came from, so the launcher can
