@@ -155,3 +155,54 @@
   filed as the accounting gap (GUARD-DF-006), not as a slowdown.
 - **Full evidence:** docs/dogfood/2026-10-19-run4-findings.md (this commit). Scratch
   consumer (outside the repo): ~/guard-integrator-1019/.
+
+## 2026-10-19b — dogfood run 4b (tick guard-dogfood-2026-10-20-01-29-06, SECOND executor of the same tick: CLI wire shape + override internals)
+
+- **Verdict: SOUND** (no new product-blocking finding). Run 4a = commit `b05b8da` by this tick's
+  first executor (consumer + HTTP + Python connector + `make docs-check` + install leg). This run
+  changed the ANGLE per the same-tick-sibling rule, and re-proved run 4a's rows on ITS OWN
+  artifacts (~/guard-df-run4, HEAD build bcb6002).
+- **GUARD-DF-005 re-proved behaviourally on the CLI shape** (row byte-untouched; fresh evidence in
+  events.jsonl): in-band payloads scored live ABOVE the documented override's BlockAt 0.55 --
+  `guardd -content "<B2>"` 9 runs: score 0.76-0.84, `route=review` with `-source webhook` AND
+  `-source inbox` AND no flag (identical; a reachable per-source override at BlockAt 0.55 must
+  quarantine anything 0.55 <= score < 0.85). Same build, in-process consumer with the README
+  literal at score 0.60 + source=webhook -> `quarantine/block`. HTTP A/B identical
+  (`POST /check {content,source:webhook}` -> review). `-fail-closed` DOES reach the policy, so the
+  gap is the missing `Overrides` loader, not the flag plumbing.
+- **`-channel` inert, independently re-proved** (3-variant live matrix -> identical verdicts; only
+  non-test references are the flag decl and the `Input` assignment) -- sub-evidence of GUARD-DF-008,
+  not a new row.
+- **New findings (rows filed this tick, family GUARD-DF, ids minted via board_next_id.py):**
+  GUARD-DF-010 [P3] `Override.FailClosed` is exported + JSON-tagged but never read -- inert in BOTH
+  directions (deterministic stub consumer: global true + override false -> still fail-closed
+  quarantine; global false + override true -> still fail-open review; each identical to its control
+  source); GUARD-DF-011 [P4] the verdict cannot report that a per-source override was applied
+  (`policy` stays "default", reason wording unchanged).
+- **GUARD-DF-009 re-proved independently** (render break, no agent needed):
+  `bunker-qa.sh __gen-remote /home/kara/trouble-agent/guard` -> rc=1, 0-byte output,
+  `bunker-qa.sh: line 1061: UI_PORTS: unbound variable`. Line-level root cause added to the
+  evidence: the unquoted render heredoc (line 1061 `cat <<EOF`, body 1062-2757) expands on the
+  controller under `set -uo pipefail` (line 44), and lines 2397-2407 lost the escape fence the
+  surrounding lines keep (`UI_PORTS="${BUNKER_QA_UI_PORTS:-}"`, `[ -z "$UI_PORTS" ]`, ...); line
+  2407's unescaped `$(...)` is the same gap's second hazard (it would execute on the CONTROLLER if
+  the abort at 2398 did not fire first). Event appended to the EVENTS file; GUARD-DF-009 stays the
+  single SKIPPED-install-bunker row.
+- **Install leg re-run by hand on its OWN fresh agent** (skill's sanctioned substitute; agent
+  `701e4fac` @ bunker-mvp, TTL 90m, DESTROYED, key removed, list re-checked clean): public-origin
+  clone -> `b05b8da` -> build rc=0 45.94s (image go1.22.2; the toolchain directive auto-downloads
+  go1.26.9) -> fail-closed first run rc=2 byte-exact documented JSON -> serve: /healthz 200,
+  no token 401, token 200 -> `make docs-check` rc=2 "could not parse README fail-closed JSON block"
+  with `jq` MISSING on the box (GUARD-DF-004 independently reproduced) -> `go test ./... -count=1`
+  rc=0 12.97s. INSTALL_SECONDS ~= 46 (build dominates). Battery cells remain unproven (driver break).
+- **Perf (Step 2b):** warm CLI deliver 343.9ms +- 40.1 (hyperfine, 8 runs, 1 classifier call);
+  warm caught verdict 590.8ms +- 29.7 (5 runs, 2 calls by design); local floor (egress disabled)
+  4.9-7.8ms; process startup floor 3.7ms +- 1.1; in-process policy evaluation (whole 11-case
+  consumer, stub classifier) 3.4ms +- 0.5. **No PERF row** -- every local path is single-digit ms
+  and the only felt wait is the designed remote round trip (accounted by GUARD-DF-006).
+- **Not exercised (stated, not passed off):** the bunker-qa.sh battery cells (ci-pass/upgrade/
+  chaos-*) -- driver break above; a real classification on the fresh box (no key there; credentials
+  never minted or copied into a bunker); the Python connector and Go client (covered by run 4a,
+  deliberately not repeated).
+- **Full evidence:** docs/dogfood/2026-10-19-run4b-second-angle.md (this commit). Scratch:
+  ~/guard-df-run4/ (consumer, scans, ab-cli, http-battery, install-leg, gen.*).
