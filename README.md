@@ -99,24 +99,23 @@ versions: https://github.com/trouble-agent/guard/releases (first release:
 `checksums.txt`).
 
 > **Released-artifact notice (2026-10-17, updated 2026-10-20).** The only
-> tagged release, **v0.1.0** (2026-10-02), predates every user-facing contract
+> tagged release, **v0.1.0** (2026-10-02), predates four user-facing contracts
 > added since it was cut, and the README bundled in its tarball (153 lines)
-> documents that older binary, not this one: it carries no
-> `GUARD_EGRESS_ENABLED` classifier egress kill switch, no CLI exit-code
-> contract (`rc=2` on a fail-closed error, `rc=0` on a classified run), no
-> server token precedence (`GUARD_TOKEN` env > `-tokenfile` > `-token`) and
-> no loopback-by-default `-serve` bind, no `-channel` flag, and no
-> normalization-attribution semantics — the released docs describe
-> `normalizations` as "why it was caught, visibly", which the current
-> contract replaced with `normalizations` (what ran) vs
+> documents that older binary, not this one. The released binary lacks the
+> `GUARD_EGRESS_ENABLED` classifier egress kill switch, the CLI exit-code
+> contract (`rc=2` on a fail-closed error, `rc=0` on a classified run), server
+> token precedence (`GUARD_TOKEN` env > `-tokenfile` > `-token`), and the
+> normalization-attribution semantics represented by
 > `load_bearing_normalizations` (what actually drove the verdict,
-> GUARD-DF-002); the released binary also predates the Go `net/http`
-> security fix GO-2026-6617 (SEC-GO-1269). The tarball's bundled README is a
-> snapshot frozen at tag time and cannot be corrected in place — cutting a
-> release is an owner decision — so the standing warning lives in the v0.1.0
-> release notes and in this notice until the next tag. **Build from source
-> (Quick Start above)** to get the contracts documented here — the notice is
-> removed by the next tagged release (v0.2.0 is proposed in
+> GUARD-DF-002). It does include the default local-only `-serve` binding and
+> its channel-selection CLI option; those are not gaps in the released
+> artifact. The released binary also predates the Go `net/http` security fix
+> GO-2026-6617 (SEC-GO-1269). The tarball's bundled README is a snapshot frozen
+> at tag time and cannot be corrected in place — cutting a release is an owner
+> decision — so the standing warning lives in the v0.1.0 release notes and in
+> this notice until the next tag. **Build from source (Quick Start above)** to
+> get the contracts documented here — the notice is removed by the next tagged
+> release (v0.2.0 is proposed in
 > [release readiness](docs/release-readiness-2026-10-04.md)).
 
 ```bash
