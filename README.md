@@ -37,6 +37,9 @@ GUARD_POLICY=policy.json ./guardd -serve :8768 # serve with per-source overrides
 
 **First run with no key — this is the expected, correct (fail-closed) result**
 
+(On a box with a live key you will instead see a successful classification; to
+reproduce the verdict below, use the scratch-HOME note that follows this block.)
+
 ```json
 {
   "decision": "block",
@@ -60,7 +63,11 @@ GUARD_POLICY=policy.json ./guardd -serve :8768 # serve with per-source overrides
 }
 ```
 
-> **To reproduce this on a box with a live key:** run with a scratch HOME so the key discovery order finds nothing:
+> **To reproduce this on a box with a live key:** the example's JSON block is the
+> verdict you would see, so the reproduction runs the same one-shot stdin call on
+> a scratch HOME, stripping `$OPENROUTER_API_KEY` from the environment so the key
+> discovery order (env → `~/.hermes/.env` → `~/9router-deploy/.env.shared`) finds
+> nothing:
 > ```bash
 > TD=$(mktemp -d) && env -u OPENROUTER_API_KEY HOME=$TD bash -c 'printf "hello world" | ./guardd'
 > ```
