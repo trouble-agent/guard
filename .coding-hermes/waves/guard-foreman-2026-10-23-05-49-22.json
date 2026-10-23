@@ -33,5 +33,6 @@
   "worktrees_removed": true,
   "board_rows_closed": true,
   "post_recovery_main": "34347597a83030bde2d0fe86d466ffe65a85f5a2",
-  "ci": "GREEN: exact-head main run succeeded"
+  "post_recovery_followup": "README-9 implemented after recovery in 61f44118ef27ac53f1880d23c64d1d67aff24d7d; pushed with parity 0; exact-head CI pending at close",
+  "ci": "GREEN at recovery head 34347597; follow-up head 61f44118 exact-head run pending"
 }
