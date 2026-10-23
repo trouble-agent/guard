@@ -1,0 +1,37 @@
+{
+  "tick_id": "guard-foreman-2026-10-23-05-49-22",
+  "project": "guard",
+  "workdir": "/home/kara/trouble-agent/guard",
+  "base_commit": "dec138a",
+  "wave_budget": 5,
+  "dispatched": 2,
+  "tasks": [
+    {
+      "id": "GUARD-DF-015",
+      "priority": "P4",
+      "complexity": 3,
+      "worktree": "/home/kara/worktrees/guard-GUARD-DF-015",
+      "branch": "wt/GUARD-DF-015",
+      "dispatched_at": "2026-10-23T05:49:22Z",
+      "note": "batched with GUARD-DF-015-R2 (same fix direction)"
+    },
+    {
+      "id": "QA-GUARD-005-R2-R2",
+      "priority": "P4",
+      "complexity": 3,
+      "worktree": "/home/kara/worktrees/guard-QA-GUARD-005-R2-R2",
+      "branch": "wt/QA-GUARD-005-R2-R2",
+      "dispatched_at": "2026-10-23T05:49:22Z"
+    }
+  ],
+  "created_at": "2026-10-23T05:49:22Z",
+  "finished_at": "2026-10-23T20:30:47Z",
+  "status": "recovered-closed",
+  "recovery_action": "verification-only: both dispatched task rows were already closed on main at 5196122; no preserved worker branches or worktrees existed",
+  "merged_count": 0,
+  "failed_count": 0,
+  "worktrees_removed": true,
+  "board_rows_closed": true,
+  "post_recovery_main": "34347597a83030bde2d0fe86d466ffe65a85f5a2",
+  "ci": "GREEN: exact-head main run succeeded"
+}
