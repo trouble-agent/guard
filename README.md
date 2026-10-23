@@ -60,6 +60,11 @@ GUARD_POLICY=policy.json ./guardd -serve :8768 # serve with per-source overrides
 }
 ```
 
+> **To reproduce this on a box with a live key:** run with a scratch HOME so the key discovery order finds nothing:
+> ```bash
+> TD=$(mktemp -d) && env -u OPENROUTER_API_KEY HOME=$TD bash -c 'printf "hello world" | ./guardd'
+> ```
+
 This is fail-closed working as designed: a guard that cannot judge must not
 wave content through, so the message is blocked and quarantined and the
 `reason` names the error. The CLI (guardd run without `-serve`) exits with
