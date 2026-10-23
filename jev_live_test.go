@@ -17,6 +17,13 @@ func TestLiveJevRoutesKnownCases(t *testing.T) {
 	if len(loadOpenRouterKeys()) == 0 {
 		t.Skip("no OPENROUTER_API_KEY available")
 	}
+	// Transport-error skip: when a proxy env var is set (the shape the
+	// chaos-disconnect QA cell manufactures for a network cut), skip the
+	// live test so the cell measures the unit suite offline rather than a
+	// live-key test's transport refusal.
+	if os.Getenv("HTTP_PROXY") != "" || os.Getenv("HTTPS_PROXY") != "" {
+		t.Skip("skipping live test under network cut (proxy env)")
+	}
 
 	g := &Guard{Classifier: NewJev(), Policy: DefaultPolicy()}
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
