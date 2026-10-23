@@ -308,3 +308,49 @@
   then withdrawn -- explicitly NOT measured, as they were never part of HEAD).
 - **Full evidence:** docs/dogfood/2026-10-19-run4d-findings.md (this commit). Scratch:
   ~/guard-df-run4/{consumer-4d,parity-4d,stubprobe-4d,ops-ladder.sh,parity.sh,startup-4d.sh,clean-copy*.sh}.
+
+## 2026-10-23 — dogfood run 5 (tick guard-dogfood-2026-10-23-04-13-22, HEAD f0e79c1)
+
+- **NEW ground vs runs 1–4d:** live-key real classification (run 4d's named gap),
+  policy-override audit trail over HTTP, connector outage path, README fail-closed
+  example reproduction, and the first battery with the QA-GUARD-005-R2 harness fix.
+- **Live-key classification (OpenRouter via the product's own key discovery):
+  injection -> quarantine 0.98, attack_class instruction_injection, 529 ms,
+  cost 0.000054264 (2 calls, post-e858041 accounting verified with real money);
+  benign -> deliver 0.23 / 287 ms / 1 call; quoted example attack -> review 0.95
+  (QuotedDowngrade). Repeat call -> quarantine 0.98 again (deterministic route).
+- **Override audit trail:** -policy with slack_digest override (0.6/0.3) quarantines
+  a 0.63-score body under base bands' deliver, and the verdict NAMES
+  override_source=slack_digest + effective_block_at 0.6. Typo'd source row still
+  silently ignored (GUARD-DF-007 re-confirmed at HEAD).
+- **Connector + outage:** python connector fail-open on a dead endpoint -> route
+  review, errored=True, deliver=False, tools/secrets still granted (GUARD-DF-001 at
+  HEAD), 0 ms fail, no hang.
+- **README no-key example:** NOT literally producible where ~/.hermes/.env carries a
+  live key (the documented discovery path reads it by design) — reproduced via
+  scratch-HOME substitution (rc=2, fail-closed block, exact documented reason).
+  Filed **GUARD-DF-015** [P4].
+- **Perf:** deliver /check warm 254.3 ms ± 20.2 (hyperfine 10 runs); cold first call
+  286–343 ms on 3 fresh servers; /healthz 6.4 ms; egress-off floor 9.6 ms → the
+  whole user-visible wait is the Jev round trip. **No PERF row** (nothing a user
+  would feel; decomposed per the two-stage rule).
+- **Install leg:** FULL battery, fresh agent 2a27aadc @ bunker-mvp (04:22:11Z,
+  destroyed by collect + TEARDOWN-RECOVERED). 19 rows: repo-head OK, fresh-install
+  OK, ci-pass OK (act 1 job green), upgrade OK (v0.1.0 → HEAD), chaos-resource PASS,
+  chaos-errorpath OK, 3 N/A by repo shape, ui-probe INFO. **chaos-disconnect
+  UNVERIFIED a 4th consecutive time — now with the toolchain-floor fix in place
+  (516423c ran in this battery) the leg grades vacuous-native-suite (disc.log 0
+  bytes) rather than toolchain-floor refusal; the suite still produced zero output.**
+  The battery evidence is archived outside the repo (stand-in workdir) because the
+  lane contract keeps repo writes to rows/docs only.
+- **Not exercised:** a multi-tenant concurrency soak; docker/UI/state cells stay N/A
+  by repo shape.
+- **Verdict: SHIPPABLE.** Real users integrate via the three shapes and the contract
+  (route + constraints + errored) holds live at HEAD.
+- **Run record parked:** DuckBrain namespace `guard`,
+  key `/dogfood/2026-10-23/run5-guard-dogfood-2026-10-23-04-13-22` (id 2de4a648,
+  content read-back verified, distinctive-phrases verified).
+- **Evidence:** docs/dogfood/2026-10-23-run5-findings.md; scratch /tmp/guard-df5/
+  (scripts + responses) — ephemeral; battery evidence JSONL in
+  ~/.hermes/stand-in/dogfood/guard/evidence/.
+- ch:trace row=GUARD-DF-015 spec=README.md "First run with no key" evidence=docs/dogfood/2026-10-23-run5-findings.md witness=path@scratch:/tmp/guard-df5 verdict=manual-live-use commit=f0e79c1
