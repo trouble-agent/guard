@@ -141,3 +141,4 @@
 {"id": 133, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_updated", "task_id": "DOC-26", "actor": "foreman", "detail": "{\"status\":\"pending\"}", "tick_number": null}
 {"id": 134, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_created", "task_id": "DOC-27", "actor": "foreman", "detail": "{\"id\":\"DOC-27\",\"status\":\"pending\"}", "tick_number": null}
 {"id": 135, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_updated", "task_id": "DOC-27", "actor": "foreman", "detail": "{\"status\":\"pending\"}", "tick_number": null}
+{"id": 136, "timestamp": "2026-10-23T20:48:42Z", "event_type": "task_created", "task_id": "INT-CI-2", "actor": "foreman", "detail": "{\"id\":\"INT-CI-2\",\"status\":\"pending\"}", "tick_number": null}
