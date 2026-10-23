@@ -135,3 +135,9 @@
 {"id": 127, "timestamp": "2026-10-23T20:45:49Z", "event_type": "task_created", "task_id": "DOC-24", "actor": "foreman", "detail": "{\"id\":\"DOC-24\",\"status\":\"pending\"}", "tick_number": null}
 {"id": 128, "timestamp": "2026-10-23T20:45:58Z", "event_type": "task_updated", "task_id": "DOC-24", "actor": "foreman", "detail": "{\"status\":\"pending\"}", "tick_number": null}
 {"id": 129, "timestamp": "2026-10-23T20:46:02Z", "event_type": "task_completed", "task_id": "README-9", "actor": "foreman", "detail": "{\"status\":\"complete\"}", "tick_number": null}
+{"id": 130, "timestamp": "2026-10-23T20:46:20Z", "event_type": "task_created", "task_id": "DOC-25", "actor": "foreman", "detail": "{\"id\":\"DOC-25\",\"status\":\"pending\"}", "tick_number": null}
+{"id": 131, "timestamp": "2026-10-23T20:46:20Z", "event_type": "task_updated", "task_id": "DOC-25", "actor": "foreman", "detail": "{\"status\":\"pending\"}", "tick_number": null}
+{"id": 132, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_created", "task_id": "DOC-26", "actor": "foreman", "detail": "{\"id\":\"DOC-26\",\"status\":\"pending\"}", "tick_number": null}
+{"id": 133, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_updated", "task_id": "DOC-26", "actor": "foreman", "detail": "{\"status\":\"pending\"}", "tick_number": null}
+{"id": 134, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_created", "task_id": "DOC-27", "actor": "foreman", "detail": "{\"id\":\"DOC-27\",\"status\":\"pending\"}", "tick_number": null}
+{"id": 135, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_updated", "task_id": "DOC-27", "actor": "foreman", "detail": "{\"status\":\"pending\"}", "tick_number": null}
