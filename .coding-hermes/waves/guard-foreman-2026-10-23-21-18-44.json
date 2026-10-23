@@ -1,0 +1,44 @@
+{
+  "tick_id": "guard-foreman-2026-10-23-21-18-44",
+  "project": "guard",
+  "workdir": "/home/kara/trouble-agent/guard",
+  "base_commit": "03a5ca99f0b8fb5cab26f84510b610f2c00cdd02",
+  "wave_budget": 4,
+  "dispatched": 4,
+  "tasks": [
+    {
+      "id": "README-10",
+      "worktree": "/home/kara/worktrees/guard-README-10",
+      "branch": "wt/README-10",
+      "base_commit": "03a5ca99f0b8fb5cab26f84510b610f2c00cdd02"
+    },
+    {
+      "id": "DOC-20",
+      "worktree": "/home/kara/worktrees/guard-DOC-20",
+      "branch": "wt/DOC-20",
+      "base_commit": "03a5ca99f0b8fb5cab26f84510b610f2c00cdd02"
+    },
+    {
+      "id": "DOC-22",
+      "worktree": "/home/kara/worktrees/guard-DOC-22",
+      "branch": "wt/DOC-22",
+      "base_commit": "03a5ca99f0b8fb5cab26f84510b610f2c00cdd02"
+    },
+    {
+      "id": "DOC-23",
+      "worktree": "/home/kara/worktrees/guard-DOC-23",
+      "branch": "wt/DOC-23",
+      "base_commit": "03a5ca99f0b8fb5cab26f84510b610f2c00cdd02"
+    }
+  ],
+  "created_at": "2026-10-23T21:40:00Z",
+  "status": "recovered-closed",
+  "finished_at": "2026-10-23T22:00:00Z",
+  "recovery_action": "README-10 completed and merged; DOC-20, DOC-22, DOC-23 failed with explicit dispatch/no-artifact reasons; no new worker artifacts remained to recover",
+  "merged_count": 1,
+  "failed_count": 3,
+  "worktrees_removed": false,
+  "board_rows_closed": true,
+  "post_recovery_main": "0456fa7ffd869b061bfb922551a95fb3148d270a",
+  "ci": "exact-head CI pending; prior completed failures remain owned by INT-CI-2"
+}

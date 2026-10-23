@@ -142,3 +142,11 @@
 {"id": 134, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_created", "task_id": "DOC-27", "actor": "foreman", "detail": "{\"id\":\"DOC-27\",\"status\":\"pending\"}", "tick_number": null}
 {"id": 135, "timestamp": "2026-10-23T20:46:21Z", "event_type": "task_updated", "task_id": "DOC-27", "actor": "foreman", "detail": "{\"status\":\"pending\"}", "tick_number": null}
 {"id": 136, "timestamp": "2026-10-23T20:48:42Z", "event_type": "task_created", "task_id": "INT-CI-2", "actor": "foreman", "detail": "{\"id\":\"INT-CI-2\",\"status\":\"pending\"}", "tick_number": null}
+{"id": 137, "timestamp": "2026-10-23T21:38:39Z", "event_type": "task_updated", "task_id": "README-10", "actor": "foreman", "detail": "{\"status\":\"in_progress\"}", "tick_number": null}
+{"id": 138, "timestamp": "2026-10-23T21:38:39Z", "event_type": "task_updated", "task_id": "DOC-20", "actor": "foreman", "detail": "{\"status\":\"in_progress\"}", "tick_number": null}
+{"id": 139, "timestamp": "2026-10-23T21:38:39Z", "event_type": "task_updated", "task_id": "DOC-22", "actor": "foreman", "detail": "{\"status\":\"in_progress\"}", "tick_number": null}
+{"id": 140, "timestamp": "2026-10-23T21:38:39Z", "event_type": "task_updated", "task_id": "DOC-23", "actor": "foreman", "detail": "{\"status\":\"in_progress\"}", "tick_number": null}
+{"id": 141, "timestamp": "2026-10-23T21:54:57Z", "event_type": "task_completed", "task_id": "README-10", "actor": "foreman", "detail": "{\"status\":\"complete\"}", "tick_number": null}
+{"id": 142, "timestamp": "2026-10-23T21:54:57Z", "event_type": "task_updated", "task_id": "DOC-20", "actor": "foreman", "detail": "{\"status\":\"failed\"}", "tick_number": null}
+{"id": 143, "timestamp": "2026-10-23T21:54:57Z", "event_type": "task_updated", "task_id": "DOC-22", "actor": "foreman", "detail": "{\"status\":\"failed\"}", "tick_number": null}
+{"id": 144, "timestamp": "2026-10-23T21:54:57Z", "event_type": "task_updated", "task_id": "DOC-23", "actor": "foreman", "detail": "{\"status\":\"failed\"}", "tick_number": null}
