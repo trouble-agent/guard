@@ -292,7 +292,8 @@ On any classifier failure the verdict is a DIFFERENT shape: `errored=true`,
 `risk_level=medium`, `decision=block|allow`, `route=quarantine|review` (block +
 quarantine when the policy fails closed, allow + review when it fails open), and
 `reason="guard_error (fail-closed|fail-open): <err>"`. An error verdict carries
-NO `score`, NO `attack_class`, and NO `model`. It DOES carry the resolved row:
+NO `attack_class` and NO `model`; `score` is present but always `0` on an error
+verdict and is not a measurement. It DOES carry the resolved row:
 `effective_block_at` / `effective_review_at` always, plus `override_source` when
 a per-source Override was selected — which is what tells you whether that
 source's fail-closed (or fail-open) stance came from the policy or from its
