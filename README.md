@@ -220,8 +220,9 @@ that architecture:
                                     // for contract parity with crier, not produced
   "risk_level": "high",             // low | medium | high
   "route": "quarantine",            // deliver | review | quarantine
-  "errored": false,                 // true on any classifier failure — check it
-                                    // FIRST (see "Error verdicts" below)
+  "errored": false,                 // json:"errored,omitempty": emitted only
+                                    // when true; an absent key means false
+                                    // (see "Error verdicts" below)
   "reason": "injection signals above block threshold",
   "matched_patterns": ["instruction_injection"],
   "attack_class": "instruction_injection",
@@ -294,7 +295,10 @@ messages only — deliver verdicts skip it.
 On any classifier failure the verdict is a DIFFERENT shape: `errored=true`,
 `risk_level=medium`, `decision=block|allow`, `route=quarantine|review` (block +
 quarantine when the policy fails closed, allow + review when it fails open), and
-`reason="guard_error (fail-closed|fail-open): <err>"`. An error verdict carries
+`reason="guard_error (fail-closed|fail-open): <err>"`. The `errored` field uses
+`json:"errored,omitempty"`: it is serialized only when true, so an absent key
+means false. Clients must treat absence as false rather than indexing the key
+unconditionally. An error verdict carries
 NO `attack_class` and NO `model`; `score` is present but always `0` on an error
 verdict and is not a measurement. It DOES carry the resolved row:
 `effective_block_at` / `effective_review_at` always, plus `override_source` when
