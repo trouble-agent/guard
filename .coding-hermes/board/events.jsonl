@@ -150,3 +150,4 @@
 {"id": 142, "timestamp": "2026-10-23T21:54:57Z", "event_type": "task_updated", "task_id": "DOC-20", "actor": "foreman", "detail": "{\"status\":\"failed\"}", "tick_number": null}
 {"id": 143, "timestamp": "2026-10-23T21:54:57Z", "event_type": "task_updated", "task_id": "DOC-22", "actor": "foreman", "detail": "{\"status\":\"failed\"}", "tick_number": null}
 {"id": 144, "timestamp": "2026-10-23T21:54:57Z", "event_type": "task_updated", "task_id": "DOC-23", "actor": "foreman", "detail": "{\"status\":\"failed\"}", "tick_number": null}
+{"id": 145, "timestamp": "2026-10-24T01:07:49Z", "event_type": "task_created", "task_id": "INT-CI-3", "actor": "foreman", "detail": "{\"id\":\"INT-CI-3\",\"status\":\"pending\"}", "tick_number": null}
