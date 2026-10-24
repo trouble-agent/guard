@@ -19,12 +19,11 @@ One Go core, three consumption shapes, one `Result` contract. Route on
   (regex `sk-or-v1-…`, tried in order on 401/402/429). An expired key in the
   first file yields opaque `guard_error (fail-closed): key rejected: http 401`
   block verdicts — check `errored` in the Result when a block looks wrong.
-- **`jq` for `make docs-check`** (the README-drift gate shells out to it at
-  `Makefile:84,86,89,102`). The gate does NOT check for the tool: on a machine
-  without jq it fails with `docs-check FAIL: could not parse README
-  fail-closed JSON block`, which points at correct docs instead of at the
-  missing tool (GUARD-DF-004; a GH Actions runner has jq preinstalled, so CI
-  stays green while a clean box fails).
+- **`jq` for `make docs-check`** (the README-drift gate probes for it at
+  `Makefile:31-32` and shells out to it at `Makefile:86,88,91,104`). The gate
+  checks for the tool before parsing: without jq, `make docs-check` exits 2
+  with `docs-check FAIL: jq was not found on PATH`; with jq present, it ends
+  with `docs-check: PASS` (GUARD-DF-004).
 - Full prerequisite detail, key discovery, and a first-run walkthrough:
   README.md "Quick Start". This file is the agent-facing summary.
 
