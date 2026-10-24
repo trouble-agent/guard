@@ -23,7 +23,7 @@ type Policy struct {
 	QuotedDowngrade float64 `json:"quoted_downgrade"`
 
 	// FailClosed decides what an ERROR means. true = block on guard error,
-	// false = deliver flagged. Never a silent default: the result records which.
+	// false = route=review, flagged. Never a silent default: the result records which.
 	FailClosed bool `json:"fail_closed"`
 
 	// Overrides lets a high-sensitivity source tighten the bands without a new

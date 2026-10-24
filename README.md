@@ -440,7 +440,7 @@ classification.
 guard.Policy{
     ID: "default", BlockAt: 0.85, ReviewAt: 0.50,
     QuotedDowngrade: 0.80,   // BLOCK -> REVIEW when it is a quotation. Never -> deliver.
-    FailClosed: true,        // an error blocks; false = deliver flagged (recorded either way)
+    FailClosed: true,        // an error blocks; false = route=review, flagged (recorded either way)
     Overrides: map[string]guard.Override{
         "webhook": {BlockAt: 0.55},   // tighten a sensitive source
     },
