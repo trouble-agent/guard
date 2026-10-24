@@ -12,11 +12,12 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
 - **Go ≥ 1.26.9** to build (the repo itself declares Go 1.26.9 in `go.mod`).
 - **`jq` is required by `make docs-check`** (the README-drift gate shells out
   to it to compare verdict JSON). Nothing else in the repo needs it — build
-  and `go test` run on Go alone. The target does not probe for jq first, so
-  on a machine without it the gate fails with `docs-check FAIL: could not
-  parse README fail-closed JSON block`, a message that points at correct
-  docs instead of the missing tool (GUARD-DF-004). GitHub Actions runners
-  ship jq preinstalled, so CI stays green where a fresh box fails.
+  and `go test` run on Go alone. The target probes for jq first and, when it
+  is missing, stops with `docs-check FAIL: jq was not found on PATH — this
+  target shells out to jq (four times) to compare verdict JSON. Install jq
+  and re-run (see README Prerequisites, GUARD-DF-004).` GitHub Actions
+  runners ship jq preinstalled, so CI stays green where a fresh box fails.
+- **`make release` additionally needs `goreleaser`; no other target does.**
 - **An OpenRouter API key is required for ANY classification.** Classification
   runs on the Jev decisions model via OpenRouter; with no key available, every
   verdict comes back as the fail-closed block shown below. A key is picked up
