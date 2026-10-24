@@ -13,6 +13,10 @@ Request — `POST /check` (or the library call):
 { "id": "…", "source": "webhook", "channel": "crier", "content": "<untrusted>", "meta": {} }
 ```
 
+Only `source` and `content` affect the verdict. `id`, `channel`, and `meta` are
+accepted-but-ignored pass-through fields: they are not echoed, do not affect
+classification, and produce no error.
+
 Response — the `Result`:
 
 ```json
@@ -296,7 +300,10 @@ A connector is intentionally trivial — that is what makes the surface powerful
 To add language or framework N:
 
 1. **HTTP client** — POST `{"content", "source", "channel"}` to `/check`, decode
-   the `Result`. That is the whole protocol.
+   the `Result`. Only `source` and `content` affect the verdict; `channel` is an
+   accepted-but-ignored pass-through field (as are `id` and `meta` when supplied),
+   so none of those fields is echoed or produces an error. That is the whole
+   protocol.
 2. **A verdict view** — expose `route` and `constraints` as fields, plus one
    boolean (`deliver` / `IsSafe()`), so callers never parse the raw map.
 3. **Fail mode** — implement `closed` (raise/return error) and `open` (return

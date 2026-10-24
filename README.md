@@ -324,7 +324,7 @@ than treating the verdict as a block.
 # 1. CLI — pipe anything through it
 printf '%s' "$message" | guardd
 guardd -content "$message" -source github_pr -pretty
-guardd -content "$message" -source github_pr -channel crier -pretty   # -channel: classifier label, e.g. crier|task-router (default: empty = no label)
+guardd -content "$message" -source github_pr -channel crier -pretty   # -channel: pass-through label for caller bookkeeping; ignored by the core (default: empty)
 
 # 2. HTTP service — one instance, every language
 GUARD_TOKEN="$GUARD_TOKEN" guardd -serve :8768           # env (recommended: token never in argv)
