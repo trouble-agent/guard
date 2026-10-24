@@ -510,6 +510,7 @@ go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
 - [Release readiness](docs/release-readiness-2026-10-04.md) — the 2026-10-04
   re-verification of the v0.1.0 release: tag/commit linkage, published
   GitHub Release assets, and checksums.
+- [Historical guard documentation audit](docs/audits/guard-docs-2026-10-16-19-57-44.md) — dated findings and source anchors; the board is the status record.
 - [Connectors](connectors/README.md) — the language adapters that turn the
   guard into a one-liner in each consumer stack.
 
