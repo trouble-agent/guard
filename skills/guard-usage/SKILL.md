@@ -106,9 +106,9 @@ if not v.deliver: ...    # quarantine/review
   normalisations (skipped when the verdict errored or normalisation changed
   nothing), so a caught message costs **two** classifier calls, about twice
   the wall time, and reports ≈2x the cost — the fields are the full bill for
-  the message, not the first call. Measured: caught verdicts 0.53–0.61 s wall
-  vs deliver ~0.24–0.33 s (load-dependent; 29 samples over 2026-10-23/24 at
-  karaHermes-mde-7840hs, HEADs c9f913b–81eb581). Don't read the fields as per-call
+  the message, not the first call. Measured: caught verdicts ~0.48–0.85 s wall
+  vs deliver ~0.24–0.40 s (load-dependent; 47 samples over 2026-10-23/24 at
+  karaHermes-mde-7840hs, HEADs c9f913b–06085ab). Don't read the fields as per-call
   values: to time or count an individual call, measure it yourself or use a
   stub endpoint.
 
@@ -121,15 +121,19 @@ go build ./... && go vet ./... && go test ./... -count=1   # about 4–6s real (
 make docs-check                                            # needs jq (see Prerequisites)
 ```
 
-## Performance (measured 2026-10-23–24, HEADs c9f913b–81eb581, karaHermes-mde-7840hs)
+## Performance (measured 2026-10-23–24, HEADs c9f913b–06085ab, karaHermes-mde-7840hs)
 
-- deliver verdict, HTTP /check warm: **0.24–0.33 s** wall, `duration_ms` 240–326
-  (29 samples across 2026-10-23/24: five-run sets land 240–294 ms on an idle
-  host and 299–326 ms on a loaded one — the spread is host load, not code).
-- caught verdict (block/review): **0.53–0.61 s** wall — two classifier calls by design.
+- deliver verdict, HTTP /check warm: **0.24–0.40 s** wall, `duration_ms` 240–389
+  (47 samples across 2026-10-23/24 under mixed host load; five-run sets land
+  240–294 ms on an idle host and 299–389 ms on a loaded one — the spread is
+  host load, not code).
+- caught verdict (block/review): **0.48–0.85 s** wall, `duration_ms` 477–807
+  (13 samples 2026-10-23/24: 576–603 ms measured 10-23, 477–807 ms measured
+  10-24) — two classifier calls by design.
 - local floor with `GUARD_EGRESS_ENABLED=false`: 0.00–0.01 s, rc=2.
-- cold first call ~0.85 s; cost ≈ $0.000027 per classifier call — a caught
-  message's `cost_usd` reports both calls (≈2x) since e858041.
+- cold first call ~0.85 s; cost ≈ $0.000027 per classifier call (measured
+  0.0000268–0.0000271) — a caught message's `cost_usd` reports both calls
+  (≈2x) since e858041.
 
 ≈ All of it is the Jev API round trip (user+sys ≈ 20–25 ms locally).
 Don't profile the Go code first — the network is the latency.
