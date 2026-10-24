@@ -125,7 +125,7 @@ func main() {
 		source    = flag.String("source", "", "source label, e.g. github_pr (drives policy overrides)")
 		channel   = flag.String("channel", "", "channel label, e.g. crier|task-router")
 		policy    = flag.String("policy", "", "path to a policy file (JSON matching guard.Policy) overriding the default bands; GUARD_POLICY=<path> also works; -policy wins")
-		fail      = flag.Bool("fail-closed", true, "block on guard error (false = deliver flagged)")
+		fail      = flag.Bool("fail-closed", true, "block on guard error (false = route=review, flagged)")
 		pretty    = flag.Bool("pretty", false, "indent the JSON output")
 	)
 	flag.Parse()
