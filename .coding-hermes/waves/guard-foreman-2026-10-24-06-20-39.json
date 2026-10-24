@@ -1,0 +1,22 @@
+{
+  "tick_id": "guard-foreman-2026-10-24-06-20-39",
+  "project": "guard",
+  "base": "origin/main",
+  "base_sha": "21f5a009a35fd1b6e604d32529340eec60e681a6",
+  "budget": 2,
+  "status": "planned",
+  "tasks": [
+    {
+      "task_id": "DOC-20",
+      "worktree": "/home/kara/worktrees/guard-DOC-20",
+      "branch": "wt/DOC-20",
+      "files": ["skills/guard-usage/SKILL.md"]
+    },
+    {
+      "task_id": "DOC-23",
+      "worktree": "/home/kara/worktrees/guard-DOC-23",
+      "branch": "wt/DOC-23",
+      "files": ["guard-docs-2026-10-16-19-57-44.md"]
+    }
+  ]
+}
