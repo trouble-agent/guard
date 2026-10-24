@@ -142,9 +142,9 @@ Don't profile the Go code first — the network is the latency.
 
 - HTTP /check without `X-Operator-Token` → 401 by design; /healthz is open and
   returns `{"status":"ok","egress_enabled":<bool>}`.
-- The `cmd/guardd/main.go` file-header usage comment says `POST /check {input}`;
-  the handler decodes `{content}`. Following the comment gives
-  `400 content is required` with no hint of the right key (GUARD-DF-008a).
+- The `cmd/guardd/main.go` file-header usage comment documents
+  `POST /check {"content": "..."}`; the handler requires the `content` key.
+  GUARD-DF-008a records the historical documentation defect.
 - Fail-open (`fail_mode='open'`) does NOT deliver on outage: it returns
   route=review, decision='error', errored=True, and
   constraints=CONSTRAINTS_FAIL_OPEN (allow_tools/allow_secrets still granted

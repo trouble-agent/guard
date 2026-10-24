@@ -4,7 +4,7 @@
 //
 //	guardd                          # CLI: reads content on stdin, prints the Result JSON
 //	guardd -content "..."           # CLI: one-shot, argument form
-//	GUARD_TOKEN=s3cr3t guardd -serve :8768  # HTTP: POST /check {input} -> Result JSON
+//	GUARD_TOKEN=s3cr3t guardd -serve :8768  # HTTP: POST /check {"content": "..."} -> Result JSON
 //
 // The HTTP shape is authenticated: /check requires the shared secret in the
 // X-Operator-Token header (the fleet's operator-token pattern), and a token is
