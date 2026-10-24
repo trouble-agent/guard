@@ -112,7 +112,7 @@ environment variable ([`connectors/python/guard_client.py:180`](python/guard_cli
 
 **guardd's own token precedence (serving side)** — when `-serve` starts, it
 resolves the secret once at startup, env > tokenfile > argv
-([`cmd/guardd/main.go:148`](../cmd/guardd/main.go),
+([`cmd/guardd/main.go:147`](../cmd/guardd/main.go),
 [`cmd/guardd/main.go:305`](../cmd/guardd/main.go)):
 
 1. `GUARD_TOKEN` environment variable — preferred; it wins even when a
@@ -170,7 +170,7 @@ JSON first.
 
 **guardd CLI** (one-shot `guardd`, content on stdin) — the exit code
 distinguishes *classified* from *never classified*, not the verdict's
-polarity ([`cmd/guardd/main.go:141`](../cmd/guardd/main.go)):
+polarity ([`cmd/guardd/main.go:175-176`](../cmd/guardd/main.go)):
 
 | Exit | Meaning |
 |---|---|
@@ -236,7 +236,6 @@ auto-delivered. (Sources:
 non-200 responses as check failures; fail-open mode then returns the same
 connector-local REVIEW verdict described above, while fail-closed returns/raises
 an error. This does not change guardd's response into a 200. (Sources:
-[`cmd/guardd/main.go:184-198`](../cmd/guardd/main.go),
 [`client/client.go:109-137`](../client/client.go),
 [`connectors/python/guard_client.py:200-230`](python/guard_client.py).)
 

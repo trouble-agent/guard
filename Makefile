@@ -129,12 +129,19 @@ docs-check: build
 	      doctype_anchor_fail=1; continue;; \
 	    esac; \
 	  case "$$anchor_line" in \
-	    ""|*[[:space:]]*) ;; \
+	    ""|*[![:space:]]*) ;; \
 	    *) \
 	      echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is whitespace/blank, not the cited behaviour: '$$anchor_line'"; \
 	      doctype_anchor_fail=1; continue;; \
 	  esac; \
+	  anchor_no_space=$$(printf '%s' "$$anchor_line" | tr -d '[:space:]'); \
 	  case "$$anchor_line" in \
+	    [[:space:]]*[{}][[:space:]]*) \
+	      case "$$anchor_no_space" in \
+	        '{'|'}') \
+	          echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is a lone brace line, not the cited behaviour: '$$anchor_line'"; \
+	          doctype_anchor_fail=1; continue;; \
+	      esac;; \
 	    '{'|'}') \
 	      echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is a lone brace line, not the cited behaviour: '$$anchor_line'"; \
 	      doctype_anchor_fail=1; continue;; \
