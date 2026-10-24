@@ -1,0 +1,140 @@
+{
+  "tick_id": "guard-foreman-2026-10-24-08-01-52",
+  "project": "guard",
+  "base": "origin/main",
+  "base_sha": "74f9d1b91b8f717064286033e622e9d35c380915",
+  "budget": 11,
+  "status": "complete",
+  "finished_at": "2026-10-24T09:20:00-05:00",
+  "results": {
+    "workers_dispatched": 11,
+    "rows_covered": 13,
+    "zero_diff_workers": 0,
+    "merged_branches": ["README-11", "README-14", "README-15", "README-12", "DOC-24", "DOC-21", "DOC-25", "DOC-27", "DOC-26", "DOC-22", "QA-GUARD-005-R2-R2"],
+    "merge_commits": ["b6671b3", "bebe0f3", "468b677", "c78da2a", "0ba0f4a", "28e5eef", "ae75710", "5a6f8e7", "9ca337d", "6c11901", "b45b680"],
+    "verdicts": {
+      "README-11": "b780eb7d PASS", "README-13": "e3f858d7 PASS", "README-14": "cca29d35 PASS",
+      "README-15": "18303fc0 PASS", "README-12": "371b8290 PASS", "DOC-24": "97a7e2df PASS",
+      "DOC-25": "83a72386 PASS", "DOC-27": "b80f2b92 PASS", "DOC-21": "636846ca PASS",
+      "DOC-19-R2": "3a217d05 INCOMPLETE + 6915e833 INCOMPLETE + 5270b8e5 PASS (band re-measure chain)",
+      "DOC-26": "01c55eda PASS", "DOC-22": "439c1970 PASS",
+      "QA-GUARD-005-R2-R2": "a73bea55 INCOMPLETE (graded unmerged main) + async re-judge at closeout"
+    },
+    "rows_closed_this_tick": ["README-11", "README-13", "README-14", "README-15", "README-12", "DOC-24", "DOC-25", "DOC-27", "DOC-21", "DOC-19-R2", "DOC-26", "DOC-22", "GUARD-DF-015", "GUARD-DF-015-R2", "QA-GUARD-005", "INT-CI-2"],
+    "rows_left_pending": {"QA-GUARD-005-R2-R2": "partial: harness B1 disc.log preservation + bunker battery legs outstanding"},
+    "home_repo_commit": "66a7e140d7 (bunker-qa.sh live_test_transport_cut classifier; pushed)",
+    "off_by_one": "submitted sub_e95ae5 gitleaks-curl-auth-header-board-artifact-fp-allowlist-syntax; solver complete (answer id 4693) and discoverable"
+  },
+  "worker_model": "openai/gpt-5.6-luna",
+  "worker_providers": ["xkiro", "xkiro-2"],
+  "created_at": "2026-10-24T08:07:00-05:00",
+  "tasks": [
+    {
+      "task_id": "README-11",
+      "rows": ["README-11", "README-13"],
+      "worktree": "/home/kara/worktrees/guard-README-11",
+      "branch": "wt/README-11",
+      "files": ["README.md"],
+      "provider": "xkiro",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-README-11-brief.txt"
+    },
+    {
+      "task_id": "README-14",
+      "rows": ["README-14"],
+      "worktree": "/home/kara/worktrees/guard-README-14",
+      "branch": "wt/README-14",
+      "files": ["README.md"],
+      "provider": "xkiro",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-README-14-brief.txt"
+    },
+    {
+      "task_id": "README-15",
+      "rows": ["README-15"],
+      "worktree": "/home/kara/worktrees/guard-README-15",
+      "branch": "wt/README-15",
+      "files": ["README.md"],
+      "provider": "xkiro",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-README-15-brief.txt"
+    },
+    {
+      "task_id": "README-12",
+      "rows": ["README-12"],
+      "worktree": "/home/kara/worktrees/guard-README-12",
+      "branch": "wt/README-12",
+      "files": ["README.md", "policy.go", "cmd/guardd/main.go"],
+      "provider": "xkiro",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-README-12-brief.txt"
+    },
+    {
+      "task_id": "DOC-24",
+      "rows": ["DOC-24"],
+      "worktree": "/home/kara/worktrees/guard-DOC-24",
+      "branch": "wt/DOC-24",
+      "files": ["README.md"],
+      "provider": "xkiro",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-DOC-24-brief.txt"
+    },
+    {
+      "task_id": "DOC-21",
+      "rows": ["DOC-21", "DOC-19-R2"],
+      "worktree": "/home/kara/worktrees/guard-DOC-21",
+      "branch": "wt/DOC-21",
+      "files": ["skills/guard-usage/SKILL.md"],
+      "provider": "xkiro",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-DOC-21-brief.txt"
+    },
+    {
+      "task_id": "DOC-25",
+      "rows": ["DOC-25"],
+      "worktree": "/home/kara/worktrees/guard-DOC-25",
+      "branch": "wt/DOC-25",
+      "files": ["connectors/README.md", "README.md"],
+      "provider": "xkiro-2",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-DOC-25-brief.txt"
+    },
+    {
+      "task_id": "DOC-27",
+      "rows": ["DOC-27"],
+      "worktree": "/home/kara/worktrees/guard-DOC-27",
+      "branch": "wt/DOC-27",
+      "files": ["connectors/README.md"],
+      "provider": "xkiro-2",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-DOC-27-brief.txt"
+    },
+    {
+      "task_id": "DOC-26",
+      "rows": ["DOC-26"],
+      "worktree": "/home/kara/worktrees/guard-DOC-26",
+      "branch": "wt/DOC-26",
+      "files": ["cmd/guardd/main.go"],
+      "provider": "xkiro-2",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-DOC-26-brief.txt"
+    },
+    {
+      "task_id": "DOC-22",
+      "rows": ["DOC-22"],
+      "worktree": "/home/kara/worktrees/guard-DOC-22",
+      "branch": "wt/DOC-22",
+      "files": ["connectors/README.md", "Makefile"],
+      "provider": "xkiro-2",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-DOC-22-brief.txt"
+    },
+    {
+      "task_id": "QA-GUARD-005-R2-R2",
+      "rows": ["QA-GUARD-005-R2-R2"],
+      "worktree": "/home/kara/worktrees/guard-QA-GUARD-005-R2-R2",
+      "branch": "wt/QA-GUARD-005-R2-R2",
+      "files": ["jev_live_test.go", "/home/kara/.hermes/scripts/bunker-qa.sh"],
+      "provider": "xkiro-2",
+      "brief": "/tmp/guard-foreman-2026-10-24-08-01-52-QA-GUARD-005-R2-R2-brief.txt"
+    }
+  ],
+  "foreman_direct": {
+    "GUARD-DF-015": "premise satisfied at HEAD (scratch-HOME isolation note landed at README.md:41/68); verification-only close",
+    "GUARD-DF-015-R2": "same acceptance as GUARD-DF-015, satisfied at HEAD; close as superseded",
+    "QA-GUARD-005": "premise fixed in bunker-qa.sh toolchain bootstrap (QA-GUARD-005-tagged, 2026-10-20); successor QA-GUARD-005-R2-R2 tracks residual legs",
+    "INT-CI-2": "da948b1 CI failure = gitleaks FP on board artifacts (X-Operator-Token probe examples in DOC-25 row); allowlist fix landed 21f5a00, gitleaks step green at 74f9d1b (run 40070632902)"
+  },
+  "merge_order": ["README-11", "README-14", "README-15", "README-12", "DOC-24", "DOC-21", "DOC-25", "DOC-27", "DOC-26", "DOC-22", "QA-GUARD-005-R2-R2"],
+  "bundling_note": "README-11+README-13 share the Prerequisites paragraph; DOC-21+DOC-19-R2 share adjacent blocks of skills/guard-usage/SKILL.md — one worker per bundle, gitreins lifecycle per row. 13 rows, 11 workers (WAVE_BUDGET=12 ceiling respected)."
+}
