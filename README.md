@@ -513,6 +513,3 @@ go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
 - [Historical guard documentation audit](docs/audits/guard-docs-2026-10-16-19-57-44.md) — dated findings and source anchors; the board is the status record.
 - [Connectors](connectors/README.md) — the language adapters that turn the
   guard into a one-liner in each consumer stack.
-
-CI runs the same build, vet, and test steps on every push and pull request
-(`.github/workflows/ci.yml`), plus a gitleaks secret scan.
