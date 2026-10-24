@@ -147,11 +147,14 @@ make test    # the whole suite: go test ./...
 
 No external services are required to run it: the suite is plain `go test`
 (use `go test ./... -count=1` to bypass the test cache). The unit and policy
-tests use a deterministic stub classifier and pass offline, and the live
-end-to-end test (`TestLiveJevRoutesKnownCases`, `jev_live_test.go`) — the one
-that exercises the real Jev classifier — skips itself when no OpenRouter key
-is available (and under `-short`), so the suite stays runnable offline by
-default. The sibling quality gates are `make vet`, `make lint`, and
+tests use a deterministic stub classifier and pass offline. The live end-to-
+end test (`TestLiveJevRoutesKnownCases`, `jev_live_test.go`) — the one that
+exercises the real Jev classifier — skips itself when no resolved OpenRouter
+key is available, under `-short`, or when `HTTP_PROXY` or `HTTPS_PROXY` is
+non-empty (the latter is treated as a network cut). Therefore, `make test`
+does not prove that the live route test ran. To prove it ran, use
+`go test -run TestLiveJevRoutesKnownCases -v -count=1` and look for `PASS`, not
+`SKIP`. The sibling quality gates are `make vet`, `make lint`, and
 `make docs-check` (the last replays this README's documented commands). CI
 runs the same build, vet, and test steps on every push and pull request
 (`.github/workflows/ci.yml`), plus a gitleaks secret scan. The build itself is
