@@ -107,19 +107,23 @@ if not v.deliver: ...    # quarantine/review
   nothing), so a caught message costs **two** classifier calls, about twice
   the wall time, and reports ≈2x the cost — the fields are the full bill for
   the message, not the first call. Measured: caught verdicts 0.53–0.61 s wall
-  vs deliver 0.25–0.29 s. Don't read the fields as per-call values: to time
-  or count an individual call, measure it yourself or use a stub endpoint.
+  vs deliver 0.30–0.32 s (five warm runs on 2026-10-24 at
+  karaHermes-mde-7840hs, HEAD 74f9d1b). Don't read the fields as per-call
+  values: to time or count an individual call, measure it yourself or use a
+  stub endpoint.
 
 ## Run commands
 
 ```bash
-go build ./... && go vet ./... && go test ./... -count=1   # suite runs in ~5ms, no network needed
+go build ./... && go vet ./... && go test ./... -count=1   # about 4–6s real (4.04s on 2026-10-24 at karaHermes-mde-7840hs, HEAD 74f9d1b)
+# Offline when testing.Short, no resolved classifier key, or HTTP_PROXY/HTTPS_PROXY is set (the live tests skip).
+# Keyed runs make six live Jev classifier calls in TestLiveJevRoutesKnownCases (real network/cost).
 make docs-check                                            # needs jq (see Prerequisites)
 ```
 
-## Performance (measured 2026-10-19, HEAD bcb6002)
+## Performance (measured 2026-10-24, HEAD 74f9d1b, karaHermes-mde-7840hs)
 
-- deliver verdict, HTTP /check warm: **0.25–0.29 s** wall (5 runs), `duration_ms` 248–290.
+- deliver verdict, HTTP /check warm: **0.30–0.32 s** wall (5 runs), `duration_ms` 301–313.
 - caught verdict (block/review): **0.53–0.61 s** wall — two classifier calls by design.
 - local floor with `GUARD_EGRESS_ENABLED=false`: 0.00–0.01 s, rc=2.
 - cold first call ~0.85 s; cost ≈ $0.000027 per classifier call — a caught
