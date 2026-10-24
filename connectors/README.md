@@ -70,10 +70,13 @@ reveals nothing about the later stages:
 
 **Limits:**
 
-- **Body size**: capped at **8 MiB** via `io.LimitReader(r.Body, 8<<20)`
+- **HTTP body size**: capped at **8 MiB** via `io.LimitReader(r.Body, 8<<20)`
   (main.go:228). A larger body is silently truncated mid-read; the truncation
   breaks the JSON, so an oversized request surfaces as case 3 (`400 bad
-  request: ...`), not a dedicated 413.
+  request: ...`), not a dedicated 413. This cap is HTTP-only.
+- **CLI stdin**: when content is read from stdin, the CLI reads it to EOF with
+  no size cap and buffers the whole input in memory (`io.ReadAll(os.Stdin)`,
+  main.go:158). Large pipelines can therefore consume substantial memory.
 - **Classification timeout**: **120s** per request via
   `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:236). The CLI
   form uses the same 120s budget (main.go:165), so CLI and HTTP verdicts agree
