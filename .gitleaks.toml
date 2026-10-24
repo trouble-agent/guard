@@ -2,7 +2,6 @@ title = "gitleaks config"
 
 # Allowlist board artifacts - they contain documented curl probes with redacted tokens
 # that trip the curl-auth-header rule. The tokens are already redacted in prose.
-# Note: paths use regex, not globs (gitleaks v8 syntax)
-[[allowlist]]
+[allowlist]
   description = "Board artifacts with documented curl probes"
   paths = ['''\.coding-hermes/board/.*\.jsonl$''']
