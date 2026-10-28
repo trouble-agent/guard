@@ -63,27 +63,27 @@ reveals nothing about the later stages:
 
 | # | Trigger | Status | Body | Code |
 |---|---------|--------|------|------|
-| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:220 |
-| 2 | Method other than `POST` | `405` | `POST only` | main.go:224 |
-| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:228-229 |
-| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:233 |
+| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:226 |
+| 2 | Method other than `POST` | `405` | `POST only` | main.go:230 |
+| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:234-235 |
+| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:239 |
 
 **Limits:**
 
 - **HTTP body size**: capped at **8 MiB** via `io.LimitReader(r.Body, 8<<20)`
-  (main.go:228). A larger body is silently truncated mid-read; the truncation
+  (main.go:234). A larger body is silently truncated mid-read; the truncation
   breaks the JSON, so an oversized request surfaces as case 3 (`400 bad
   request: ...`), not a dedicated 413. This cap is HTTP-only.
 - **CLI stdin**: when content is read from stdin, the CLI reads it to EOF with
   no size cap and buffers the whole input in memory (`io.ReadAll(os.Stdin)`,
   main.go:158). Large pipelines can therefore consume substantial memory.
 - **Classification timeout**: **120s** per request via
-  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:236). The CLI
-  form uses the same 120s budget (main.go:165), so CLI and HTTP verdicts agree
+  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:242). The CLI
+  form uses the same 120s budget (main.go:166), so CLI and HTTP verdicts agree
   on timing too.
 
-**`/healthz`** — no auth, always `200` (GET and other methods are accepted; the
-handler does not restrict the method; `cmd/guardd/main.go:209-215`) with a JSON
+**`/healthz`** (and the identical conventional `/health` alias) — no auth, always `200` (GET and other methods are accepted; the
+handler does not restrict the method; `cmd/guardd/main.go:209-221`) with a JSON
 body `{"status":"ok","egress_enabled":<bool>}`, so liveness probes work without
 the shared secret. It never classifies anything. The `egress_enabled` field
 mirrors the `GUARD_EGRESS_ENABLED` startup flag.
@@ -120,15 +120,15 @@ environment variable ([`connectors/python/guard_client.py:180`](python/guard_cli
 **guardd's own token precedence (serving side)** — when `-serve` starts, it
 resolves the secret once at startup, env > tokenfile > argv
 ([`cmd/guardd/main.go:147`](../cmd/guardd/main.go),
-[`cmd/guardd/main.go:305`](../cmd/guardd/main.go)):
+[`cmd/guardd/main.go:311`](../cmd/guardd/main.go)):
 
 1. `GUARD_TOKEN` environment variable — preferred; it wins even when a
    tokenfile is staged, so an operator can override ad hoc without editing
-   the file ([`cmd/guardd/main.go:307-308`](../cmd/guardd/main.go)).
+   the file ([`cmd/guardd/main.go:313-314`](../cmd/guardd/main.go)).
 2. `-tokenfile <path>` — file contents, surrounding whitespace trimmed. The
    file must be owner-only (`0400` or `0600`); group- or world-accessible
    modes are refused at startup
-   ([`cmd/guardd/main.go:333-335`](../cmd/guardd/main.go)).
+   ([`cmd/guardd/main.go:339-341`](../cmd/guardd/main.go)).
 3. `-token <secret>` — works, but guardd warns loudly on stderr: an argv
    secret is world-readable via `ps` and `/proc/<pid>/cmdline`.
 
@@ -177,7 +177,7 @@ JSON first.
 
 **guardd CLI** (one-shot `guardd`, content on stdin) — the exit code
 distinguishes *classified* from *never classified*, not the verdict's
-polarity ([`cmd/guardd/main.go:175-176`](../cmd/guardd/main.go)):
+polarity ([`cmd/guardd/main.go:176-177`](../cmd/guardd/main.go)):
 
 | Exit | Meaning |
 |---|---|
@@ -220,7 +220,7 @@ default `-fail-closed=true` yields `decision="block"`,
 `route="review"`. Both include a `reason` beginning `guard_error (...)`; this
 is an in-band verdict, not an HTTP error response. (Sources:
 [`cmd/guardd/main.go:128-144`](../cmd/guardd/main.go),
-[`cmd/guardd/main.go:236-239`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:242-245`](../cmd/guardd/main.go),
 [`guard.go:192-216`](../guard.go),
 [`jev.go:161-164`](../jev.go).)
 
@@ -254,7 +254,7 @@ and its mode through `fail_mode` / CLI `--fail-open`. The server policy is
 configurable with `-fail-closed` (default true), affecting only the in-band
 classifier-error verdict, not the HTTP status. (Sources:
 [`cmd/guardd/main.go:128-144`](../cmd/guardd/main.go),
-[`cmd/guardd/main.go:236-239`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:242-245`](../cmd/guardd/main.go),
 [`client/client.go:53-64`](../client/client.go),
 [`connectors/python/guard_client.py:170-182`](python/guard_client.py),
 [`connectors/python/guard_client.py:264-287`](python/guard_client.py).)

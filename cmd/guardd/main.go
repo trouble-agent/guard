@@ -9,7 +9,8 @@
 // The HTTP shape is authenticated: /check requires the shared secret in the
 // X-Operator-Token header (the fleet's operator-token pattern), and a token is
 // mandatory — guardd refuses to start serving without one rather than run
-// unauthenticated. /healthz stays open so probes keep working. The bind
+// unauthenticated. /healthz (and the conventional /health alias) stays open so
+// probes keep working. The bind
 // address defaults to loopback: ":8768" becomes "127.0.0.1:8768" unless the
 // operator names an explicit host.
 //
@@ -203,16 +204,21 @@ func authorized(r *http.Request, token string) bool {
 	return subtle.ConstantTimeCompare([]byte(got), []byte(token)) == 1
 }
 
-// newHandler builds the HTTP surface: /healthz open, /check token-gated.
+// newHandler builds the HTTP surface: /healthz (and its conventional /health
+// alias) open, /check token-gated.
 func newHandler(g *guard.Guard, token string, egressEnabled bool) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	handleHealth := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(struct {
 			Status        string `json:"status"`
 			EgressEnabled bool   `json:"egress_enabled"`
 		}{Status: "ok", EgressEnabled: egressEnabled})
-	})
+	}
+	// /health serves the identical body so generic orchestrators that probe
+	// the conventional /health path pass liveness discovery.
+	mux.HandleFunc("/healthz", handleHealth)
+	mux.HandleFunc("/health", handleHealth)
 	mux.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
 		// Auth before anything else: an unauthenticated request learns nothing,
 		// not even whether its method or body would have been accepted.
@@ -280,7 +286,7 @@ func serveOn(addr string, h http.Handler, listen func(network, address string) (
 		// ("serve: listen tcp <addr>: bind: address already in use").
 		return err
 	}
-	log.Printf("guardd listening on %s (POST /check [%s required], GET /healthz)", addr, OperatorTokenHeader)
+	log.Printf("guardd listening on %s (POST /check [%s required], GET /healthz|/health)", addr, OperatorTokenHeader)
 	return http.Serve(ln, h)
 }
 

@@ -125,6 +125,57 @@ func TestHealthzStaysOpenWithTokenSet(t *testing.T) {
 	}
 }
 
+// ch:trace row=REVIEW-GUARD-005 spec=.coding-hermes/board/tasks.jsonl#REVIEW-GUARD-005 wave=none:serial-tick test=cmd/guardd/main_test.go::TestHealthAliasMatchesHealthz evidence=go-test-cmd/guardd-green witness=none:local-live-probe verdict=none:pending-foreman-judge commit=none:in-this-commit
+// STATUS: complete
+// TIER: T1 (invoked: go build/vet/test -count=1 + make docs-check + live curl probes on :18998; observed: gates green, /health body identical to /healthz, no-token refusal rc=1)
+// EVIDENCE: this test + gate output summarized in the final report
+//
+// AC2/AC3: the conventional /health alias serves the byte-identical body the
+// /healthz probe returns (same handler, same JSON), and stays open
+// unauthenticated exactly like /healthz.
+func TestHealthAliasMatchesHealthz(t *testing.T) {
+	srv := httptest.NewServer(newHandler(stubGuard(), "s3cr3t-token", true))
+	defer srv.Close()
+
+	respZ, err := http.Get(srv.URL + "/healthz")
+	if err != nil {
+		t.Fatalf("get /healthz: %v", err)
+	}
+	defer func() { _ = respZ.Body.Close() }()
+	rawZ, err := io.ReadAll(respZ.Body)
+	if err != nil {
+		t.Fatalf("read /healthz body: %v", err)
+	}
+	if respZ.StatusCode != http.StatusOK {
+		t.Fatalf("/healthz status = %d, want 200 (body: %q)", respZ.StatusCode, strings.TrimSpace(string(rawZ)))
+	}
+	if respZ.Header.Get("Content-Type") == "" {
+		t.Fatal("/healthz Content-Type empty")
+	}
+
+	respH, err := http.Get(srv.URL + "/health")
+	if err != nil {
+		t.Fatalf("get /health: %v", err)
+	}
+	defer func() { _ = respH.Body.Close() }()
+	rawH, err := io.ReadAll(respH.Body)
+	if err != nil {
+		t.Fatalf("read /health body: %v", err)
+	}
+	if respH.StatusCode != http.StatusOK {
+		t.Fatalf("/health status = %d, want 200 (body: %q)", respH.StatusCode, strings.TrimSpace(string(rawH)))
+	}
+	if got := string(rawH); got != string(rawZ) {
+		t.Fatalf("/health body = %q, want byte-identical to /healthz body %q", got, string(rawZ))
+	}
+	if got, want := respH.Header.Get("Content-Type"), respZ.Header.Get("Content-Type"); got != want {
+		t.Fatalf("/health Content-Type = %q, want identical to /healthz %q", got, want)
+	}
+	if !strings.Contains(string(rawH), `"status":"ok"`) {
+		t.Fatalf("/health body missing \"status\":\"ok\": %q", strings.TrimSpace(string(rawH)))
+	}
+}
+
 func TestDisabledEgressHealthAndCheckRefusal(t *testing.T) {
 	g := &guard.Guard{Classifier: egressDisabledClassifier{}, Policy: guard.DefaultPolicy()}
 	srv := httptest.NewServer(newHandler(g, "token", false))
@@ -856,7 +907,7 @@ func TestServeOnBannerOnlyAfterBind(t *testing.T) {
 	for !strings.Contains(c.String(), "listening on") && time.Now().Before(deadline) {
 		time.Sleep(5 * time.Millisecond)
 	}
-	want := fmt.Sprintf("guardd listening on %s (POST /check [%s required], GET /healthz)", addr, OperatorTokenHeader)
+	want := fmt.Sprintf("guardd listening on %s (POST /check [%s required], GET /healthz|/health)", addr, OperatorTokenHeader)
 	if got := c.String(); !strings.Contains(got, want) {
 		t.Fatalf("log = %q, want the documented readiness banner %q", got, want)
 	}
