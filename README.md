@@ -352,7 +352,10 @@ precedence **`GUARD_TOKEN` env > `-tokenfile` (must be 0600; group/world-
 readable files are refused) > `-token`**; a missing or wrong token is a 401
 and the body is never classified. `guardd` refuses to start serving without a
 token rather than run unauthenticated, and `GET /healthz` stays open (no
-header) so probes keep working. Prefer the env or tokenfile forms: `-token`
+header) so probes keep working — the conventional `GET /health` alias is
+served by the same handler and returns the identical body, so generic
+orchestrators that probe `/health` pass liveness discovery too. Prefer the
+env or tokenfile forms: `-token`
 puts the secret in the process list (`ps`, `/proc/<pid>/cmdline`), so serving
 with it prints a warning to stderr. `-serve` takes the bind address: an
 omitted host defaults to loopback, so `:8768` binds `127.0.0.1:8768` — pass
