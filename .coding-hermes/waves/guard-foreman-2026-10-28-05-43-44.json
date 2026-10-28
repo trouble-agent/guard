@@ -1,0 +1,26 @@
+{
+  "scheduler_tick_id": "guard-foreman-2026-10-28-05-43-44",
+  "composed_at": "2026-10-28T05:55:00-05:00",
+  "mode": "serial-fallback",
+  "mode_reason": "1 dispatchable row < 2; REL-GUARD-003/004 are owner-gated NO-CUT",
+  "wave_budget": 5,
+  "tasks": [
+    {
+      "row": "REVIEW-GUARD-005",
+      "title": "P4 - conventional /health endpoint is absent; only documented /healthz responds",
+      "worktree": "/home/kara/worktrees/guard-REVIEW-GUARD-005",
+      "branch": "wt/REVIEW-GUARD-005",
+      "base": "origin/main",
+      "base_sha": "75b07eb",
+      "worker_model": "glm-5.3-flash",
+      "worker_provider": "zai-glm-default",
+      "gitreins_task": "REVIEW-GUARD-005 (created + started)",
+      "depends_on": [],
+      "independent": true
+    }
+  ],
+  "not_dispatched": [
+    {"row": "REL-GUARD-003", "reason": "P1 release readiness NO-CUT - owner authorization gate, stays pending"},
+    {"row": "REL-GUARD-004", "reason": "P1 release readiness NO-CUT - owner authorization gate, stays pending"}
+  ]
+}
