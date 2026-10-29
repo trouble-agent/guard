@@ -24,8 +24,11 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
   from, in order, `$OPENROUTER_API_KEY`, then `~/.hermes/.env`, then
   `~/9router-deploy/.env.shared` (key-shaped `sk-or-v1-…` values are scanned
   from each file, deduplicated, and tried in that order — a 401/402/429 moves
-  to the next key). There is no key flag — the CLI and HTTP shapes both resolve
-  keys through this same order (`loadOpenRouterKeys`, `jev.go`).
+  to the next key). There is no key flag — the CLI and HTTP shapes both
+  resolve keys through this same order (`loadOpenRouterKeys`, `jev.go`).
+  To reproduce the no-key example on a machine whose normal HOME contains a
+  key, use an isolated HOME for the command, for example `TD=$(mktemp -d) &&
+  env -u OPENROUTER_API_KEY HOME=$TD bash -c 'printf "hello world" | ./guardd'`.
 
 **Build and run**
 
