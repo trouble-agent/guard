@@ -526,6 +526,7 @@ go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
 
 ## Further docs
 
+- [Operator monitoring and recovery runbook](docs/operations.md) — safe guardd startup, liveness and request checks, and bounded recovery steps.
 - [Adoption guide](docs/ADOPTION.md) — the exact choke point where each
   consumer (crier, task-router, shell) hooks the guard, and how its
   connector is wired.
