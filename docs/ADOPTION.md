@@ -5,6 +5,9 @@ crosses into a context that will act on it. One hook per consumer; the
 classification itself is the shared core. This file names the exact seam in each
 of the first three consumers.
 
+For people using a product that includes Guard, see the [end-user guide](user-guide.md)
+for plain-language explanations of results, errors, privacy, and limitations.
+
 The pattern is identical everywhere, which is why one connector shape suffices:
 
 ```
