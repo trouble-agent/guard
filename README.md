@@ -33,10 +33,21 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
 **Build and run**
 
 ```bash
-go build ./cmd/guardd          # produces ./guardd
+go build -o guardd ./cmd/guardd          # produces ./guardd
 printf '%s' "hello, world" | ./guardd          # CLI: classify via stdin
 GUARD_TOKEN=s3cr3t ./guardd -serve :8768       # or serve over HTTP
-GUARD_POLICY=policy.json ./guardd -serve :8768 # serve with per-source overrides (see "Policy files" below)
+cat > policy.json <<'JSON'                       # create a per-source policy fixture
+{
+  "id": "quick-start",
+  "block_at": 0.85,
+  "review_at": 0.50,
+  "fail_closed": true,
+  "overrides": {
+    "webhook": {"block_at": 0.55, "review_at": 0.40}
+  }
+}
+JSON
+GUARD_TOKEN=s3cr3t GUARD_POLICY=policy.json ./guardd -serve :8768 # serve with per-source overrides
 ```
 
 **First run with no key — this is the expected, correct (fail-closed) result**
