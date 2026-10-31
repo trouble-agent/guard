@@ -1,0 +1,41 @@
+{
+  "tick_id": "guard-foreman-2026-10-31-02-00-15",
+  "project": "guard",
+  "base_sha": "eb83982bede3d60f1818679a05463794f2ebb614",
+  "published_ref": "origin/main",
+  "mode": "wave",
+  "wave_budget": 12,
+  "workers": [
+    {
+      "task_id": "DOC-29",
+      "worktree": "/home/kara/worktrees/guard-DOC-29",
+      "branch": "wt/DOC-29",
+      "base_sha": "eb83982",
+      "worker_commit": "c55fd71cffb950240451d523ed4615bf80b2ac4c",
+      "verified_tree_sha": "60dbcff",
+      "status": "merged"
+    },
+    {
+      "task_id": "DOC-30",
+      "worktree": "/home/kara/worktrees/guard-DOC-30",
+      "branch": "wt/DOC-30",
+      "base_sha": "eb83982",
+      "worker_commit": "b3a7dc172b826a985b2c1765a2fee7479534f36c",
+      "verified_tree_sha": "2da7d5b",
+      "status": "merged"
+    }
+  ],
+  "worktrees": [
+    "/home/kara/worktrees/guard-DOC-29",
+    "/home/kara/worktrees/guard-DOC-30"
+  ],
+  "status": "complete",
+  "verified_tree_sha": "2da7d5bf2c59eb701e4fc51bcd909b71b040b822",
+  "cleanup": {
+    "worktrees_removed": [],
+    "branches_deleted": []
+  },
+  "closeout_commit_sha": "pending:board-closeout",
+  "finished_at": "2026-10-31T02:16:00Z",
+  "created_at": "2026-10-31T02:00:15-05:00"
+}
