@@ -536,5 +536,6 @@ go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
   re-verification of the v0.1.0 release: tag/commit linkage, published
   GitHub Release assets, and checksums.
 - [Historical guard documentation audit](docs/audits/guard-docs-2026-10-16-19-57-44.md) — dated findings and source anchors; the board is the status record.
+- [Traceability doctrine](docs/traceability-doctrine.md) — the repository-local `ch:trace` fields, evidence tiers, witness rules, and close-out shape.
 - [Connectors](connectors/README.md) — the language adapters that turn the
   guard into a one-liner in each consumer stack.
