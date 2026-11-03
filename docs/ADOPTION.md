@@ -56,7 +56,23 @@ server (`:9092`). Every task carries a description that ends up in a model's
 context; that description is the untrusted input.
 
 **Connector:** `connectors/python/guard_client.py`
-(pip installable: `pip install guard-client` from this repo's `connectors/python/`).
+
+Install from this repo (there is **no PyPI release yet** — the name
+`guard-client` on PyPI belongs to an unrelated project, so `pip install
+guard-client` will install the wrong package):
+
+```bash
+pip install /path/to/guard/connectors/python
+```
+
+Pin it in a requirements file so an install is reproducible:
+
+```bash
+pip install "guard-client @ git+https://github.com/trouble-agent/guard.git@v0.1.0#subdirectory=connectors/python"
+```
+
+The distribution is named `guard-agent-client` (import name stays
+`guard_client`) specifically to avoid the `guard-client` PyPI collision.
 
 ```python
 import os
@@ -125,10 +141,31 @@ carries its own `decision='error'` and always routes to review. Fail-open means
 **Connector:** `github.com/trouble-agent/guard/client` (HTTP to a shared
 `guardd`), or the core package in-process.
 
+The `client` package lives in this module, so a consumer always resolves it at
+the **same version as the module** — there is no separate `client` module to pin:
+
+```
+go get github.com/trouble-agent/guard@latest
+```
+
+> **Version floor: v0.1.1 or later.** The published `v0.1.0` client cannot
+> authenticate — it sends no `X-Operator-Token` header, so every `/check` call
+> returns 401. `v0.1.1` adds `Client.Token` and the header. If you are pinned to
+> `v0.1.0`, you must upgrade; there is no workaround short of reimplementing the
+> HTTP call.
+
 ```go
+import (
+    "github.com/trouble-agent/guard"
+    "github.com/trouble-agent/guard/client"
+)
+
 c := client.New(guardEndpoint)
 c.Token = os.Getenv("GUARD_TOKEN") // /check requires X-Operator-Token
-res, _ := c.Check(ctx, guard.Input{Source: "webhook", Channel: "dagger", Content: body})
+res, err := c.Check(ctx, guard.Input{Source: "webhook", Channel: "dagger", Content: body})
+if err != nil {
+    return err                     // FailMode is FailClosed by default
+}
 if res.Route != guard.RouteDeliver {
     return daggerErr(res.Reason)   // do not build a DAG from this input
 }

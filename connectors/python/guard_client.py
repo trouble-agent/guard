@@ -91,9 +91,20 @@ class Verdict:
 
     @classmethod
     def from_dict(cls, d: Mapping[str, Any]) -> "Verdict":
+        # Fail closed on a malformed verdict: a response that omits `route`
+        # (a proxy error page, a truncated body, a future server schema) must
+        # never be read as "deliver". Absence of a route is not permission.
+        if "route" not in d:
+            return cls(
+                route=ROUTE_REVIEW,
+                decision="error",
+                risk_level="unknown",
+                reason="malformed verdict: response carries no `route` "
+                       "(defaulting to review, NOT deliver)",
+            )
         return cls(
-            route=d.get("route", ROUTE_DELIVER),
-            decision=d.get("decision", "allow"),
+            route=d.get("route", ROUTE_REVIEW),
+            decision=d.get("decision", "review"),
             risk_level=d.get("risk_level", "low"),
             reason=d.get("reason", ""),
             attack_class=d.get("attack_class", ""),
