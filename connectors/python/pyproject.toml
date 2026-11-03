@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "guard-client"
+name = "guard-agent-client"
 version = "0.1.0"
 description = "Python connector for the guard service - stdlib only, same verdict contract as the Go client"
 license = { text = "MIT" }

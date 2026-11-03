@@ -342,3 +342,30 @@ def test_main_empty_content_errors(capsys):
         guard_client.main([""])
     assert ei.value.code == 2
     assert "no content" in capsys.readouterr().err
+
+
+def test_from_dict_missing_route_fails_closed():
+    """A verdict with no `route` must NOT be read as deliver.
+
+    Regression: from_dict used to default route=ROUTE_DELIVER, so a malformed
+    or truncated response (proxy error page, future server schema) was silently
+    treated as permission to deliver untrusted input.
+    """
+    v = guard_client.Verdict.from_dict({"decision": "allow", "reason": "?"})
+    assert v.route == guard_client.ROUTE_REVIEW
+    assert v.deliver is False
+    assert v.errored is False
+    assert "malformed" in v.reason
+
+
+def test_from_dict_present_route_is_honoured():
+    v = guard_client.Verdict.from_dict({"route": "deliver"})
+    assert v.route == guard_client.ROUTE_DELIVER
+    assert v.deliver is True
+
+
+def test_from_dict_partial_verdict_does_not_grant_tools():
+    v = guard_client.Verdict.from_dict({})
+    assert v.deliver is False
+    assert v.allows_tools is False
+    assert v.allows_secrets is False
