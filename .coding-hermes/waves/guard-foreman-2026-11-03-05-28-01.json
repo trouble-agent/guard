@@ -1,0 +1,58 @@
+{
+  "tick_id": "guard-foreman-2026-11-03-05-28-01",
+  "project": "guard",
+  "base_sha": "fbc8436b90354f872c3cd3eeed63cb610ee5064d",
+  "published_ref": "origin/main",
+  "mode": "verification-only",
+  "classification": "verification-only",
+  "wave_budget": 12,
+  "eligible_independent": 0,
+  "workers": [],
+  "worktrees": [],
+  "wave": "none:verification-only",
+  "gitreins": "none:verification-only-no-task",
+  "board_census": {
+    "total_rows": 98,
+    "complete": 95,
+    "pending": 3,
+    "duplicate_ids": 0
+  },
+  "selected_row": null,
+  "selected_row_reason": "No executable implementation row remains. The 3 pending rows are owner-gated release decision records (REL-GUARD-003, REL-GUARD-004) and an external QA-infra finding (QA-GUARD-REVIEW-1); none has executable guard-repo work for a worker.",
+  "tick_context_rows": [
+    "REL-GUARD-003",
+    "REL-GUARD-004",
+    "QA-GUARD-REVIEW-1"
+  ],
+  "blockers": [
+    {
+      "row": "REL-GUARD-004",
+      "class": "owner-gated-release-decision",
+      "gate": "NO-CUT v0.2.0 readiness; requires explicit owner release-cut authorization naming target (trouble-agent/guard), requested version (v0.2.0), and baseline/candidate SHA. A version inferred from the readiness doc is not authorization.",
+      "supersedes_note": "REL-GUARD-003 is the stale 2026-10-26 sweep duplicate of the same standing NO-CUT gate; REL-GUARD-004 (2026-11-01 sweep) carries the freshest evidence."
+    },
+    {
+      "row": "QA-GUARD-REVIEW-1",
+      "class": "external-qa-infrastructure",
+      "gate": "bunker-qa.sh correctly refused a mis-pointed review path (/home/kara/.hermes/stand-in/review/guard is a subdir of /home/kara). Remediation is QA-lane dispatch config (set BUNKER_QA_SUBDIR or dispatch against the real product git root /home/kara/trouble-agent/guard), not guard product code."
+    }
+  ],
+  "next_owner_action": "Bane to (a) authorize or defer the v0.2.0 release cut with explicit target+version+SHA, or direct the version-prep strategy (CHANGELOG + Go version stamp + Python connector version alignment are absent); (b) have the QA-lane owner correct the guard-review dispatch path so bunker-qa.sh runs against the real product git root.",
+  "verification": {
+    "local_gates_head": "fbc8436b90354f872c3cd3eeed63cb610ee5064d",
+    "build": "PASS (make build)",
+    "vet": "PASS (make vet)",
+    "test": "PASS (go test ./... -count=1; 4 pkgs ok)",
+    "docs_check": "PASS (make docs-check)",
+    "release_blocker_reprobe": "UNCHANGED: no CHANGELOG.md, no Go release version stamp, Python connector 0.1.0, only tag v0.1.0 present (git tag + ls-remote agree).",
+    "exact_head_ci": "GREEN (run 41584626760, headSha fbc8436, completed success)"
+  },
+  "sha_roles": {
+    "source_sha": "fbc8436b90354f872c3cd3eeed63cb610ee5064d",
+    "verified_code_commit": "fbc8436b90354f872c3cd3eeed63cb610ee5064d",
+    "gitreins_judged_commit": "none:verification-only-no-task"
+  },
+  "status": "complete",
+  "created_at": "2026-11-03T05:28:01-05:00",
+  "finished_at": "2026-11-03T05:40:00-05:00"
+}
