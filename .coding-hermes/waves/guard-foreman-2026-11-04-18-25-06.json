@@ -1,0 +1,65 @@
+{
+  "tick_id": "guard-foreman-2026-11-04-18-25-06",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "base_sha": "4c18fa8af7d2f757495b19fa4b9419e1b3f91554",
+  "published_ref": "origin/main",
+  "mode": "verification-only",
+  "classification": "verification-only",
+  "wave_budget": 4,
+  "eligible_independent": 0,
+  "workers": [],
+  "worktrees": [],
+  "wave": "none:verification-only",
+  "gitreins": {
+    "task": "GUARD-VERIFY-20261104-1825",
+    "class": "post-evidence verification task (rows have executable premise probes)",
+    "row_under_verification": "QA-GUARD-* premise re-probe"
+  },
+  "board_census": {
+    "total_rows": 102,
+    "complete": 97,
+    "pending": 4,
+    "blocked": 1,
+    "duplicate_ids": 0,
+    "events": 203
+  },
+  "selected_row": null,
+  "selected_row_reason": "No executable product row. REL-GUARD-005 (version prep) landed at 11:52Z today; REL-GUARD-003 is an owner-gated release-decision record; the four QA-GUARD-* rows are QA-lane generated findings whose premises were re-probed this tick.",
+  "tick_context_rows": [
+    "REL-GUARD-003",
+    "QA-GUARD-REVIEW-1",
+    "QA-GUARD-FOREMAN-1",
+    "QA-GUARD-DOCS-1",
+    "QA-GUARD-README-1"
+  ],
+  "blockers": [
+    {
+      "row": "REL-GUARD-003",
+      "class": "owner-gated-release-decision",
+      "owner": "Bane",
+      "unblock": "explicit authorization naming trouble-agent/guard + v0.2.0 + candidate SHA; version prep already landed at d91284516995a3d8e564b0da6045860cfed904ab"
+    },
+    {
+      "row": "QA-GUARD-QUARANTINE-1",
+      "class": "qa-harness-defect",
+      "owner": "QA lane",
+      "unblock": "BUNKER_QA_QUARANTINE_DIR must point at a user-writable path (or the dir must be created at install); then re-run bunker-qa.sh launch/collect for guard"
+    }
+  ],
+  "evidence": {
+    "audit": ".coding-hermes/audits/guard-foreman-2026-11-04-18-25-06.md",
+    "gates": "make build / make vet / go test ./... -count=1 (4 pkgs) / make docs-check all exit 0 at 4c18fa8",
+    "ci": "exact-head run at 4c18fa8 completed/success (2026-11-04T11:52:47Z); 5 most recent runs all success",
+    "probes": {
+      "review_path": "bunker-qa.sh resolve -> /home/kara/trouble-agent/guard rc=0, no SUBDIRECTORY refusal",
+      "bunker_mvp_disk": "df -P / use%=43 (gate refuses above 94)",
+      "v0.1.0_build": "go build ./... rc=0 in detached worktree at tag v0.1.0",
+      "qa_launch": "attempted 18:33:35Z; preflight passed; agent f58144a5 spawned 18:38:58Z; launch stalled on retained orphan lock; killed at 6min; agent destroyed; zero cells executed"
+    }
+  },
+  "residue_preserved": [
+    ".coding-hermes/audits/guard-readme-2026-10-30-21-53-18.md",
+    ".coding-hermes/board/tasks.jsonl.pre-resolve"
+  ]
+}
