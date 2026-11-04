@@ -69,6 +69,10 @@ import (
 	"github.com/trouble-agent/guard"
 )
 
+// version is the guardd release version, injected at build time by the
+// Makefile and goreleaser via -X main.version=<v>; a plain `go build` leaves "dev".
+var version = "dev"
+
 // OperatorTokenHeader is the header carrying the shared secret on /check.
 // Same name as the fleet's operator-token convention so one credential works
 // across surfaces.
@@ -119,6 +123,7 @@ func classifierEgressEnabled(value string) bool {
 
 func main() {
 	var (
+		vers      = flag.Bool("version", false, "print version and exit")
 		serve     = flag.String("serve", "", "address to serve HTTP on, e.g. :8768 (empty = CLI mode)")
 		token     = flag.String("token", "", "shared secret required in the "+OperatorTokenHeader+" header on /check (REQUIRED with -serve; prefer GUARD_TOKEN or -tokenfile)")
 		tokenfile = flag.String("tokenfile", "", "path to a file holding the shared secret; must be 0600 (recommended: keeps the token out of argv)")
@@ -130,6 +135,11 @@ func main() {
 		pretty    = flag.Bool("pretty", false, "indent the JSON output")
 	)
 	flag.Parse()
+
+	if *vers {
+		fmt.Printf("guardd %s\n", version)
+		return
+	}
 
 	egressEnabled := classifierEgressEnabled(os.Getenv(GuardEgressEnv))
 	var classifier guard.Classifier = egressDisabledClassifier{}

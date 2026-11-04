@@ -1,10 +1,11 @@
 BINARY_NAME := guardd
+VERSION ?= v0.2.0
 
 .PHONY: build test vet lint release docs-check print-go-directive
 
 build:
 	mkdir -p bin
-	go build -o bin/$(BINARY_NAME) ./cmd/guardd
+	go build -ldflags "-X main.version=$(VERSION)" -o bin/$(BINARY_NAME) ./cmd/guardd
 	# Note: client/ is a library package (no main); only cmd/guardd produces a binary.
 
 test:
