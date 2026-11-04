@@ -1,0 +1,76 @@
+{
+  "tick_id": "guard-foreman-2026-11-04-19-21-17",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "base_sha": "4b6f67f300a98cc4f544e69876bb809e37c9d291",
+  "published_ref": "origin/main",
+  "mode": "wave-recovery+verification-only",
+  "classification": "recovery-empty-then-verification-only",
+  "wave_budget": 9,
+  "eligible_independent": 0,
+  "workers": [],
+  "worktrees": [],
+  "wave": "none:no-dispatchable-product-row",
+  "recovery_manifest": ".coding-hermes/waves/guard-foreman-2026-11-04-18-25-06.json",
+  "recovery": {
+    "named_tick": "guard-foreman-2026-11-04-18-25-06",
+    "verdict": "EMPTY_WAVE_CONFIRMED",
+    "workers_found": 0,
+    "merged": 0,
+    "fixups": 0,
+    "worktrees_reaped": 4,
+    "branches_deleted": [
+      "verify/guard-20261104",
+      "fix/install-paths"
+    ],
+    "branches_preserved_as_evidence": [
+      "gitreins",
+      "wt/GUARD-DF-008"
+    ],
+    "note": "The recovered manifest declared workers=[] and worktrees=[], and no ref derives from its base_sha that is not already reachable from main. Recovery was an explicit confirmation plus a hygiene sweep of four merged, clean worktrees that predated the wave (their HEADs 30d6934 / ce2a86c / 4b6f67f / 6cfd37f are all ancestors of main with ahead=0 and no /proc cwd owner)."
+  },
+  "board_census": {
+    "total_rows": 103,
+    "complete": 100,
+    "pending": 2,
+    "blocked": 1,
+    "duplicate_ids": 0,
+    "events": 208
+  },
+  "selected_row": null,
+  "selected_row_reason": "Zero dispatchable product rows. REL-GUARD-003 is an owner-gated release decision (Bane must authorize the v0.2.0 cut naming target+version+SHA). QA-GUARD-REVIEW-1 and QA-GUARD-QUARANTINE-1 are QA-harness rows whose fix surface is the fleet script ~/.hermes/scripts/bunker-qa.sh, not this repository; their executable acceptance is a battery run, which this tick attempted instead of dispatching a worker.",
+  "blockers": [
+    {
+      "row": "REL-GUARD-003",
+      "class": "owner-gated-release-decision",
+      "owner": "Bane",
+      "unblock": "explicit authorization naming trouble-agent/guard + v0.2.0 + candidate SHA (version prep REL-GUARD-005 landed at d912845)"
+    },
+    {
+      "row": "QA-GUARD-QUARANTINE-1",
+      "class": "qa-harness-defect",
+      "owner": "QA lane / fleet harness",
+      "unblock": "make BUNKER_QA_QUARANTINE_DIR point at a user-writable directory (proven this tick: scratch dir writable, orphan 4e9fec9b quarantined) or create /var/lib/bunker-qa/quarantine at install time"
+    },
+    {
+      "row": "QA-GUARD-REVIEW-1",
+      "class": "qa-coverage-unverified",
+      "owner": "QA lane",
+      "unblock": "a completed bunker-qa.sh battery bound to guard's published HEAD, then collect with a terminal verdict"
+    }
+  ],
+  "verification_action": {
+    "what": "bunker-qa.sh launch /home/kara/trouble-agent/guard with BUNKER_QA_QUARANTINE_DIR=/home/kara/.hermes/cache/scratch/bunker-qa-quarantine and BUNKER_QA_EVIDENCE=/home/kara/.hermes/cache/scratch/qa-guard-2026-11-04-1921/qa-evidence.jsonl",
+    "launch_script": "/home/kara/.hermes/cache/scratch/guard-qa-launch-1921.sh",
+    "purpose": "produce the missing battery verdict for guard HEAD (QA-GUARD-REVIEW-1 leg 2) and prove QA-GUARD-QUARANTINE-1 legs 1 and 3 with a writable quarantine dir"
+  },
+  "gitreins": {
+    "task": null,
+    "reason": "no dispatchable row and no code change: nothing to create/start/complete"
+  },
+  "residue_preserved": [
+    ".coding-hermes/audits/guard-readme-2026-10-30-21-53-18.md",
+    ".coding-hermes/board/tasks.jsonl.pre-resolve"
+  ],
+  "finished_at": null
+}

@@ -61,5 +61,23 @@
   "residue_preserved": [
     ".coding-hermes/audits/guard-readme-2026-10-30-21-53-18.md",
     ".coding-hermes/board/tasks.jsonl.pre-resolve"
-  ]
+  ],
+  "recovery": {
+    "recovered_by_tick": "guard-foreman-2026-11-04-19-21-17",
+    "verdict": "EMPTY_WAVE_CONFIRMED",
+    "workers_recovered": 0,
+    "merged": [],
+    "fixups_dispatched": [],
+    "stale_base_skips": 0,
+    "board_touching_refusals": 0,
+    "worktrees_reaped": 0,
+    "evidence": "workers=[] and worktrees=[] in this manifest, so there was no branch to gate, rebase or fix up. No ref and no worktree derives from base_sha 4c18fa8af7d2f757495b19fa4b9419e1b3f91554 that is not already reachable from main: the only refs created around this tick (verify/guard-20261104, fix/install-paths) are both 0 commits ahead of main and every registered worktree HEAD (30d6934, ce2a86c, 4b6f67f, 6cfd37f) is an ancestor of main with a clean tracked tree. The tick's own output had already landed before it stopped: fa220bc (this audit) and 4b6f67f (three QA rows closed on re-probed premises, QA-GUARD-QUARANTINE-1 filed) are both on origin/main at parity 0/0. Board truth re-verified: 100 complete / 2 pending / 1 blocked, no duplicate ids.",
+    "recovery_checks": [
+      "git worktree list — 4 worktrees, all clean, all ahead=0",
+      "git branch --no-merged main — gitreins, wt/GUARD-DF-008 preserved as evidence (not this wave's)",
+      "git rev-list --left-right --count origin/main...HEAD = 0 0",
+      "gitreins tasks.yaml — 6 in_progress / 5 pending records, every one of which names a board row already complete: stale GitReins residue, not dispatchable work, preserved for a reconciliation pass"
+    ]
+  },
+  "finished_at": "2026-11-04T19:26:00Z"
 }
