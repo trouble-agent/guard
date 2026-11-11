@@ -1,69 +1,23 @@
-# Guard — diagnostic trail (dogfood 2026-10-02)
+# Guard — diagnostic trail (dogfood)
 
-How the thing is built, why, what bit during real use, and the right way to
-use it. Read this before integrating guard anywhere.
+This file records durable real-use diagnostics and the current integration boundaries. Historical detailed runs remain in the dated `docs/dogfood/*findings.md` files and `.coding-hermes/dogfood-log.md`.
 
-## Architecture as experienced
+## Current run: 2026-11-11, HEAD 92c3e07178f2dd267a1512318029c06e50922c5e
 
-One Go module, three surfaces, one `Result`:
+The Go CLI, authenticated HTTP service, and Python connector all exercised successfully. The no-key CLI path returned the expected fail-closed block with rc=2. The local HTTP path returned health 200, unauthenticated /check 401, empty content 400, and an authenticated egress-disabled error verdict with HTTP 200. A fresh Python virtual environment installed `connectors/python` and exposed the `guard` console command; an unreachable endpoint returned rc=3.
 
-- `guard.go` — the Guard: normalise → classify → policy → route. The policy
-  layer (policy.go) owns thresholds (`BlockAt 0.85 / ReviewAt 0.50`) and the
-  quoted-downgrade rule; classification never decides the route alone.
-- `normalize.go` — decode base64/hex/URL/ROT13, strip zero-widths. ROT13 is
-  applied to EVERY message on purpose (normalize.go:152): a bare ROT13 payload
-  once scored 0.32 = delivered. The label noise that cost is FIXED
-  (GUARD-DF-002): `normalizations` = what ran (rot13 on ~everything),
-  `load_bearing_normalizations` = the decoded variant actually drove the
-  verdict — read the second for "why it was caught".
-- `jev.go` — the classifier: OpenRouter's `/api/alpha/decisions` (NOT
-  /chat/completions — a decisions model 400s there; that's "the usual first
-  mistake" per the code comment). Keys load env → ~/.hermes/.env →
-  9router-deploy/.env.shared, regex-extracted `sk-or-v1-…`, deduped, tried in
-  order on 401/402/429.
-- `cmd/guardd` — CLI + HTTP. Since GUARD-001 (c796feb): token required for
-  /check, loopback default bind, /healthz open. Since REVIEW-GUARD-001: the
-  token resolves GUARD_TOKEN env > `-tokenfile` (0600 enforced) > `-token`
-  (dev; warned on stderr — argv leaks via ps).
+The live provider path returned a benign deliver verdict in 0.84s and an injection quarantine verdict in 0.81s. Five warm deliver runs measured 406.0ms ±17.3ms, range 378.8–421.8ms. User+system CPU was about 21ms on the direct deliver run, so the Jev network round trip dominates. The documented usage range is tracked by GUARD-DF-016 because its precision no longer reproduces at this HEAD.
 
-## Errors hit during real use, and what each actually meant
+The install battery completed on fresh bunker agent 1867ca04 at bunker-mvp: fresh-install, lint, tests, CI, upgrade, resource, and error-path cells were green/OK; cells for Docker, compose, UI, shutdown, and corruption were N/A by repository shape; network disconnect was INFO because the suite has no network dependency. Collect destroyed the agent and post-collect info returned not_found. The host used shared network namespaces and had unrelated agents, so tenant-isolation coverage is not claimed.
 
-1. `KeyError: 'attack_class'` parsing fresh-box output → the verdict was a
-   fail-closed guard_error block, which omits attack_class. Meaning: the KEY
-   was dead, not the JSON shape. Lesson: check `errored` before trusting any
-   field of a block verdict.
-2. Fresh-box `http 401` on every classification while the dev box worked →
-   the key I transferred came from the FIRST file in the load order
-   (~/.hermes/.env), which was expired; guardd's own fallback to
-   .env.shared is why the dev box worked. Lesson: when replicating guardd's
-   environment elsewhere, replicate the FILE SET, not one variable — and the
-   "key rejected" message never tells you which key or which file failed.
-3. `TypeError: unexpected keyword argument 'base_url'` on the Python
-   connector → the parameter is `endpoint=` (guard_client.py:104), and the
-   default is the env var GUARD_ENDPOINT or :8768. The kwarg name differs
-   from the transport name; read the constructor before wiring.
-4. Fail-open probe returned deliver=False → not a bug in the probe: that is
-   the connector's actual outage contract today (GUARD-DF-001).
+## Durable integration rules
 
-## The right way to use guard (as of this run)
+- Bind consumers to `route` plus `constraints`, not `decision` alone.
+- Check `errored` before trusting classification-only fields such as `attack_class` or `score`.
+- Use `GUARD_TOKEN` or a 0600 token file for HTTP; `/check` requires `X-Operator-Token`.
+- `normalizations` describes transforms that ran; `load_bearing_normalizations` describes transforms that changed the verdict.
+- `duration_ms` and `cost_usd` include all classifier calls caused by the verdict; caught messages can cost about two calls.
+- The Python connector's failure exit code is 3; guardd's CLI fail-closed error exit code is 2.
+- The HTTP body limit is 8 MiB. The CLI stdin documentation/source anchor is under reconciliation in GUARD-DF-017; do not infer an oversized-input result from this run.
 
-- Bind consumers to `route` + `constraints`, exactly as docs/ADOPTION.md says
-  — but ALSO branch on `errored` if you use fail_mode='open', or an outage
-  silently strips capabilities (row GUARD-DF-001 tracks the fix).
-- Never trust `attack_class` near the threshold; README's own honest-
-  limitations section says the same and the dogfood battery agreed (benign
-  text labelled masquerade at 0.09–0.37 several times).
-- For the HTTP shape, always pass an explicit loopback host and supply the
-  token via GUARD_TOKEN env or a 0600 `-tokenfile` (never `-token` in prod —
-  ps leaks it; guardd warns).
-- Expect ~260–330 ms per verdict, essentially all of it the Jev decisions
-  API round trip; budget for it in synchronous paths.
-
-## Environment facts from the run
-
-- go 1.26.5 builds the module (go.mod says 1.24) with zero new deps; vet and
-  the full test suite are clean in ~5ms — the suite is fast enough for CI
-  (which is exactly what GUARD-002 asks for).
-- The live key used by dev-box runs lives in 9router-deploy/.env.shared
-  (OPENROUTER_API_KEY_FLEET); ~/.hermes/.env's OPENROUTER_API_KEY was expired
-  at run time.
+Evidence for the current run is in `/home/kara/.hermes/cache/scratch/guard-dogfood-20261111-223617/` while the dated integration report is `docs/dogfood/2026-11-11-run7-integration.md`.
