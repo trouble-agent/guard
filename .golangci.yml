@@ -1,0 +1,18 @@
+version: "2"
+
+linters:
+  default: standard
+  exclusions:
+    rules:
+      - path: _test.go
+        linters:
+          - errcheck
+      - path: cmd/guardd/main.go
+        linters:
+          - ineffassign
+
+run:
+  timeout: 5m
+  tests: true
+
+# ch:trace row=QA-GUARD-006 spec=Makefile:17-18,.github/workflows/ci.yml:21-38 wave=none:serial test=make lint doc=none evidence=make-lint-and-config-verify witness=none:local-verification verdict=none:pending-foreman-judge commit=none:worker-commit memory=none:not-written
