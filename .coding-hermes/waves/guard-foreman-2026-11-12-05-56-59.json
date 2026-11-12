@@ -14,24 +14,35 @@
       "worktree": "/home/kara/worktrees/guard-GUARD-DF-016",
       "branch": "wt/GUARD-DF-016",
       "commit": "d93f7a2b30f3d565f234c9755adcd5bbd68e0813",
-      "status": "merged",
-      "evidence": "/home/kara/.hermes/cache/scratch/guard-df-016-timing.txt"
+      "status": "already-landed",
+      "evidence": "/home/kara/.hermes/cache/scratch/guard-df-016-timing.txt",
+      "branch_gate": "PASS: make docs-check; make build; go vet ./...; go test ./... -count=1",
+      "verdict": ".gitreins/history/2026-11-12/40941aed/verdict.json: PASS, evaluated commit 6b7d1765c0854a9fc2983827ced311a9e7004db3"
     },
     {
       "task_id": "GUARD-DF-017",
       "worktree": "/home/kara/worktrees/guard-GUARD-DF-017",
       "branch": "wt/GUARD-DF-017",
       "commit": "f1786a2241cae64f49411fe4be96ed8a30a79f68",
-      "status": "merged",
-      "evidence": "none:ephemeral-probe-output (bounded CLI stdin probe re-run by foreman at merge)"
+      "status": "already-landed",
+      "evidence": "none:ephemeral-probe-output (bounded CLI stdin probe re-run by foreman at merge)",
+      "branch_gate": "PASS: make docs-check; make build; go vet ./...; go test ./... -count=1",
+      "verdict": ".gitreins/history/2026-11-12/1781996d/verdict.json: PASS, evaluated commit 1ab49bfa625fbf3f0a8ecf6a20a5abe40199c09b"
     }
   ],
-  "merge": "serial: 016 already at the published tip (already-up-to-date), 017 merged --no-ff into main as 6b7d176, then pushed",
+  "merge": "No merge performed: both worker tips are already ancestors of current main f41a0a9ba5643c2aad466a56ca9b9b839855c157; recovery verified the later merge, corrective-docs, and board-closeout commits on main.",
   "gates": {
-    "make_docs_check": "PASS",
-    "make_build": "PASS",
-    "go_vet": "PASS",
-    "go_test_count1": "PASS (guard 4.9s, client, cmd/guardd, data/corpus)"
+    "make_docs_check": "PASS on current main f41a0a9ba5643c2aad466a56ca9b9b839855c157",
+    "make_build": "PASS on current main f41a0a9ba5643c2aad466a56ca9b9b839855c157",
+    "go_vet": "PASS on current main f41a0a9ba5643c2aad466a56ca9b9b839855c157",
+    "go_test_count1": "PASS on current main f41a0a9ba5643c2aad466a56ca9b9b839855c157",
+    "boardctl_validate": "OK with 73 pre-existing warnings",
+    "exact_head_ci": "success for current origin/main f41a0a9ba5643c2aad466a56ca9b9b839855c157"
   },
-  "notes": "Two pending rows had empty depends_on and disjoint documentation scopes, so they composed one two-worker wave. Both reused pre-existing clean zero-commit worktrees that predated the tick and were inspected inactive before use, rather than being recreated. The foreman re-ran the 017 stdin probe after discarding the worker's toolchain-failed probe claim."
+  "recovery": {
+    "recovered_by_tick": "guard-foreman-2026-11-12-11-59-25",
+    "verdict": "RECOVERED_ALREADY_LANDED",
+    "evidence": "Both preserved branches were clean, had zero commits ahead of main, and were already contained by main. Their branch bases were stale relative to main, so no merge was attempted; direct gates passed on both branch tips and again on current main. Board rows GUARD-DF-016 and GUARD-DF-017 are complete with matching commit hashes and PASS verdict artifacts."
+  },
+  "finished_at": "2026-11-12T12:07:01Z"
 }
