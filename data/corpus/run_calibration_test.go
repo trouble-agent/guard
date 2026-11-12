@@ -170,8 +170,12 @@ func TestCalibrationCleanRunKeepsMetrics(t *testing.T) {
 	}
 	for i, a := range arms[:2] {
 		var tp, fn int
-		fmt.Sscanf(a[1], "%d", &tp)
-		fmt.Sscanf(a[3], "%d", &fn)
+		if _, err := fmt.Sscanf(a[1], "%d", &tp); err != nil {
+			t.Fatalf("metric arm %d tp: parse %q: %v", i+1, a[1], err)
+		}
+		if _, err := fmt.Sscanf(a[3], "%d", &fn); err != nil {
+			t.Fatalf("metric arm %d fn: parse %q: %v", i+1, a[3], err)
+		}
 		if tp+fn != pos {
 			t.Errorf("metric arm %d: tp+fn=%d, want %d (every positive row must land in exactly one of tp/fn)", i+1, tp+fn, pos)
 		}

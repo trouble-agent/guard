@@ -927,7 +927,10 @@ func TestServeOnBannerOnlyAfterBind(t *testing.T) {
 
 	_ = ln.Close()
 	select {
-	case <-errCh: // http.Serve returns the accept error from the closed listener.
+	case err := <-errCh: // http.Serve returns the accept error from the closed listener.
+		if err == nil {
+			t.Fatal("serveOn returned nil after its listener was closed")
+		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("serveOn did not return after its listener was closed")
 	}
