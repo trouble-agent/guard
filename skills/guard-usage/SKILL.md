@@ -161,6 +161,15 @@ Don't profile the Go code first — the network is the latency.
 - Malformed JSON to /check → HTTP 400 with a Go json parse message (readable).
 - A body over 8 MiB is truncated by `io.LimitReader` and surfaces as
   `400 bad request: unexpected EOF` — the 8 MiB limit is not named in the
-  error (GUARD-DF-008c). The CLI's stdin path (`io.ReadAll(os.Stdin)`,
-  `main.go:123`) has NO cap at all (GUARD-DF-008b).
+  error (`cmd/guardd/main.go:244`, GUARD-DF-008c). The CLI's stdin path uses
+  `io.ReadAll(os.Stdin)` (`cmd/guardd/main.go:169-173`) and has no explicit
+  input cap in the source (GUARD-DF-008b). This is an implementation statement,
+  not a multi-gigabyte measurement; a bounded finite-input probe does not measure
+  behavior at that scale (GUARD-DF-017).
 - go.mod declares go 1.26.9; newer toolchains are fine.
+
+ch:trace row=GUARD-DF-017 spec=skills/guard-usage/SKILL.md,cmd/guardd/main.go wave=guard-GUARD-DF-017 test=bounded-cli-stdin-probe+source-anchor-check doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-probe-output witness=none:single-worker verdict=pending:foreman-verification commit=pending:worker memory=none:docs-only
+
+STATUS: PASS
+TIER: T4 — source anchors and the bounded finite-input CLI probe were directly verified; no multi-gigabyte behavior is claimed.
+EVIDENCE: `printf 'bounded stdin probe\\n' | env -i HOME=/home/kara PATH="$PATH" GUARD_EGRESS_ENABLED=false go run ./cmd/guardd` completed with the expected finite-input fail-closed result (rc=1 from `go run`, with guardd's JSON rc=2 in the output); source/document checks verified `io.ReadAll(os.Stdin)`, `io.LimitReader(r.Body, 8<<20)`, and the corrected anchors.
