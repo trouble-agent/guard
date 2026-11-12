@@ -15,7 +15,7 @@ vet:
 	go vet ./...
 
 lint:
-	@if [ -f .golangci.yml ] || [ -f .golangci.yaml ]; then golangci-lint run; else echo "no golangci-lint config; skipping"; fi
+	golangci-lint run ./...
 
 release:
 	goreleaser release --snapshot --clean
