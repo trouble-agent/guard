@@ -216,3 +216,4 @@
 {"id":208,"event_type":"task_completed","task_id":"GUARD-DF-017","actor":"foreman","tick_id":null,"timestamp":"2026-11-12T06:34:59Z","detail":"{\"status\":\"complete\"}"}
 {"id":209,"event_type":"task_created","task_id":"QA-GUARD-006","actor":"foreman","tick_id":null,"timestamp":"2026-11-12T11:52:48Z","detail":"{\"id\":\"QA-GUARD-006\",\"status\":\"pending\"}"}
 {"id":210,"event_type":"task_created","task_id":"QA-GUARD-001-R2","actor":"foreman","tick_id":null,"timestamp":"2026-11-12T11:52:48Z","detail":"{\"id\":\"QA-GUARD-001-R2\",\"status\":\"pending\"}"}
+{"id":211,"event_type":"task_completed","task_id":"QA-GUARD-006","actor":"foreman","tick_id":null,"timestamp":"2026-11-12T19:45:26Z","detail":"{\"status\":\"complete\"}"}
