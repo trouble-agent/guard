@@ -185,7 +185,7 @@ declared in the Makefile's `.PHONY` list and runs as `make <target>`:
 | `build` | `go build -o bin/guardd ./cmd/guardd` (`client/` is a library package — only `cmd/guardd` produces a binary) | You want the CLI binary locally |
 | `test` | `go test ./...` | Before every commit |
 | `vet` | `go vet ./...` | Static analysis alongside the tests |
-| `lint` | `golangci-lint run` if a `.golangci.yml` / `.golangci.yaml` config is present; prints a skip notice otherwise | Style pass before opening a PR |
+| `lint` | `golangci-lint run ./...` using the repository's pinned `.golangci.yml` configuration | Style pass before opening a PR |
 | `release` | `goreleaser release --snapshot --clean` | Building a local snapshot release artifact (no upload) |
 | `docs-check` | Replays this README's documented commands against the real binary (see below) | You touched the README, the guard's documented behavior, or the Go version claim |
 | `print-go-directive` | Prints the Go directive version the guard is built against | Consumed by `docs-check`; also handy for checking a version claim by hand |
