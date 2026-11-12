@@ -389,7 +389,8 @@ func warnTokenProvenance(prov tokenProvenance, argvToken string) {
 // default bands: an operator tightening a source would otherwise run with the
 // looser table while believing the override is live.
 func resolvePolicy(envPath, flagPath string) (guard.Policy, policyProvenance, error) {
-	path, prov := "", policyDefault
+	path := ""
+	var prov policyProvenance
 	switch {
 	case flagPath != "":
 		path, prov = flagPath, policyFromFlag
@@ -405,6 +406,7 @@ func resolvePolicy(envPath, flagPath string) (guard.Policy, policyProvenance, er
 	return pol, prov, nil
 }
 
+// ch:trace row=QA-GUARD-001-R2 spec=.coding-hermes/board/tasks.jsonl#QA-GUARD-001-R2 wave=none:serial-tick test=golangci-lint-run-./...+go-test-./...-count=1 evidence=none:local-command-output-not-durable witness=none:local-command-only verdict=none:pending-foreman-judge commit=none:in-this-commit memory=none:not-written
 // loadPolicyFile reads a policy file: JSON matching guard.Policy
 // (README "Policy files" documents the shape). Validation:
 //
