@@ -1,0 +1,35 @@
+{
+  "tick_id": "guard-foreman-2026-11-12-19-27-50",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "base_sha": "bf8f68961e5ba41dc70c9a6ec48dbcd4d0a2b723",
+  "published_ref": "origin/main",
+  "mode": "verification-only",
+  "wave_budget": 1,
+  "selected_row": "QA-GUARD-006",
+  "eligible_independent": 2,
+  "workers": [],
+  "dispatch": [],
+  "reason": "Highest-priority pending row was already implemented on published HEAD; no duplicate worker dispatch.",
+  "pending_rows": ["QA-GUARD-006", "QA-GUARD-001-R2"],
+  "blocked_rows": ["REL-GUARD-003"],
+  "verification": {
+    "direct_gates": "PASS: make build; make vet; go test ./... -count=1; make lint; make docs-check",
+    "mutation_control": "PASS: clean archived copy make lint exits 2 on an injected unused function, then returns 0 after removal",
+    "ci_surface": "PASS: .github/workflows/ci.yml lint action v2.15",
+    "readme": "PASS: README.md:188 documents unconditional golangci-lint run ./... with pinned .golangci.yml",
+    "gitreins": {
+      "task_id": "QA-GUARD-006-RV",
+      "history_run": "bf158e1b",
+      "verdict": "PASS",
+      "evaluated_commit": "bf8f68961e5ba41dc70c9a6ec48dbcd4d0a2b723",
+      "artifact": ".gitreins/history/2026-11-12/bf158e1b/verdict.json",
+      "artifact_sha256": "ab0e264d75d649065d81b616c9be3a81c217f9ee90a3acbedfbd277208251220",
+      "tier1": "PASS",
+      "tier2": "PASS"
+    },
+    "exact_head_ci": "PASS: run 43117653561 success at candidate implementation ancestry; latest three runs all success, current HEAD bf8f689 included"
+  },
+  "status": "finished",
+  "finished_at": "2026-11-12T20:00:00Z"
+}
