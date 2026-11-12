@@ -174,8 +174,8 @@ first — the network is the latency.
   behavior at that scale (GUARD-DF-017).
 - go.mod declares go 1.26.9; newer toolchains are fine.
 
-ch:trace row=GUARD-DF-017 spec=skills/guard-usage/SKILL.md,cmd/guardd/main.go wave=guard-GUARD-DF-017 test=bounded-cli-stdin-probe+source-anchor-check doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-probe-output witness=none:single-worker verdict=pending:foreman-verification commit=pending:worker memory=none:docs-only
+ch:trace row=GUARD-DF-017 spec=skills/guard-usage/SKILL.md,cmd/guardd/main.go wave=guard-GUARD-DF-017 test=bounded-cli-stdin-probe+source-anchor-check doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-probe-output witness=none:single-worker verdict=none:docs-only commit=none:worker-commit memory=none:pending
 
 STATUS: PASS
-TIER: T4 — source anchors and the bounded finite-input CLI probe were directly verified; no multi-gigabyte behavior is claimed.
-EVIDENCE: `printf 'bounded stdin probe\\n' | env -i HOME=/home/kara PATH="$PATH" GUARD_EGRESS_ENABLED=false go run ./cmd/guardd` completed with the expected finite-input fail-closed result (rc=1 from `go run`, with guardd's JSON rc=2 in the output); source/document checks verified `io.ReadAll(os.Stdin)`, `io.LimitReader(r.Body, 8<<20)`, and the corrected anchors.
+TIER: T4 — source anchors and the bounded finite-input CLI probe were directly verified by the foreman; no multi-gigabyte behavior is claimed.
+EVIDENCE: `printf 'The quarterly report is ready for review.\n' | timeout 120 ./bin/guardd` on HEAD 6b7d176 returned rc=0 with `{"decision":"allow","route":"deliver","provider":"jev","duration_ms":401}` on a finite 40-byte stdin, and `grep -n` confirmed `io.ReadAll(os.Stdin)` at `cmd/guardd/main.go:169` plus `io.LimitReader(r.Body, 8<<20)` at `cmd/guardd/main.go:244`. The earlier `env -i ... go run` probe was discarded: it never reached guardd (go1.26.9 toolchain download failed under the empty HOME), so it is not evidence for anything.

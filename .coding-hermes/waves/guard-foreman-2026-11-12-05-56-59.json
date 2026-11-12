@@ -1,0 +1,37 @@
+{
+  "tick_id": "guard-foreman-2026-11-12-05-56-59",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "base_sha": "4c88304289d0172e2c4c52ead60562aed6730907",
+  "published_ref": "origin/main",
+  "mode": "wave",
+  "wave_budget": 12,
+  "eligible_independent": 2,
+  "dispatch_order": "manifest written before worker 017 launch; worker 016 had already been started from a pre-staged launcher",
+  "workers": [
+    {
+      "task_id": "GUARD-DF-016",
+      "worktree": "/home/kara/worktrees/guard-GUARD-DF-016",
+      "branch": "wt/GUARD-DF-016",
+      "commit": "d93f7a2b30f3d565f234c9755adcd5bbd68e0813",
+      "status": "merged",
+      "evidence": "/home/kara/.hermes/cache/scratch/guard-df-016-timing.txt"
+    },
+    {
+      "task_id": "GUARD-DF-017",
+      "worktree": "/home/kara/worktrees/guard-GUARD-DF-017",
+      "branch": "wt/GUARD-DF-017",
+      "commit": "f1786a2241cae64f49411fe4be96ed8a30a79f68",
+      "status": "merged",
+      "evidence": "none:ephemeral-probe-output (bounded CLI stdin probe re-run by foreman at merge)"
+    }
+  ],
+  "merge": "serial: 016 already at the published tip (already-up-to-date), 017 merged --no-ff into main as 6b7d176, then pushed",
+  "gates": {
+    "make_docs_check": "PASS",
+    "make_build": "PASS",
+    "go_vet": "PASS",
+    "go_test_count1": "PASS (guard 4.9s, client, cmd/guardd, data/corpus)"
+  },
+  "notes": "Two pending rows had empty depends_on and disjoint documentation scopes, so they composed one two-worker wave. Both reused pre-existing clean zero-commit worktrees that predated the tick and were inspected inactive before use, rather than being recreated. The foreman re-ran the 017 stdin probe after discarding the worker's toolchain-failed probe claim."
+}
