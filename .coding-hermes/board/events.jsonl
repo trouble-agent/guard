@@ -232,3 +232,5 @@
 {"id":224,"timestamp":"2026-11-14T09:27:41Z","event_type":"task_completed","task_id":"REL-GUARD-008","actor":"foreman","detail":"{\"status\":\"complete\"}"}
 {"id":225,"timestamp":"2026-11-14T09:27:41Z","event_type":"task_completed","task_id":"REL-GUARD-009","actor":"foreman","detail":"{\"status\":\"complete\"}"}
 {"id":226,"timestamp":"2026-11-14T18:15:17Z","event_type":"task_created","task_id":"QA-GUARD-007","actor":"qa","detail":"{\"id\":\"QA-GUARD-007\",\"status\":\"pending\",\"tick\":\"guard-qa-2026-11-14-17-37-48\",\"note\":\"paired audit event backfilled by verification-only refire of the same tick; row filed at 39ef920\"}"}
+{"id":227,"timestamp":"2026-11-14T23:54:00Z","event_type":"task_created","task_id":"GUARD-DF-018","actor":"foreman","detail":"{\"id\":\"GUARD-DF-018\",\"status\":\"pending\"}"}
+{"id":228,"timestamp":"2026-11-14T23:54:21Z","event_type":"task_created","task_id":"GUARD-DF-019","actor":"foreman","detail":"{\"id\":\"GUARD-DF-019\",\"status\":\"pending\"}"}
