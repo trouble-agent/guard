@@ -38,6 +38,8 @@ changes.
 - guardd CLI exits rc=2 on guard_error (no key configured, egress disabled,
   classifier failure) so exit-status-keying callers can distinguish
   "classified, blocked" from "never classified" (QA-GUARD-002).
+- Reported billing now includes the attribution classifier call's cost and
+  latency (GUARD-DF-006).
 
 ### Fixed
 
@@ -62,6 +64,10 @@ changes.
   including the v0.1.0 Go client's missing auth header as an upgrade floor.
   Fresh-agent install and live consumer workflows verified SHIPPABLE by the
   dogfood lane (run 6, 2026-10-29).
+- golangci-lint is enforced through make lint and CI, with errcheck and
+  ineffassign fixes making the gate green (QA-GUARD-006; QA-GUARD-001-R2).
+
+ch:trace row=REL-GUARD-006 spec=CHANGELOG.md#[0.2.0] wave=none:serial-worker test=make-docs-check doc=CHANGELOG.md prompt=none:ephemeral-brief evidence=none:worker-acceptance-output witness=none:ephemeral-acceptance verdict=none:foreman-judge commit=none:foreman-commit memory=none:not-written
 
 [Unreleased]: https://github.com/trouble-agent/guard/compare/v0.1.0...HEAD
 [0.2.0]: https://github.com/trouble-agent/guard/compare/v0.1.0...v0.2.0
