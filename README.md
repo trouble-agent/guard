@@ -9,7 +9,7 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
 
 **Prerequisites**
 
-- **Go ≥ 1.26.9** to build (the repo itself declares Go 1.26.9 in `go.mod`).
+- **Go ≥ 1.26.11** to build (the repo itself declares Go 1.26.11 in `go.mod`).
 - **`jq` is required by `make docs-check`** (the README-drift gate shells out
   to it to compare verdict JSON). Nothing else in the repo needs it — build
   and `go test` run on Go alone. The target probes for jq first and, when it
