@@ -40,6 +40,8 @@ changes.
   "classified, blocked" from "never classified" (QA-GUARD-002).
 - Reported billing now includes the attribution classifier call's cost and
   latency (GUARD-DF-006).
+- `make docs-check` requires `jq`; when `jq` is absent, it emits the install
+  instruction "Install jq and re-run (see README Prerequisites, GUARD-DF-004)."
 
 ### Fixed
 
