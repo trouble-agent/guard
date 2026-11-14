@@ -1,0 +1,27 @@
+{
+  "tick": "guard-foreman-2026-11-14-09-03-05",
+  "project": "guard",
+  "base": "323a342f415563a1d114202441bafac02d062dfa",
+  "budget": 12,
+  "rows": [
+    {
+      "task_id": "REL-GUARD-008",
+      "worktree": "/home/kara/worktrees/guard-REL-GUARD-008",
+      "branch": "wt/REL-GUARD-008",
+      "base_sha": "323a342f415563a1d114202441bafac02d062dfa",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "depends_on": []
+    },
+    {
+      "task_id": "REL-GUARD-009",
+      "worktree": "/home/kara/worktrees/guard-REL-GUARD-009",
+      "branch": "wt/REL-GUARD-009",
+      "base_sha": "323a342f415563a1d114202441bafac02d062dfa",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "depends_on": []
+    }
+  ],
+  "status": "staged"
+}
