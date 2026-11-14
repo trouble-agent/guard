@@ -11,7 +11,7 @@ One Go core, three consumption shapes, one `Result` contract. Route on
 
 ## Prerequisites
 
-- Go ≥1.26.9 to build (`go build ./...` — go.mod declares `go 1.26.9`); zero external deps.
+- Go ≥1.26.11 to build (`go build ./...` — go.mod declares `go 1.26.11`); zero external deps.
   A newer toolchain downloads itself from the `go` directive's toolchain floor.
 - An OpenRouter API key for ANY classification (Jev decisions model at
   `openrouter.ai/api/alpha/decisions`). Key load order:
@@ -172,7 +172,7 @@ first — the network is the latency.
   input cap in the source (GUARD-DF-008b). This is an implementation statement,
   not a multi-gigabyte measurement; a bounded finite-input probe does not measure
   behavior at that scale (GUARD-DF-017).
-- go.mod declares go 1.26.9; newer toolchains are fine.
+- go.mod declares go 1.26.11; newer toolchains are fine.
 
 ch:trace row=GUARD-DF-017 spec=skills/guard-usage/SKILL.md,cmd/guardd/main.go wave=guard-GUARD-DF-017 test=bounded-cli-stdin-probe+source-anchor-check doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-probe-output witness=none:single-worker verdict=none:docs-only commit=none:worker-commit memory=none:pending
 
