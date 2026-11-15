@@ -93,8 +93,10 @@ reveals nothing about the later stages:
   normal text path around 32,000 bytes; it prevents provider-side suffix
   dropping from becoming a silent allow. The returned Result always exposes
   `bytes_seen`, `classified_bytes`, and `truncated`. For a rejected long input,
-  `bytes_seen` is the raw input size, `classified_bytes` is `0`, and
-  `truncated` is `true` with `errored: true`; connectors must not deliver it.
+  `bytes_seen` is the raw input size for raw overflow (or the complete
+  normalized-state size when normalization overflows), `classified_bytes` is
+  `0`, and `truncated` is `true` with `errored: true`; connectors must not
+  deliver it.
 - **Classification timeout**: **120s** per request via
   `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:264). The CLI
   form uses the same 120s budget (main.go:179), so CLI and HTTP verdicts agree

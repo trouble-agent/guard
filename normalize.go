@@ -60,9 +60,9 @@ func normalizationScanInput(in string) string {
 }
 
 // NormalizeAll runs the whole chain and returns the text to classify plus the
-// names of the transforms that actually produced something. It preserves the
-// historical bounded output contract; callers that need to distinguish a bound
-// hit use normalizeAllBounded directly.
+// names of the transforms that actually produced something. The returned text
+// is complete even when it exceeds maxExpanded; callers that need to enforce
+// the bound use normalizeAllBounded's truncation signal.
 func NormalizeAll(in string, chain []Normalizer) (string, []string) {
 	out, applied, _ := normalizeAllBounded(in, chain, maxExpanded)
 	return out, applied
@@ -100,7 +100,7 @@ func normalizeAllBounded(in string, chain []Normalizer, limit int) (string, []st
 		if s := stripInvisible(scanInput); s != scanInput {
 			joined := in + "\n---\n" + s
 			if len(joined) > limit {
-				return joined[:limit], append(applied, "invisible-strip"), true
+				return joined, append(applied, "invisible-strip"), true
 			}
 			return joined, append(applied, "invisible-strip"), false
 		}
@@ -109,7 +109,7 @@ func normalizeAllBounded(in string, chain []Normalizer, limit int) (string, []st
 
 	joined := in + "\n---\n" + strings.Join(parts, "\n---\n")
 	if len(joined) > limit {
-		return joined[:limit], applied, true
+		return joined, applied, true
 	}
 	return joined, applied, false
 }

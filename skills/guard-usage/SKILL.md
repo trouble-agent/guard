@@ -101,13 +101,15 @@ if not v.deliver: ...    # quarantine/review
 - **Long content is rejected, never silently judged as a prefix.** The guard
   refuses raw input over 20,000 UTF-8 bytes, or normalized classifier state
   over that budget, before provider submission. The error verdict has
-  `errored: true`, `truncated: true`, `bytes_seen` set to the raw input size,
-  and `classified_bytes: 0`; route it as an error and do not deliver it.
+  `errored: true`, `truncated: true`, `bytes_seen` set to the raw input size
+  (or the complete normalized-state size when normalization overflows), and
+  `classified_bytes: 0`; route it as an error and do not deliver it.
   `bytes_seen`, `classified_bytes`, and `truncated` are present on every Go
   Result, including CLI, HTTP, Go-client, and Python-connector responses.
-  The 20,000-byte boundary is intentionally stricter than Jev's documented
-  normal text path around 32,000 bytes so provider-side suffix dropping cannot
-  become a silent allow.
+  For raw overflow `bytes_seen` is the raw input size; for normalized overflow
+  it is the complete normalized-state size. The 20,000-byte boundary is
+  intentionally stricter than Jev's documented normal text path around 32,000
+  bytes so provider-side suffix dropping cannot become a silent allow.
 - Deterministic normalization scans only a 128 KiB prefix plus a 16 KiB suffix.
   Encodings in the omitted middle are not claimed to be detected; all default
   transforms remain enabled within that window.
