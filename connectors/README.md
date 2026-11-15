@@ -88,7 +88,7 @@ reveals nothing about the later stages:
   on timing too.
 
 **`/healthz`** (and the identical conventional `/health` alias) — no auth, always `200` (GET and other methods are accepted; the
-handler does not restrict the method; `cmd/guardd/main.go:224-234`) with a JSON
+handler does not restrict the method; `cmd/guardd/main.go:241-251`) with a JSON
 body `{"status":"ok","egress_enabled":<bool>}`, so liveness probes work without
 the shared secret. It never classifies anything. The `egress_enabled` field
 mirrors the `GUARD_EGRESS_ENABLED` startup flag.
@@ -124,16 +124,15 @@ environment variable ([`connectors/python/guard_client.py:180`](python/guard_cli
 
 **guardd's own token precedence (serving side)** — when `-serve` starts, it
 resolves the secret once at startup, env > tokenfile > argv
-([`cmd/guardd/main.go:147`](../cmd/guardd/main.go),
-[`cmd/guardd/main.go:333`](../cmd/guardd/main.go)):
+([`cmd/guardd/main.go:350-366`](../cmd/guardd/main.go)):
 
 1. `GUARD_TOKEN` environment variable — preferred; it wins even when a
    tokenfile is staged, so an operator can override ad hoc without editing
-   the file ([`cmd/guardd/main.go:319-323`](../cmd/guardd/main.go)).
+   the file ([`cmd/guardd/main.go:352-353`](../cmd/guardd/main.go)).
 2. `-tokenfile <path>` — file contents, surrounding whitespace trimmed. The
    file must be owner-only (`0400` or `0600`); group- or world-accessible
    modes are refused at startup
-   ([`cmd/guardd/main.go:356-369`](../cmd/guardd/main.go)).
+   ([`cmd/guardd/main.go:373-387`](../cmd/guardd/main.go)).
 3. `-token <secret>` — works, but guardd warns loudly on stderr: an argv
    secret is world-readable via `ps` and `/proc/<pid>/cmdline`.
 

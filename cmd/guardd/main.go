@@ -124,6 +124,18 @@ func classifierEgressEnabled(value string) bool {
 	}
 }
 
+// newGuard is the shipped composition root for both stdin/CLI and HTTP modes.
+// Construction performs the advisory override-key check once; Check retains the
+// same Warnf so a construction warning is never repeated per request.
+func newGuard(classifier guard.Classifier, pol guard.Policy, sources ...string) *guard.Guard {
+	warnf := func(format string, args ...any) {
+		log.Printf("guardd: "+format, args...)
+	}
+	g := &guard.Guard{Classifier: classifier, Policy: pol, Warnf: warnf}
+	guard.WarnUnknownOverrideKeys(pol, warnf, sources...)
+	return g
+}
+
 func main() {
 	var (
 		vers      = flag.Bool("version", false, "print version and exit")
@@ -155,7 +167,12 @@ func main() {
 	}
 	warnPolicyProvenance(policyProv, pol)
 	pol.FailClosed = *fail
-	g := &guard.Guard{Classifier: classifier, Policy: pol}
+	var g *guard.Guard
+	if *serve != "" {
+		g = newGuard(classifier, pol)
+	} else {
+		g = newGuard(classifier, pol, *source)
+	}
 
 	if *serve != "" {
 		resolved, prov, err := resolveToken(os.Getenv(GuardTokenEnv), *tokenfile, *token)
