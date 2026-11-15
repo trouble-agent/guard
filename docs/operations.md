@@ -129,6 +129,7 @@ GUARD_POLICY=/etc/guard/policy.json GUARD_TOKEN='…' \
 - `WARNING: classifier egress is DISABLED; ...` confirms that classification is disabled and `/check` will return an in-band error result. The enabled warning explicitly states that submitted content can leave the host.
 - `guardd listening on ...` is emitted only after the TCP bind succeeds. If the address is already in use, expect a `serve: listen tcp ...` failure and no listening banner; check for another process or choose a free port.
 - Authentication refusals return 401 to the caller. The handler does not log each refusal in `main.go`; use an upstream access log, if configured, for request-level auditing. Do not infer that a refusal was logged by guardd itself.
+- A startup line containing `guardd: GUARD: policy ... override key(s) ["..."] not selected by any source seen so far` means an override key is unused and therefore inert. Override keys must be the exact `Input.Source` values the caller sends (for example, `webhook`), never the policy ID; correct the policy key or the request's `source` field and restart. This advisory warning does not change thresholds, verdicts, or fail-closed behavior, and the same key is not repeated on every request.
 - Classification outcomes are returned in each `/check` JSON `Result`, not as a documented per-request guardd log line. Inspect the response fields (`errored`, `decision`, `route`, `reason`, and policy metadata) when diagnosing an outcome.
 
 ## 9. Bounded recovery and restart

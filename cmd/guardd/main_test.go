@@ -817,6 +817,53 @@ func (c quotedClassifier) Classify(ctx context.Context, content string) (guard.S
 // The provenance line lands on stderr with the table id and override count,
 // so a mispointed -policy is visible in unit/service logs next to the token
 // provenance.
+// ch:trace row=GUARD-DF-022 spec=cmd/guardd/main.go#guard-construction wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#GUARD-DF-022 test=cmd/guardd/main_test.go::TestGuarddCompositionWarnsUnknownOverridesOnce doc=docs/operations.md evidence=none:worker-branch-only witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
+func TestGuarddCompositionWarnsUnknownOverridesOnce(t *testing.T) {
+	policy := guard.DefaultPolicy()
+	policy.ID = "guardd-composition-typo"
+	policy.Overrides = map[string]guard.Override{"webhook": {BlockAt: 0.55}}
+	cliOutput := captureLog(t, func() {
+		g := newGuard(scoreClassifier{score: 0.60}, policy, "github_pr")
+		g.Check(context.Background(), guard.Input{Source: "github_pr", Content: "payload"})
+	})
+	if !strings.Contains(cliOutput, "[webhook]") {
+		t.Fatalf("CLI composition did not name the unmatched override: %q", cliOutput)
+	}
+	if got := strings.Count(cliOutput, "override key(s)"); got != 1 {
+		t.Fatalf("CLI composition warned %d times, want once: %q", got, cliOutput)
+	}
+
+	matchedPolicy := policy
+	matchedPolicy.ID = "guardd-composition-matched"
+	matchedOutput := captureLog(t, func() {
+		g := newGuard(scoreClassifier{score: 0.60}, matchedPolicy, "webhook")
+		g.Check(context.Background(), guard.Input{Source: "webhook", Content: "payload"})
+	})
+	if strings.Contains(matchedOutput, "override key(s)") {
+		t.Fatalf("matching CLI source unexpectedly warned: %q", matchedOutput)
+	}
+
+	servePolicy := policy
+	servePolicy.ID = "guardd-composition-serve"
+	serveOutput := captureLog(t, func() {
+		g := newGuard(scoreClassifier{score: 0.60}, servePolicy)
+		srv := httptest.NewServer(newHandler(g, "tok", false))
+		defer srv.Close()
+		if got := postCheck(t, srv.URL, "tok"); got != http.StatusOK {
+			t.Fatalf("first served request status = %d, want 200", got)
+		}
+		if got := postCheck(t, srv.URL, "tok"); got != http.StatusOK {
+			t.Fatalf("second served request status = %d, want 200", got)
+		}
+	})
+	if !strings.Contains(serveOutput, "[webhook]") {
+		t.Fatalf("serve composition warning did not name the typo key: %q", serveOutput)
+	}
+	if got := strings.Count(serveOutput, "override key(s)"); got != 1 {
+		t.Fatalf("serve composition warned %d times across construction and two requests, want once: %q", got, serveOutput)
+	}
+}
+
 func TestWarnPolicyProvenanceLines(t *testing.T) {
 	cases := []struct {
 		prov policyProvenance
