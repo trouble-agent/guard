@@ -98,6 +98,10 @@ if not v.deliver: ...    # quarantine/review
   payload was encoded". "Caught by an encoding" reads from
   `load_bearing_normalizations` (populated only when the decoded variant
   changed the verdict — GUARD-DF-002 fix).
+- Oversized inputs keep their original content for classification, while
+  deterministic normalization scans only a 128 KiB prefix plus a 16 KiB suffix.
+  Encodings in the omitted middle are not claimed to be detected; all default
+  transforms remain enabled within that window.
 - `attack_class` is noisy near the threshold — benign text often carries
   masquerade at 0.1–0.4. Trust `route`, not the label, at the margin.
 - **`duration_ms` and `cost_usd` cover ALL classifier calls the verdict

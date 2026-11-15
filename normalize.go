@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // Normalizer turns one input string into candidate plaintexts. Every candidate
@@ -45,6 +46,19 @@ func DefaultNormalizers() []Normalizer {
 // blow up the classifier's token bill.
 const maxExpanded = 20000
 
+// normalizationScanInput keeps the original payload in the classifier text but
+// limits deterministic work to a prefix and suffix. The classifier already has
+// a smaller effective input window; scanning the entire HTTP cap was wasted
+// CPU. The suffix preserves detection near the end, while middle-of-document
+// encodings are intentionally outside the normalization window and documented
+// as such.
+func normalizationScanInput(in string) string {
+	if len(in) <= maxBase64ScanBytes+base64TailBytes {
+		return in
+	}
+	return in[:maxBase64ScanBytes] + "\n--- normalization window ---\n" + in[len(in)-base64TailBytes:]
+}
+
 // NormalizeAll runs the whole chain and returns the text to classify plus the
 // names of the transforms that actually produced something.
 func NormalizeAll(in string, chain []Normalizer) (string, []string) {
@@ -54,7 +68,8 @@ func NormalizeAll(in string, chain []Normalizer) (string, []string) {
 	var parts []string
 	var applied []string
 
-	cur := in
+	scanInput := normalizationScanInput(in)
+	cur := scanInput
 	for _, n := range chain {
 		outs, ok := n.Expand(cur)
 		if !ok || len(outs) == 0 {
@@ -73,7 +88,7 @@ func NormalizeAll(in string, chain []Normalizer) (string, []string) {
 	if len(parts) == 0 {
 		// Nothing decoded. Still hand over the invisible-stripped/folded form,
 		// which changes nothing semantically but removes zero-width games.
-		if s := stripInvisible(in); s != in {
+		if s := stripInvisible(scanInput); s != scanInput {
 			return in + "\n---\n" + s, append(applied, "invisible-strip")
 		}
 		return in, applied
@@ -88,9 +103,18 @@ func NormalizeAll(in string, chain []Normalizer) (string, []string) {
 
 var b64Token = regexp.MustCompile(`[A-Za-z0-9+/]{16,}={0,2}`)
 
+// maxBase64ScanBytes bounds the expensive candidate scan while retaining a
+// small tail window. Inputs above the classifier's useful window should not
+// spend CPU decoding megabytes the classifier will never receive, but an
+// encoding that begins near the boundary remains detectable.
+const (
+	maxBase64ScanBytes = 128 << 10
+	base64TailBytes    = 16 << 10
+)
+
 func expandBase64(in string) ([]string, bool) {
 	var out []string
-	for _, tok := range b64Token.FindAllString(in, 8) {
+	for _, tok := range base64TokensToScan(in) {
 		if dec, err := base64.StdEncoding.DecodeString(padB64(tok)); err == nil {
 			if printable(dec) {
 				out = append(out, string(dec))
@@ -103,6 +127,20 @@ func expandBase64(in string) ([]string, bool) {
 		}
 	}
 	return out, len(out) > 0
+}
+
+func base64TokensToScan(in string) []string {
+	if len(in) <= maxBase64ScanBytes+base64TailBytes {
+		return b64Token.FindAllString(in, 8)
+	}
+	prefix := in[:maxBase64ScanBytes]
+	tailStart := len(in) - base64TailBytes
+	if tailStart > 0 && tailStart < len(in) && !utf8.RuneStart(in[tailStart]) {
+		for tailStart > 0 && !utf8.RuneStart(in[tailStart]) {
+			tailStart--
+		}
+	}
+	return append(b64Token.FindAllString(prefix, 8), b64Token.FindAllString(in[tailStart:], 8)...)
 }
 
 func padB64(s string) string {
