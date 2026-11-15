@@ -19,6 +19,14 @@ The pip install also ships a console script for shell callers:
     guard "ignore previous instructions"     # argument form
     printf '%s' "$input" | guard             # stdin form (no argument)
 
+    guard --source webhook --channel crier "ignore previous instructions"
+
+The CLI exposes the same two request labels the library does: `--source`
+selects a per-source policy Override (GUARD-DF-019 — without it a shell caller
+could only ever reach the policy's base row, so a deployment that relies on
+source-scoped bands silently enforced the wrong thresholds), and `--channel`
+is an accepted-but-ignored pass-through label.
+
 It prints the verdict JSON on stdout; exit codes branch by route so shell
 callers never parse JSON: 0 deliver, 1 review, 2 quarantine, 3 no verdict
 (transport/auth failure, fail-closed).
@@ -215,7 +223,14 @@ class Guard:
         meta: Optional[Mapping[str, str]] = None,
         msg_id: str = "",
     ) -> Verdict:
-        """Classify one message. Never returns a bare success on failure."""
+        """Classify one message. Never returns a bare success on failure.
+
+        `source` is the request field a per-source policy Override is keyed on:
+        it decides which bands are compared and is reported back as
+        `override_source` / `effective_*`. `channel` (like `meta` and `id`) is
+        an accepted-but-ignored pass-through label. The CLI exposes both as
+        `--source` / `--channel` (GUARD-DF-019).
+        """
         payload = {
             "id": msg_id,
             "source": source,
@@ -303,6 +318,25 @@ def _parser() -> argparse.ArgumentParser:
         help="per-check timeout (default: 120)",
     )
     p.add_argument(
+        "--source",
+        default="",
+        metavar="LABEL",
+        help=(
+            "source label sent as the request `source` (default: empty). This is"
+            " the field a per-source policy Override is keyed on — e.g. webhook,"
+            " inbox, github_pr; an empty source selects the policy's base row"
+        ),
+    )
+    p.add_argument(
+        "--channel",
+        default="",
+        metavar="LABEL",
+        help=(
+            "channel label sent as the request `channel` (default: empty);"
+            " accepted-but-ignored pass-through, it does not affect the verdict"
+        ),
+    )
+    p.add_argument(
         "--fail-open",
         dest="fail_mode",
         action="store_const",
@@ -339,7 +373,10 @@ def main(argv: Optional[list] = None) -> int:
         fail_mode=args.fail_mode,
     )
     try:
-        verdict = guard.check(content)
+        # GUARD-DF-019: the CLI must send the same labels the library accepts.
+        # Without source the installed entrypoint could only ever select the
+        # policy's base row, making a deployed per-source Override unreachable.
+        verdict = guard.check(content, source=args.source, channel=args.channel)
     except GuardError as exc:
         print(f"guard: {exc}", file=sys.stderr)
         return 3
