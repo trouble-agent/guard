@@ -218,7 +218,9 @@ that architecture:
    zero-width characters, fold homoglyphs. The parser can't be injected because
    there is no prompt. This layer exists because it was *measured* to matter: a
    bare ROT13 payload scored 0.32 (delivered) until normalisation surfaced the
-   plaintext.
+   plaintext. For oversized input, deterministic scans use a 128 KiB prefix plus
+   a 16 KiB suffix window; the original content remains classifier input, but
+   encodings in the omitted middle are not claimed to be detected.
 2. **A typed classifier** — Jev, a non-generative "System One" model. It returns
    calibrated probabilities instead of prose, so it cannot be talked into
    *emitting* attacker text, only misclassified. It is also a different model
