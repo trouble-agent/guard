@@ -68,6 +68,13 @@ A successful liveness response establishes that the HTTP handler is responding. 
 
 `/check` accepts `POST` and requires the configured token in `X-Operator-Token`. Authentication is checked before method or body validation, so an unauthenticated request receives 401 even if its method or JSON is otherwise invalid.
 
+The request body is a JSON object with this contract:
+
+- `content` is required and must be non-empty.
+- `source` is optional. When present, its value is matched against the policy's `overrides` keys; for example, `source: "webhook"` selects the `webhook` entry in `Policy.Overrides`.
+- `id`, `channel`, and `meta` are optional input context. They do not select a policy override; `source` does.
+- Unknown JSON fields are silently ignored by the decoder. They do not affect classification, so a request with an unrecognized field falls back to the base policy behavior unless its valid `source` selects an override.
+
 | Request condition | Expected response |
 | --- | --- |
 | Missing or invalid `X-Operator-Token` | `401 Unauthorized` |
@@ -76,17 +83,30 @@ A successful liveness response establishes that the HTTP handler is responding. 
 | Valid token and `POST`, empty or omitted `content` | `400 Bad Request` |
 | Valid token and `POST`, non-empty `content` | `200 OK` with a JSON `Result` body |
 
-Example:
+The README [Quick Start](../README.md#quick-start) fixture defines base bands of `block_at: 0.85` and `review_at: 0.50`, plus a `webhook` override with `block_at: 0.55` and `review_at: 0.40`. With that policy loaded, these requests demonstrate base selection versus the source-selected override (the `jq` projection keeps the relevant response fields visible):
 
 ```sh
-curl -sS -i -X POST \
+curl -sS -X POST \
   -H 'X-Operator-Token: replace-with-a-long-random-secret' \
   -H 'Content-Type: application/json' \
   -d '{"content":"message to classify"}' \
-  http://127.0.0.1:8768/check
+  http://127.0.0.1:8768/check | jq '{effective_block_at, override_source}'
+# {"effective_block_at":0.85,"override_source":null}
+
+curl -sS -X POST \
+  -H 'X-Operator-Token: replace-with-a-long-random-secret' \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"message to classify","source":"webhook"}' \
+  http://127.0.0.1:8768/check | jq '{effective_block_at, override_source}'
+# {"effective_block_at":0.55,"override_source":"webhook"}
 ```
 
 HTTP 200 means the request was processed and a `Result` was returned; inspect its `errored`, `decision`, `route`, and `reason` fields. It does not by itself mean live classification succeeded.
+
+ch:trace row=DOC-31 spec=docs/operations.md#/check wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#DOC-31 test=make docs-check doc=docs/operations.md evidence=none:worker-branch-only witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
+STATUS: complete
+TIER: T1 (docs-check plus source and fixture verification)
+EVIDENCE: none:worker-branch-only
 
 ## 6. Classifier egress behavior
 
