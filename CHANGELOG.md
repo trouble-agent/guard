@@ -40,6 +40,9 @@ changes.
   "classified, blocked" from "never classified" (QA-GUARD-002).
 - Reported billing now includes the attribution classifier call's cost and
   latency (GUARD-DF-006).
+- Building the Go release requires Go >=1.26.11, the minimum toolchain that
+  closes the reachable standard-library advisories GO-2026-6859 (`net/http`)
+  and GO-2026-6809 (`crypto/x509`) (REL-GUARD-008).
 - `make docs-check` requires `jq`; when `jq` is absent, it emits the install
   instruction "Install jq and re-run (see README Prerequisites, GUARD-DF-004)."
 
@@ -70,6 +73,7 @@ changes.
   ineffassign fixes making the gate green (QA-GUARD-006; QA-GUARD-001-R2).
 
 ch:trace row=REL-GUARD-006 spec=CHANGELOG.md#[0.2.0] wave=none:serial-worker test=make-docs-check doc=CHANGELOG.md prompt=none:ephemeral-brief evidence=none:worker-acceptance-output witness=none:ephemeral-acceptance verdict=none:foreman-judge commit=none:foreman-commit memory=none:not-written
+ch:trace row=REL-GUARD-011 spec=CHANGELOG.md#0.2.0 wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#REL-GUARD-011 test=make docs-check doc=CHANGELOG.md evidence=none:worker-branch witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
 
 [Unreleased]: https://github.com/trouble-agent/guard/compare/v0.1.0...HEAD
 [0.2.0]: https://github.com/trouble-agent/guard/compare/v0.1.0...v0.2.0
