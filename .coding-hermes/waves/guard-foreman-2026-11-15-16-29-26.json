@@ -20,14 +20,35 @@
       "task": "GUARD-DF-020",
       "task_id_dispatched": "GUARD-DF-020-R1",
       "attempt": 2,
-      "status": "dispatched",
+      "status": "committed",
       "model": "openai/gpt-6.1-terra",
       "provider": "xkiro",
       "worktree": "/home/kara/worktrees/guard-GUARD-DF-020-R1",
       "branch": "wt/GUARD-DF-020-R1",
       "base": "2cf9475",
+      "worker_commit": "e2dd73c32e805d87944f9d29893bc7a34ee21b5f",
+      "merged_as": "275c2d212fdbaa3ffd556d04557d7ff3107e7c77",
       "log": "/home/kara/.hermes/cache/scratch/guard-foreman-2026-11-15-16-29-26/GUARD-DF-020-R1/worker.log",
-      "brief": "GUARD-DF-020-R1-brief.txt"
+      "brief": "GUARD-DF-020-R1-brief.txt",
+      "worker_scope_note": "the worker's branch also carried edits to .coding-hermes/board and docs/operations.md, which workers must not touch; the rebase onto main dropped them and only normalize_test.go plus the dogfood evidence doc were merged",
+      "tier2": "3cc2501c FAIL — boundary test landed and green, but the 128 KiB/16 KiB scan it covers is unreachable through Check (guard.go:202 raw cap), so the throughput claim cannot be exercised; residual filed as GUARD-DF-020-R2"
+    },
+    {
+      "task": "GUARD-DF-018",
+      "task_id_dispatched": "GUARD-DF-018-R1",
+      "attempt": 1,
+      "status": "committed",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "worktree": "/home/kara/worktrees/guard-GUARD-DF-018-R1",
+      "branch": "wt/GUARD-DF-018-R1",
+      "base": "649ca23",
+      "worker_commit": "56cdcab52550758cd64a2fdbb1e6da0e0e469f63",
+      "merged_as": "deb6a1acb909e21cfa223111277cb7a24d690be5",
+      "gates": "go build/vet, go test ./... -count=1, pytest connectors/python (32 passed), make docs-check — all rc=0 before merge and again on main after merge",
+      "log": "/home/kara/.hermes/cache/scratch/guard-foreman-2026-11-15-16-29-26/GUARD-DF-018-R1/worker.log",
+      "brief": "GUARD-DF-018-R1-brief.txt",
+      "tier2": "pending — re-fired on the merged tree as run of record"
     }
   ],
   "foreman_commits": [
@@ -35,15 +56,20 @@
     {"sha": "0665244", "subject": "Merge GUARD-DF-018: reject oversized classification inputs"},
     {"sha": "2cf9475", "subject": "give DOC-31 a doctrine-shaped close-out block"},
     {"sha": "f1e8dff46d012a23e9f1b87400fde2b03cff17df", "subject": "board: GUARD-DF-020 acceptance loses the unverifiable idle-host baseline claim (GUARD-DF-021 remediation)"},
-    {"sha": "649ca2346ee3464f161a2df194d7c2407cbf147b", "subject": "DOC-31 close-out cites a real verdict and the T3 evidence it ran"}
+    {"sha": "649ca2346ee3464f161a2df194d7c2407cbf147b", "subject": "DOC-31 close-out cites a real verdict and the T3 evidence it ran"},
+    {"sha": "862e54b75ccad4bfab3d5ff5dcd6318a5dba8ce9", "subject": "DOC-31 close-out stops claiming a PASS it cannot cite, and records why (DOC-32 filed)"},
+    {"sha": "275c2d212fdbaa3ffd556d04557d7ff3107e7c77", "subject": "Merge GUARD-DF-020: pin the normalization window with a boundary test"},
+    {"sha": "3c6b0c986a463972c32541d5f7716795d1133a4b", "subject": "board: GUARD-DF-020 needs a reachability decision before it can close (GUARD-DF-020-R2 filed)"},
+    {"sha": "deb6a1acb909e21cfa223111277cb7a24d690be5", "subject": "Merge GUARD-DF-018: enforce the classification budget on the normalized state"}
   ],
   "local_only": [
-    ".gitreins/config.yaml — evaluator iteration cap raised 100 -> 300 (path is gitignored; control-plane state stays local by doctrine)"
+    ".gitreins/config.yaml — evaluator iteration cap raised 100 -> 300, 45m / 10M in / 1M out (path is gitignored; control-plane state stays local by doctrine)"
   ],
   "tier2": {
-    "graded": 9,
-    "pass": ["QA-GUARD-007", "GUARD-DF-019", "GUARD-DF-008-R2", "GUARD-DF-022", "REL-GUARD-011"],
-    "fail_remediated": ["GUARD-DF-020", "GUARD-DF-021", "DOC-31", "GUARD-DF-018"],
-    "rerun_chain": ["GUARD-DF-018", "DOC-31", "GUARD-DF-021"]
+    "graded": 11,
+    "pass": ["QA-GUARD-007", "GUARD-DF-019", "GUARD-DF-008-R2", "GUARD-DF-022", "REL-GUARD-011", "GUARD-DF-021"],
+    "fail_open_with_residual": ["DOC-32 (self-referential marker, deferred)", "GUARD-DF-020-R2 (window reachability, pending decision)"],
+    "fail_remediated": ["GUARD-DF-020", "DOC-31", "GUARD-DF-018"],
+    "rerun_chain": ["GUARD-DF-018 (run 3 on deb6a1a)", "DOC-31 (0f5f3f23)", "GUARD-DF-021 (3cdd77bc PASS)", "GUARD-DF-020 (3cc2501c FAIL)"]
   }
 }

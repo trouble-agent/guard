@@ -254,3 +254,4 @@
 {"id":246,"timestamp":"2026-11-15T17:47:52Z","event_type":"task_completed","task_id":"DOC-31","actor":"foreman","detail":"{\"status\":\"complete\"}"}
 {"id":247,"timestamp":"2026-11-15T17:52:22Z","event_type":"task_updated","task_id":"GUARD-DF-020","actor":"foreman","detail":"{\"status\":\"pending\"}"}
 {"id":248,"timestamp":"2026-11-15T17:52:22Z","event_type":"task_created","task_id":"GUARD-DF-020-R2","actor":"foreman","detail":"{\"id\":\"GUARD-DF-020-R2\",\"status\":\"pending\"}"}
+{"id":249,"timestamp":"2026-11-15T17:59:31Z","event_type":"task_updated","task_id":"GUARD-DF-018","actor":"foreman","detail":"{\"status\":\"pending\"}"}
