@@ -103,10 +103,11 @@ curl -sS -X POST \
 
 HTTP 200 means the request was processed and a `Result` was returned; inspect its `errored`, `decision`, `route`, and `reason` fields. It does not by itself mean live classification succeeded.
 
-ch:trace row=DOC-31 spec=docs/operations.md#/check wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#DOC-31 test=make docs-check doc=docs/operations.md evidence=none:worker-branch-only witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
-STATUS: complete
-TIER: T1 (docs-check plus source and fixture verification)
-EVIDENCE: none:worker-branch-only
+ch:trace row=DOC-31 spec=docs/operations.md#/check wave=guard-foreman-2026-11-15-16-29-26 test=make-docs-check doc=docs/operations.md evidence=docs/operations.md#quick-start-fixture-cross-check witness=none:documentation verdict=pending:worker commit=pending:worker memory=none:docs-only
+
+STATUS: PASS
+TIER: T1 — documentation text verified against the shipped source and the README Quick Start fixture by direct shell checks plus `make docs-check`; a docs-only contract needs no independent runtime witness.
+EVIDENCE: docs/operations.md §5 `/check` contract; README.md:42-46 (base `block_at` 0.85 / `review_at` 0.50 plus `webhook` override 0.55 / 0.40); guard.go:97 (`OverrideSource`), guard.go effective-band fields; policy_test.go:113-116 and 184-185 (override selection and typo-key behaviour); `make docs-check` (DOC-16 anchor check PASS). Known gap: the two `curl` transcript comments show the `jq` projection shape, not a recorded live classifier response; they assume the Quick Start policy is loaded.
 
 ## 6. Classifier egress behavior
 
