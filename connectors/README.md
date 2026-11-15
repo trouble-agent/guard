@@ -68,11 +68,11 @@ reveals nothing about the later stages:
 
 | # | Trigger | Status | Body | Code |
 |---|---------|--------|------|------|
-| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:238-240 |
-| 2 | Method other than `POST` | `405` | `POST only` | main.go:242-244 |
-| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:256-258 |
-| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:260-262 |
-| 5 | Body exceeds 8 MiB (8,388,608 bytes) | `413` | `request body exceeds 8 MiB (8388608 bytes)` | main.go:252-254 |
+| 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:256-257 |
+| 2 | Method other than `POST` | `405` | `POST only` | main.go:260 |
+| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:266 |
+| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:278 |
+| 5 | Body exceeds 8 MiB (8,388,608 bytes) | `413` | `request body exceeds 8 MiB (8388608 bytes)` | main.go:270 |
 
 **Limits:**
 
@@ -86,7 +86,7 @@ reveals nothing about the later stages:
   remains enabled within the scan window.
 - **CLI stdin**: when content is read from stdin, the CLI reads it to EOF with
   no size cap and buffers the whole input in memory (`io.ReadAll(os.Stdin)`,
-  main.go:176). Large pipelines can therefore consume substantial memory.
+  main.go:189). Large pipelines can therefore consume substantial memory.
 - **Classification timeout**: **120s** per request via
   `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:264). The CLI
   form uses the same 120s budget (main.go:179), so CLI and HTTP verdicts agree
@@ -249,7 +249,7 @@ default `-fail-closed=true` yields `decision="block"`,
 `route="quarantine"`; `-fail-closed=false` yields `decision="allow"`,
 `route="review"`. Both include a `reason` beginning `guard_error (...)`; this
 is an in-band verdict, not an HTTP error response. (Sources:
-[`cmd/guardd/main.go:128-144`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:130-137`](../cmd/guardd/main.go),
 [`cmd/guardd/main.go:264-267`](../cmd/guardd/main.go),
 [`guard.go:192-216`](../guard.go),
 [`jev.go:161-164`](../jev.go).)
@@ -283,7 +283,7 @@ through the `timeout` constructor argument / CLI `--timeout` (default 120s),
 and its mode through `fail_mode` / CLI `--fail-open`. The server policy is
 configurable with `-fail-closed` (default true), affecting only the in-band
 classifier-error verdict, not the HTTP status. (Sources:
-[`cmd/guardd/main.go:128-144`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:130-137`](../cmd/guardd/main.go),
 [`cmd/guardd/main.go:264-267`](../cmd/guardd/main.go),
 [`client/client.go:53-64`](../client/client.go),
 [`connectors/python/guard_client.py:170-182`](python/guard_client.py),
