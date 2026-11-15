@@ -1,0 +1,49 @@
+{
+  "tick": "guard-foreman-2026-11-15-16-29-26",
+  "project": "guard",
+  "workdir": "/home/kara/trouble-agent/guard",
+  "mode": "serial-fallback",
+  "wave_budget": 12,
+  "reason": "After GUARD-DF-018 merged and the DOC-31 close-out was corrected, the only remaining implementation work was GUARD-DF-020 remediation (one task, single worktree). Fewer than 2 mutually independent pending rows existed, so the wave path was not applicable; the tick ran the serial worker path plus foreman-owned board/doc/config corrections.",
+  "workers": [
+    {
+      "task": "GUARD-DF-020",
+      "task_id_dispatched": "GUARD-DF-020-R1",
+      "attempt": 1,
+      "status": "not_started",
+      "note": "first dispatch failed before execution: the redirect target directory did not exist, so no worker process ran and the worktree stayed clean at 2cf9475",
+      "worktree": "/home/kara/worktrees/guard-GUARD-DF-020-R1",
+      "branch": "wt/GUARD-DF-020-R1",
+      "base": "2cf9475"
+    },
+    {
+      "task": "GUARD-DF-020",
+      "task_id_dispatched": "GUARD-DF-020-R1",
+      "attempt": 2,
+      "status": "dispatched",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "worktree": "/home/kara/worktrees/guard-GUARD-DF-020-R1",
+      "branch": "wt/GUARD-DF-020-R1",
+      "base": "2cf9475",
+      "log": "/home/kara/.hermes/cache/scratch/guard-foreman-2026-11-15-16-29-26/GUARD-DF-020-R1/worker.log",
+      "brief": "GUARD-DF-020-R1-brief.txt"
+    }
+  ],
+  "foreman_commits": [
+    {"sha": "9dda5363980140e05afa52e7e22d5fe1dfb84805", "subject": "refresh connectors/README.md main.go anchors after guardd growth (INT-CI-4 / DOC-16)"},
+    {"sha": "0665244", "subject": "Merge GUARD-DF-018: reject oversized classification inputs"},
+    {"sha": "2cf9475", "subject": "give DOC-31 a doctrine-shaped close-out block"},
+    {"sha": "f1e8dff46d012a23e9f1b87400fde2b03cff17df", "subject": "board: GUARD-DF-020 acceptance loses the unverifiable idle-host baseline claim (GUARD-DF-021 remediation)"},
+    {"sha": "649ca2346ee3464f161a2df194d7c2407cbf147b", "subject": "DOC-31 close-out cites a real verdict and the T3 evidence it ran"}
+  ],
+  "local_only": [
+    ".gitreins/config.yaml — evaluator iteration cap raised 100 -> 300 (path is gitignored; control-plane state stays local by doctrine)"
+  ],
+  "tier2": {
+    "graded": 9,
+    "pass": ["QA-GUARD-007", "GUARD-DF-019", "GUARD-DF-008-R2", "GUARD-DF-022", "REL-GUARD-011"],
+    "fail_remediated": ["GUARD-DF-020", "GUARD-DF-021", "DOC-31", "GUARD-DF-018"],
+    "rerun_chain": ["GUARD-DF-018", "DOC-31", "GUARD-DF-021"]
+  }
+}
