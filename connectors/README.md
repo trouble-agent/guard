@@ -87,6 +87,14 @@ reveals nothing about the later stages:
 - **CLI stdin**: when content is read from stdin, the CLI reads it to EOF with
   no size cap and buffers the whole input in memory (`io.ReadAll(os.Stdin)`,
   main.go:189). Large pipelines can therefore consume substantial memory.
+- **Provider classification window**: the guard refuses raw input over
+  **20,000 UTF-8 bytes** (or normalized classifier state over that budget)
+  before calling Jev. This is intentionally stricter than Jev's documented
+  normal text path around 32,000 bytes; it prevents provider-side suffix
+  dropping from becoming a silent allow. The returned Result always exposes
+  `bytes_seen`, `classified_bytes`, and `truncated`. For a rejected long input,
+  `bytes_seen` is the raw input size, `classified_bytes` is `0`, and
+  `truncated` is `true` with `errored: true`; connectors must not deliver it.
 - **Classification timeout**: **120s** per request via
   `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:264). The CLI
   form uses the same 120s budget (main.go:179), so CLI and HTTP verdicts agree

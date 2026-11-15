@@ -60,8 +60,17 @@ func normalizationScanInput(in string) string {
 }
 
 // NormalizeAll runs the whole chain and returns the text to classify plus the
-// names of the transforms that actually produced something.
+// names of the transforms that actually produced something. It preserves the
+// historical bounded output contract; callers that need to distinguish a bound
+// hit use normalizeAllBounded directly.
 func NormalizeAll(in string, chain []Normalizer) (string, []string) {
+	out, applied, _ := normalizeAllBounded(in, chain, maxExpanded)
+	return out, applied
+}
+
+// normalizeAllBounded is NormalizeAll with an explicit truncation signal. The
+// classifier must reject a bound hit rather than silently judging a prefix.
+func normalizeAllBounded(in string, chain []Normalizer, limit int) (string, []string, bool) {
 	if chain == nil {
 		chain = DefaultNormalizers()
 	}
@@ -89,16 +98,20 @@ func NormalizeAll(in string, chain []Normalizer) (string, []string) {
 		// Nothing decoded. Still hand over the invisible-stripped/folded form,
 		// which changes nothing semantically but removes zero-width games.
 		if s := stripInvisible(scanInput); s != scanInput {
-			return in + "\n---\n" + s, append(applied, "invisible-strip")
+			joined := in + "\n---\n" + s
+			if len(joined) > limit {
+				return joined[:limit], append(applied, "invisible-strip"), true
+			}
+			return joined, append(applied, "invisible-strip"), false
 		}
-		return in, applied
+		return in, applied, len(in) > limit
 	}
 
 	joined := in + "\n---\n" + strings.Join(parts, "\n---\n")
-	if len(joined) > maxExpanded {
-		joined = joined[:maxExpanded]
+	if len(joined) > limit {
+		return joined[:limit], applied, true
 	}
-	return joined, applied
+	return joined, applied, false
 }
 
 var b64Token = regexp.MustCompile(`[A-Za-z0-9+/]{16,}={0,2}`)

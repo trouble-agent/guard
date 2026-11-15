@@ -145,6 +145,9 @@ def test_parses_verdict(stub):
         "constraints": {"allow_tools": False, "allow_secrets": False},
         "normalizations": ["rot13"],
         "load_bearing_normalizations": ["rot13"],
+        "bytes_seen": 1,
+        "classified_bytes": 1,
+        "truncated": False,
     }
     v = Guard(endpoint=stub).check("x")
     assert v.route == ROUTE_QUARANTINE
@@ -152,6 +155,9 @@ def test_parses_verdict(stub):
     assert not v.allows_tools
     assert v.normalizations == ["rot13"]
     assert v.load_bearing_normalizations == ["rot13"]
+    assert v.bytes_seen == 1
+    assert v.classified_bytes == 1
+    assert not v.truncated
 
 
 def test_parses_verdict_without_load_bearing(stub):
@@ -165,6 +171,27 @@ def test_parses_verdict_without_load_bearing(stub):
     }
     v = Guard(endpoint=stub).check("x")
     assert v.load_bearing_normalizations == []
+    assert v.bytes_seen == 0
+    assert v.classified_bytes == 0
+    assert not v.truncated
+
+
+def test_parses_truncated_accounting(stub):
+    _Stub.response = {
+        "route": "quarantine",
+        "decision": "block",
+        "risk_level": "medium",
+        "errored": True,
+        "bytes_seen": 32768,
+        "classified_bytes": 0,
+        "truncated": True,
+    }
+    v = Guard(endpoint=stub).check("x")
+    assert v.errored
+    assert v.bytes_seen == 32768
+    assert v.classified_bytes == 0
+    assert v.truncated
+    assert v.to_dict()["truncated"] is True
 
 
 # --- GUARD-DF-011: the reported selection (override_source / effective_* bands)
