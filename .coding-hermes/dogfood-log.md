@@ -528,3 +528,44 @@ the same bytes; re-running was declined on that ground, not for lack of a host.
 Evidence document: `docs/dogfood/2026-11-14-run8-tick3-cap-and-perf.md`.
 
 - ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=no new-evidence=yes head=c62f815 product=4d4a295-invariant verdict=SHIPPABLE-WITH-SECURITY-SHAPED-ROUGH-EDGE install=PASS(inherited,byte-identical-product,not-rerun) perf=MEASURED-normaliz-0.79s@8MiB rows=GUARD-DF-020,GUARD-DF-008-R2 cited=GUARD-DF-018,GUARD-DF-008,DOC-27
+
+## Fourth fire — the perf premise re-derived, and the criterion it broke
+
+Tick `guard-dogfood-2026-11-14-23-17-36`, fourth executor. HEAD `0a5a791` (tree `e130718b`),
+product tree byte-identical to run 8's tested commit `4d4a295`. Unlike the records-only fire above,
+this one produced a fresh measurement artifact and one new row.
+
+Why: the third fire put a 5x performance target on the board (`GUARD-DF-020`) with a baseline it
+recorded only in prose — the `ns/op` output was never captured as a file, while its HTTP artifacts
+(`cap/cap-probe.json`, `ext/*.log`) were. A number a worker is graded against should be
+re-derivable from an artifact rather than from a paragraph.
+
+What: exported HEAD with `git archive` into scratch (repo tree untouched; `normalize.go` sha256
+`02f9a4f3…` identical to HEAD) and re-ran the benchmark at loadavg `24.77` against the recorded
+`29.5` — `NormalizeAll` 8 MiB **761.6 ms / 11.01 MB/s** (recorded 793.8 ms / 10.57 MB/s), 24 KB
+2.31 ms / 10.64 MB/s, `ExpandBase64` 356.5 ms, `ExpandHex` 257.6 ms, `ExpandURL` short-circuits.
+Throughput stays flat across a 340x size change, so the premise stands and the cited anchors
+(`normalize.go:89` scanned at `:93`, `normalize.go:115` scanned at `:119`) are correct at HEAD.
+base64+hex measured 80.6% of `NormalizeAll` here versus the recorded 87% — load noise, not a
+correction, so no cell was filed for it.
+
+The defect: `GUARD-DF-020`'s acceptance criterion says its 10.57 MB/s baseline was "measured at
+loadavg <5". It was not — the same row's `reasoning` records loadavg 29.5, and this fire measured
+24.77. A worker who follows that clause re-measures on an idle host, gets a different baseline, and
+cannot say whether a 5x claim passed. Wording-only fix: an explicit `>= 52.9 MB/s` target plus a
+loaded-host and an idle-host before/after table in the fix commit. Filed as `GUARD-DF-021` (P4,
+complexity 1). `GUARD-DF-020` was not edited — this lane never rewrites board rows.
+
+Not re-run, and why: the HTTP cap boundary (the tick-3 artifact `cap/cap-probe.json` is intact and
+its four cases match the published table byte-for-byte — 7 MiB 200 in 1394.8 ms, 8,388,608 B 200 in
+1208.1 ms, 8,388,609 B 400 `bad request: unexpected EOF` in 28.8 ms, 9 MiB 400 in 26.1 ms;
+re-reading a preserved artifact needs no second server) and the install leg (ephemeral bunker
+instance `08c686df` graded a byte-identical product tree; the instance is gone and its teardown
+held, so a fresh launch would grade the same bytes). Inherited, not silently passed.
+
+Teardown: no `guardd` process, no listener on `18790`/`18791`/`8768`, no agent `08c686df`; the only
+Go workload was the 8.3 s benchmark in scratch.
+
+Evidence document: `docs/dogfood/2026-11-14-run8-tick4-bench-reproduction.md`.
+
+- ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=no new-evidence=yes head=0a5a791 product=4d4a295-invariant verdict=SHIPPABLE-WITH-SECURITY-SHAPED-ROUGH-EDGE install=PASS(inherited,byte-identical-product,not-rerun) perf=REDERIVED-normalize-0.76s@8MiB rows=GUARD-DF-021 cited=GUARD-DF-020,GUARD-DF-018,GUARD-DF-008-R2
