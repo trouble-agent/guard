@@ -323,7 +323,8 @@ is rejected too. This is deliberate fail-closed behavior, not a verdict on a
 prefix, so a canary at the head and one at the tail receive the same
 `errored=true`, `truncated=true` outcome.
 
-Every verdict exposes `bytes_seen` (raw input bytes received),
+Every verdict exposes `bytes_seen` (raw input bytes received, or the complete
+normalized-state length when normalization exceeds the budget),
 `classified_bytes` (bytes sent to the provider across classifier calls), and
 `truncated`. A rejected long input has `bytes_seen` set, `classified_bytes: 0`,
 and `truncated: true`; callers must route it as an error and must not deliver it.
@@ -538,8 +539,9 @@ Nothing in the pipeline requires touching another layer to grow.
   per surface.
 - **Long content is rejected above the classification window.** The guard
   refuses inputs over 20,000 UTF-8 bytes (or normalized state over that budget)
-  before provider submission and reports `bytes_seen`, `classified_bytes: 0`,
-  and `truncated: true`; it never silently scores a prefix.
+  before provider submission. Raw overflow reports raw `bytes_seen`; normalized
+  overflow reports the complete normalized-state length in `bytes_seen`, with
+  `classified_bytes: 0` and `truncated: true`; it never silently scores a prefix.
 - **Class labels are noisy near the threshold** (a benign base64 blob was once
   labelled `masquerade` at 0.24). Trust the `route`, not the `attack_class`, at
   the margin.

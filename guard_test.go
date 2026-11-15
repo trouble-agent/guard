@@ -32,6 +32,7 @@ package guard
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -192,6 +193,46 @@ func TestGuardClassificationWindowRejectsLongPayloadsParity(t *testing.T) {
 	}
 	if !strings.Contains(head.Reason, "classification window") || !strings.Contains(tail.Reason, "classification window") {
 		t.Fatalf("head/tail reasons = %q / %q, want explicit classification-window reason", head.Reason, tail.Reason)
+	}
+}
+
+func TestGuardClassificationWindowRejectsExpandedDefaultNormalization(t *testing.T) {
+	const rawBytes = 17600
+	payload := strings.Repeat("QUFB", rawBytes/4)
+	if len(payload) != rawBytes {
+		t.Fatalf("payload bytes = %d, want %d", len(payload), rawBytes)
+	}
+	if _, err := base64.StdEncoding.DecodeString(payload); err != nil {
+		t.Fatalf("payload premise is not valid base64: %v", err)
+	}
+	normalized, _, truncated := normalizeAllBounded(payload, DefaultNormalizers(), maxExpanded)
+	if !truncated {
+		t.Fatalf("normalized state bytes = %d, want over-budget state", len(normalized))
+	}
+
+	c := &attributionClassifier{}
+	g := &Guard{
+		Classifier:  c,
+		Policy:      DefaultPolicy(),
+		Normalizers: DefaultNormalizers(),
+	}
+	res := g.Check(context.Background(), Input{Content: payload})
+
+	t.Logf("raw bytes = %d; normalized state bytes = %d", len(payload), len(normalized))
+	if len(normalized) <= maxExpanded {
+		t.Fatalf("normalized state bytes = %d, want > %d", len(normalized), maxExpanded)
+	}
+	if res.BytesSeen != len(normalized) {
+		t.Fatalf("bytes_seen = %d, want normalized state length %d", res.BytesSeen, len(normalized))
+	}
+	if res.ClassifiedBytes != 0 || !res.Truncated || !res.Errored {
+		t.Fatalf("accounting = bytes_seen %d classified_bytes %d truncated %v errored %v, want %d/0/true/true", res.BytesSeen, res.ClassifiedBytes, res.Truncated, res.Errored, len(normalized))
+	}
+	if c.calls != 0 {
+		t.Fatalf("classifier calls = %d, want zero for over-budget normalized state", c.calls)
+	}
+	if !strings.Contains(res.Reason, "normalized state") {
+		t.Fatalf("reason = %q, want normalized-state budget", res.Reason)
 	}
 }
 

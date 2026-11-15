@@ -205,7 +205,8 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 	text, applied, truncated := normalizeAllBounded(in.Content, g.Normalizers, maxExpanded)
 	res.Normalizations = applied
 	if truncated {
-		return g.classificationLimitResult(&res, in.Source, start)
+		res.BytesSeen = len(text)
+		return g.normalizedClassificationLimitResult(&res, in.Source, start)
 	}
 	res.ClassifiedBytes = len(text)
 	sig, err := g.Classifier.Classify(ctx, text)
@@ -284,13 +285,23 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 // the complete input: callers receive an explicit errored/truncated verdict and
 // the raw byte accounting remains available for audit.
 func (g *Guard) classificationLimitResult(res *Result, source string, start time.Time) Result {
+	return g.classificationLimitResultReason(res, source, start,
+		fmt.Sprintf("guard_error (classification window): input is %d bytes; maximum is %d bytes", res.BytesSeen, maxExpanded))
+}
+
+func (g *Guard) normalizedClassificationLimitResult(res *Result, source string, start time.Time) Result {
+	return g.classificationLimitResultReason(res, source, start,
+		fmt.Sprintf("guard_error (classification window): normalized state is %d bytes; maximum is %d bytes", res.BytesSeen, maxExpanded))
+}
+
+func (g *Guard) classificationLimitResultReason(res *Result, source string, start time.Time, reason string) Result {
 	sel := g.Policy.selectFor(source)
 	res.Errored = true
 	res.Truncated = true
 	res.RiskLevel = RiskMedium
 	res.EffectiveBlockAt, res.EffectiveReviewAt = sel.BlockAt, sel.ReviewAt
 	res.OverrideSource = sel.Source
-	res.Reason = fmt.Sprintf("guard_error (classification window): input is %d bytes; maximum is %d bytes", res.BytesSeen, maxExpanded)
+	res.Reason = reason
 	if sel.FailClosed {
 		res.Decision = DecisionBlock
 		res.Route = RouteQuarantine
