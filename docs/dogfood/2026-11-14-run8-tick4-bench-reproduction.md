@@ -64,6 +64,25 @@ passes. Filed as `GUARD-DF-021` (P4) to re-anchor the criterion to an explicit M
 both a loaded and an idle before/after table. `GUARD-DF-020` itself was not edited — this lane
 never rewrites board rows.
 
+## Acceptance correction evidence
+
+The requested acceptance correction is an explicit 8 MiB `NormalizeAll` target of **52.9 MB/s**
+(5× the recorded 10.57 MB/s baseline). The baseline was measured on a loaded host at loadavg
+`29.5`, not on an idle host; the independent re-derivation above measured `11.01 MB/s` at loadavg
+`24.77`. Neither measurement is an idle-host baseline, and this document makes no such claim.
+
+The required loaded/idle before-and-after record is preserved below without inventing idle
+measurements. “After” means the tick-4 re-derivation, not a claimed product improvement.
+
+| host condition | before | after | evidence boundary |
+|---|---|---|---|
+| loaded | `10.57 MB/s` at loadavg `29.5` (tick 3) | `11.01 MB/s` at loadavg `24.77` (tick 4) | measured re-derivation; not an idle comparison |
+| idle | not measured | not measured | no idle baseline or idle improvement claim |
+
+This table is an evidence correction, not proof that the 52.9 MB/s target was met. A future fix
+must supply real loaded and idle before/after measurements rather than treating “not measured” as
+zero or as a pass.
+
 Note for readers comparing digests: tick-3's `detail.tree_fp` (`d3d9ef5a…`) does not match any
 digest derivable from this tree (`sha256` over `git ls-tree -r HEAD` = `1a68c9a6…`); its method
 was never stated. It is not used as evidence in this document.
