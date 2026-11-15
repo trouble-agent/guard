@@ -103,11 +103,11 @@ curl -sS -X POST \
 
 HTTP 200 means the request was processed and a `Result` was returned; inspect its `errored`, `decision`, `route`, and `reason` fields. It does not by itself mean live classification succeeded.
 
-ch:trace row=DOC-31 spec=docs/operations.md#/check wave=guard-foreman-2026-11-15-16-29-26 test=make-docs-check doc=docs/operations.md evidence=docs/operations.md#quick-start-fixture-cross-check witness=none:documentation verdict=pending:worker commit=pending:worker memory=none:docs-only
+ch:trace row=DOC-31 spec=docs/operations.md#/check wave=guard-foreman-2026-11-15-16-29-26 test=make-docs-check doc=docs/operations.md evidence=docs/operations.md#quick-start-fixture-cross-check witness=none:documentation verdict=.gitreins/history/2026-11-15/f318c8ef/verdict.json commit=3f6d0e06af0be3a4ef09e08f41d3362346948a42 memory=none:docs-only
 
 STATUS: PASS
-TIER: T1 — documentation text verified against the shipped source and the README Quick Start fixture by direct shell checks plus `make docs-check`; a docs-only contract needs no independent runtime witness.
-EVIDENCE: docs/operations.md §5 `/check` contract; README.md:42-46 (base `block_at` 0.85 / `review_at` 0.50 plus `webhook` override 0.55 / 0.40); guard.go:97 (`OverrideSource`), guard.go effective-band fields; policy_test.go:113-116 and 184-185 (override selection and typo-key behaviour); `make docs-check` (DOC-16 anchor check PASS). Known gap: the two `curl` transcript comments show the `jq` projection shape, not a recorded live classifier response; they assume the Quick Start policy is loaded.
+TIER: T3 — invoked: `make docs-check` (DOC-16 anchor check PASS) and `go test ./... -count=1` were run against this tree, and the field/override claims were each re-read in source (guard.go, policy.go, cmd/guardd/main.go) and in the README Quick Start fixture.
+EVIDENCE: docs/operations.md §5 `/check` contract; README.md:42-46 (base `block_at` 0.85 / `review_at` 0.50 plus `webhook` override 0.55 / 0.40); guard.go:69-75 (`Input` fields), guard.go:96/106 (`OverrideSource`, `effective_block_at`), policy.go:90-108 (`selectFor` reads only `Overrides[source]`), cmd/guardd/main.go:256 (decoder without `DisallowUnknownFields`), main.go:260 (empty `content` -> 400); policy_test.go:365-397 (override selection); `make docs-check` PASS; `go test ./... -count=1` all four packages ok. Known gap: the two `curl` transcript comments show the `jq` projection shape, not a recorded live classifier response; they assume the Quick Start policy is loaded.
 
 ## 6. Classifier egress behavior
 
