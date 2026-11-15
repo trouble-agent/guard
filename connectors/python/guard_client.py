@@ -82,6 +82,9 @@ class Verdict:
     load_bearing_normalizations: list = field(default_factory=list)
     cost_usd: float = 0.0
     duration_ms: int = 0
+    bytes_seen: int = 0
+    classified_bytes: int = 0
+    truncated: bool = False
     raw: Mapping[str, Any] = field(default_factory=dict)
 
     @property
@@ -131,6 +134,9 @@ class Verdict:
             ),
             cost_usd=d.get("cost_usd", 0.0),
             duration_ms=d.get("duration_ms", 0),
+            bytes_seen=d.get("bytes_seen", 0),
+            classified_bytes=d.get("classified_bytes", 0),
+            truncated=bool(d.get("truncated", False)),
             raw=d,
         )
 
@@ -157,6 +163,9 @@ class Verdict:
                 "load_bearing_normalizations": list(self.load_bearing_normalizations),
                 "cost_usd": self.cost_usd,
                 "duration_ms": self.duration_ms,
+                "bytes_seen": self.bytes_seen,
+                "classified_bytes": self.classified_bytes,
+                "truncated": self.truncated,
             }
         )
         return out

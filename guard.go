@@ -24,6 +24,7 @@ package guard
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -114,6 +115,16 @@ type Result struct {
 	Constraints Constraints `json:"constraints"`
 	DurationMs  int64       `json:"duration_ms,omitempty"`
 	CostUSD     float64     `json:"cost_usd,omitempty"`
+	// BytesSeen is the raw UTF-8 byte count received by the guard, including
+	// bytes that are refused before classification.
+	BytesSeen int `json:"bytes_seen"`
+	// ClassifiedBytes is the UTF-8 byte count sent to the provider across all
+	// classifier calls. It is zero when classification is refused.
+	ClassifiedBytes int `json:"classified_bytes"`
+	// Truncated is true when the guard refused to classify because the raw
+	// input or normalized classifier state exceeded maxExpanded. A truncated
+	// prefix is never presented as a successful classification.
+	Truncated bool `json:"truncated"`
 	// Normalizations lists the deterministic transforms applied before
 	// classification (e.g. "base64", "rot13"). This is what RAN, not what
 	// MATTERED: rot13 runs unconditionally (see normalize.go), so it appears
@@ -183,10 +194,20 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 	// before the error return, because a config that can never take effect
 	// deserves a signal even when the classifier is down.
 	WarnUnknownOverrideKeys(g.Policy, g.Warnf, in.Source)
+	res.BytesSeen = len(in.Content)
 
-	text, applied := NormalizeAll(in.Content, g.Normalizers)
+	// Jev's normal path is roughly 32 KB, but this guard's normalization
+	// contract intentionally caps classifier state at maxExpanded (20,000
+	// bytes). Reject before the provider can silently ignore a suffix.
+	if len(in.Content) > maxExpanded {
+		return g.classificationLimitResult(&res, in.Source, start)
+	}
+	text, applied, truncated := normalizeAllBounded(in.Content, g.Normalizers, maxExpanded)
 	res.Normalizations = applied
-
+	if truncated {
+		return g.classificationLimitResult(&res, in.Source, start)
+	}
+	res.ClassifiedBytes = len(text)
 	sig, err := g.Classifier.Classify(ctx, text)
 	res.DurationMs = time.Since(start).Milliseconds()
 	if err != nil {
@@ -245,6 +266,7 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 		// verdict standing even when this call errors), so accumulating
 		// after the branch is behaviour-preserving.
 		res.DurationMs += time.Since(attributionStart).Milliseconds()
+		res.ClassifiedBytes += len(in.Content)
 		if rawErr == nil {
 			res.CostUSD += rawSig.CostUSD
 			raw := Result{Policy: res.Policy}
@@ -255,4 +277,27 @@ func (g *Guard) Check(ctx context.Context, in Input) Result {
 		}
 	}
 	return res
+}
+
+// classificationLimitResult rejects content that cannot be represented within
+// the guard's provider-state budget. A prefix is never scored as though it were
+// the complete input: callers receive an explicit errored/truncated verdict and
+// the raw byte accounting remains available for audit.
+func (g *Guard) classificationLimitResult(res *Result, source string, start time.Time) Result {
+	sel := g.Policy.selectFor(source)
+	res.Errored = true
+	res.Truncated = true
+	res.RiskLevel = RiskMedium
+	res.EffectiveBlockAt, res.EffectiveReviewAt = sel.BlockAt, sel.ReviewAt
+	res.OverrideSource = sel.Source
+	res.Reason = fmt.Sprintf("guard_error (classification window): input is %d bytes; maximum is %d bytes", res.BytesSeen, maxExpanded)
+	if sel.FailClosed {
+		res.Decision = DecisionBlock
+		res.Route = RouteQuarantine
+	} else {
+		res.Decision = DecisionAllow
+		res.Route = RouteReview
+	}
+	res.DurationMs = time.Since(start).Milliseconds()
+	return *res
 }

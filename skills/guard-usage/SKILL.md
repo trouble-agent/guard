@@ -98,8 +98,17 @@ if not v.deliver: ...    # quarantine/review
   payload was encoded". "Caught by an encoding" reads from
   `load_bearing_normalizations` (populated only when the decoded variant
   changed the verdict — GUARD-DF-002 fix).
-- Oversized inputs keep their original content for classification, while
-  deterministic normalization scans only a 128 KiB prefix plus a 16 KiB suffix.
+- **Long content is rejected, never silently judged as a prefix.** The guard
+  refuses raw input over 20,000 UTF-8 bytes, or normalized classifier state
+  over that budget, before provider submission. The error verdict has
+  `errored: true`, `truncated: true`, `bytes_seen` set to the raw input size,
+  and `classified_bytes: 0`; route it as an error and do not deliver it.
+  `bytes_seen`, `classified_bytes`, and `truncated` are present on every Go
+  Result, including CLI, HTTP, Go-client, and Python-connector responses.
+  The 20,000-byte boundary is intentionally stricter than Jev's documented
+  normal text path around 32,000 bytes so provider-side suffix dropping cannot
+  become a silent allow.
+- Deterministic normalization scans only a 128 KiB prefix plus a 16 KiB suffix.
   Encodings in the omitted middle are not claimed to be detected; all default
   transforms remain enabled within that window.
 - `attack_class` is noisy near the threshold — benign text often carries

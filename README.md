@@ -67,6 +67,9 @@ reproduce the verdict below, use the scratch-HOME note that follows this block.)
   "provider": "jev",
   "score": 0,
   "errored": true,
+  "bytes_seen": 12,
+  "classified_bytes": 29,
+  "truncated": false,
   "constraints": {
     "allow_tools": false,
     "allow_network": false,
@@ -258,7 +261,10 @@ that architecture:
   "normalizations": ["rot13"],               // what RAN before classification (rot13 always)
   "load_bearing_normalizations": ["rot13"],  // the decoded variant DROVE the verdict (absent otherwise)
   "duration_ms": 439,
-  "cost_usd": 0.000027468
+  "cost_usd": 0.000027468,
+  "bytes_seen": 1234,
+  "classified_bytes": 1234,
+  "truncated": false
 }
 ```
 
@@ -305,6 +311,24 @@ reports both fields; benign plain text reports
 `normalizations: ["rot13"]` (the transform ran) and no load-bearing
 normalizations. Attribution costs one extra classifier call on caught
 messages only — deliver verdicts skip it.
+
+### Classification window and accounting
+
+The Jev/OpenRouter provider documents a normal text path around 32,000 bytes
+and a separate long-context mode. Guard does not rely on the provider silently
+choosing or truncating that mode. Its existing normalization budget is the
+stricter, explicit boundary: an input over **20,000 UTF-8 bytes** is rejected
+before the provider is called. Normalization that would exceed the same budget
+is rejected too. This is deliberate fail-closed behavior, not a verdict on a
+prefix, so a canary at the head and one at the tail receive the same
+`errored=true`, `truncated=true` outcome.
+
+Every verdict exposes `bytes_seen` (raw input bytes received),
+`classified_bytes` (bytes sent to the provider across classifier calls), and
+`truncated`. A rejected long input has `bytes_seen` set, `classified_bytes: 0`,
+and `truncated: true`; callers must route it as an error and must not deliver it.
+The limit applies to the Go core and therefore to CLI, HTTP, Go-client, and
+Python-connector responses.
 
 ### Error verdicts
 
@@ -512,6 +536,10 @@ Nothing in the pipeline requires touching another layer to grow.
 - **Availability is a policy decision, not a default.** `FailClosed: true` means
   a provider outage stops delivery; `false` means delivery continues flagged. Pick
   per surface.
+- **Long content is rejected above the classification window.** The guard
+  refuses inputs over 20,000 UTF-8 bytes (or normalized state over that budget)
+  before provider submission and reports `bytes_seen`, `classified_bytes: 0`,
+  and `truncated: true`; it never silently scores a prefix.
 - **Class labels are noisy near the threshold** (a benign base64 blob was once
   labelled `masquerade` at 0.24). Trust the `route`, not the `attack_class`, at
   the margin.
