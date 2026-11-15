@@ -17,6 +17,11 @@ Only `source` and `content` affect the verdict. `id`, `channel`, and `meta` are
 accepted-but-ignored pass-through fields: they are not echoed, do not affect
 classification, and produce no error.
 
+Every shipped surface can send the two labels: guardd's CLI takes `-source` /
+`-channel`, and the Python `guard` console script takes `--source` /
+`--channel` (GUARD-DF-019; before that the Python CLI could only ever reach the
+policy's base row).
+
 Response — the `Result`:
 
 ```json
@@ -92,7 +97,7 @@ mirrors the `GUARD_EGRESS_ENABLED` startup flag.
 read, so an unauthenticated request cannot spend server resources reading a
 huge body.
 
-## Operational knobs (endpoint, token, timeout)
+## Operational knobs (endpoint, token, timeout, source/channel)
 
 The knobs a new integrator actually sets. Names are exact; defaults are what
 the code does today.
@@ -134,6 +139,27 @@ resolves the secret once at startup, env > tokenfile > argv
 
 With none of the three, guardd refuses to serve at all — it never runs an
 unauthenticated `/check`.
+
+**`source` / `channel`** — request labels, not server knobs: `POST /check`
+carries both, and only `source` can change a verdict, because
+`Policy.Overrides` is keyed on it. `source` selects the row of the decision
+table that judges the message (`override_source` / `effective_*` on the
+verdict say which); `channel` is an accepted-but-ignored pass-through label
+(see "The contract" above). Both default to empty, and an empty source selects
+the policy's base row.
+
+- Python library: `Guard().check(content, source="webhook", channel="crier")`
+  ([`connectors/python/guard_client.py`](python/guard_client.py)).
+- Python CLI: `--source <label>` and `--channel <label>`
+  ([`connectors/python/guard_client.py`](python/guard_client.py)). GUARD-DF-019:
+  before these flags existed the shipped console script sent an empty source
+  on every call, so a deployment that relies on source-scoped Overrides
+  silently enforced the base thresholds for every shell caller. Omitting a
+  flag still sends an empty label — existing callers keep their old verdicts.
+- guardd CLI: `-source` / `-channel` ([`cmd/guardd/main.go:131-132`](../cmd/guardd/main.go)).
+
+A source label no `overrides` key matches is silently inert (base bands apply,
+no error) — GUARD-DF-007 — so a typo'd label disables a tightening invisibly.
 
 **Timeout** — Python bounds each check with the `timeout` constructor
 argument (default `120.0` seconds) or the CLI `--timeout` flag (default 120)
