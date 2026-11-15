@@ -474,3 +474,11 @@ Left behind: this log record only. No row, event, report, code, visibility or pe
 no duplicate filing was created for either finding.
 
 - ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=yes of=run8 head=792b373 origin/main=792b373 verdict=SHIPPABLE-WITH-GUARD-DF-018 install=PASS(verified-teardown,not-rerun) perf=verified-not-retimed rows=GUARD-DF-018,GUARD-DF-019
+
+## Correction to the records-only closeout
+
+The preceding duplicate-fire record incorrectly stated that the checkout had no Git-operation markers. Independent verification on the later re-fire found `.git/REBASE_HEAD` containing `256b002be1d6d726a0606aa0881bed0193c5a5aa`; no `rebase-merge`/`rebase-apply` directory, unmerged paths, or process holding this checkout was found, so the marker appears stale, but the dogfood marker rule still makes the live checkout an unmeasured boundary. The marker was not removed or repaired.
+
+This correction does not invalidate the already-committed run-8 product, performance, or install evidence: that evidence was measured at `4d4a2954affaceeb6dbc4d22824424e32ab6e900`, and the current product-only diff to `b11864b5830c981f80941ab871bd934895ecd198` is empty. It does mean the prior statement that the fire independently verified a marker-free checkout is withdrawn. No product use, benchmark, install battery, or new board row was run on this re-fire. `GUARD-DF-018` and `GUARD-DF-019` remain the two existing live findings; their committed row and paired `task_created` event counts remain 1 each; `boardctl validate` remains `RESULT: OK (73 warning(s))`, rc 0.
+
+- ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=yes correction=stale-REBASE_HEAD live-checkout=unmeasured rows=GUARD-DF-018,GUARD-DF-019
