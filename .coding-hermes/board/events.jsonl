@@ -239,3 +239,7 @@
 {"id":231,"timestamp":"2026-11-15T00:55:07Z","event_type":"task_created","task_id":"GUARD-DF-021","actor":"foreman","detail":"{\"id\":\"GUARD-DF-021\",\"status\":\"pending\"}"}
 {"id":232,"timestamp":"2026-11-15T01:19:54Z","event_type":"task_created","task_id":"GUARD-DF-022","actor":"foreman","detail":"{\"id\":\"GUARD-DF-022\",\"status\":\"pending\"}"}
 {"id":233,"timestamp":"2026-11-15T01:19:57Z","event_type":"task_created","task_id":"DOC-31","actor":"foreman","detail":"{\"id\":\"DOC-31\",\"status\":\"pending\"}"}
+{"id":234,"timestamp":"2026-11-15T06:10:10Z","event_type":"task_completed","task_id":"REL-GUARD-006","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":235,"timestamp":"2026-11-15T06:10:18Z","event_type":"task_completed","task_id":"REL-GUARD-010","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":236,"timestamp":"2026-11-15T06:10:39Z","event_type":"task_updated","task_id":"REL-GUARD-003","actor":"foreman","detail":"{\"title\":\"RELEASE cut v0.2.0 (OWNER-GATED): readiness re-verified 2026-11-15 pass 8; candidate 7b8837f (tree a3beeaf), 8/8 gates green + exact-SHA CI success 43663689471; explicit Bane authorization required before tag\"}"}
+{"id":237,"timestamp":"2026-11-15T06:11:19Z","event_type":"task_created","task_id":"REL-GUARD-011","actor":"foreman","detail":"{\"id\":\"REL-GUARD-011\",\"status\":\"pending\"}"}
