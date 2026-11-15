@@ -22,9 +22,9 @@ BenchmarkNormalizeAll24KB-16       5   2445070 ns/op    10.05 MB/s
 BenchmarkNormalizeAll8MiB-16       5     15212386 ns/op  551.43 MB/s
 ```
 
-The 8 MiB result is 52.17x the 10.57 MB/s recorded baseline, above the 52.9
-MB/s target (5x baseline). The 24 KB result is intentionally reported too; it
-shows the small-input path remains a full scan.
+The 8 MiB result of 551.43 MB/s is approximately 52x the 10.57 MB/s recorded
+baseline and is above the 52.9 MB/s target. The 24 KB case remains a full scan
+at approximately 10 MB/s and does not receive the 8 MiB speedup.
 
 The benchmark is committed in `normalize_bench_test.go`. `b.SetBytes` makes the
 MB/s output reproducible and the benchmark comment gives the exact command.
@@ -35,8 +35,10 @@ MB/s output reproducible and the benchmark comment gives the exact command.
 deterministic normalization over a bounded prefix plus suffix window. The window
 is 128 KiB from the start and 16 KiB from the end, separated by an explicit
 `--- normalization window ---` marker. Encodings in the omitted middle are not
-claimed to be detected. A regression test places a base64 payload at byte 6 MiB
-(the suffix arm) and asserts the decoded plaintext and `base64` application.
+claimed to be detected. A regression test places a base64 payload inside the
+suffix window and asserts that it is detected, while a payload in the omitted
+middle of an 8 MiB input is not detected. The latter is the accepted, tested
+limitation of the bounded window.
 
 This is a deliberate window behavior, not deletion of encoding detection:
 base64, hex, ROT13, URL, invisible-character, and homoglyph transforms remain
