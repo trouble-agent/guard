@@ -569,3 +569,61 @@ Go workload was the 8.3 s benchmark in scratch.
 Evidence document: `docs/dogfood/2026-11-14-run8-tick4-bench-reproduction.md`.
 
 - ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=no new-evidence=yes head=0a5a791 product=4d4a295-invariant verdict=SHIPPABLE-WITH-SECURITY-SHAPED-ROUGH-EDGE install=PASS(inherited,byte-identical-product,not-rerun) perf=REDERIVED-normalize-0.76s@8MiB rows=GUARD-DF-021 cited=GUARD-DF-020,GUARD-DF-018,GUARD-DF-008-R2
+
+## 2026-11-14 — run 8, tick 5: policy wiring + operator contract (`guard-dogfood-2026-11-14-23-17-36`)
+
+Verdict: **WORKS, WITH ONE SILENT POLICY NET THAT ISN'T WIRED.** Measured on a clean `git archive`
+export of HEAD `0a5a791` (tree `e130718b`) with a private `HOME` per arm, egress disabled, loadavg
+5.5/7.8/16.3 on 16 cores. Used the product the way an operator would: served it, ran the runbook's
+own claim table, installed the release artifact, and drove per-source `Overrides` over HTTP.
+
+The product does what the docs say. Every `docs/operations.md` cell matched: no-token refusal
+(`rc=1`, "refusing to serve an unauthenticated /check"), tokenfile `0640` refused
+("mode 0640 is too open"), `GUARD_TOKEN` winning over `-token` in a request carrying the argv token
+(401), `:port` → loopback, the full /check status ladder (401/401/405/405/400/400/400/200), policy
+startup failures naming the inverted pair (`review_at=0.9 > block_at=0.5`), `-policy` beating
+`GUARD_POLICY`, and the egress kill switch returning 200 with an in-band errored `block` result.
+The release artifact downloaded (2,935,335 B in 0.76 s), its checksum verified against the real file
+hash (not just `--ignore-missing`), extracted and ran. `make test` 4.47 s rc=0; `make docs-check`
+0.55 s PASS.
+
+The finding is the net around `Overrides`. `cmd/guardd/main.go:155` is the only non-test
+`guard.Guard{...}` construction and it never sets `Warnf`; `ValidateOverrideKeys` has zero non-test
+callers. So the dead-override-key warning that `policy.go:88` advertises cannot fire for anyone
+running the binary — verified by a typo'd `overrides:{"webhook":…}` policy run with `-source
+github_pr` (stderr: only "policy loaded … 1 override(s)") and by the same policy served via
+`GUARD_POLICY` (no warning line), while a correctly keyed request *does* move the bands
+(0.85/0.50 → 0.55/0.40, `override_source: "webhook"`). The library warning itself is correct —
+its tests pass — so this is wiring, not behaviour. An operator who mistypes an override key
+silently keeps the looser base bands. Filed as `GUARD-DF-022` (P3, complexity 2).
+
+Same shape from the docs side: `docs/operations.md` documents the /check body as content-only, but
+the handler accepts `id`, `source`, `channel`, `meta`, and `source` is what selects an override —
+so the runbook never shows how to make the README's own per-source Quick Start fixture fire, and
+unknown JSON fields are silently ignored (`{"content":"x","bogus":1}` → 200). Filed as `DOC-31`
+(P4, complexity 2).
+
+Performance (Step 2b): cold CLI start 10–12 ms (n=5), clean `make build` 298 ms, server ready 12–13 ms,
+`/healthz` 0.274 ms, `/check` 0.71–1.23 ms at 4 KiB, 6.4–8.0 ms at 64 KiB, 96–99 ms at 1 MiB
+(~10.5 MB/s). **No PERF row filed**: nothing here is a new user-felt cost, and the one path that is
+(1 MiB ≈ 0.1 s → 8 MiB ≈ 0.79 s at the cap) is already `GUARD-DF-020`. Boundary stated in the report:
+egress disabled means classifier latency is not measured, and the host was moderately loaded.
+
+Install leg: **ran and passed**, not skipped. `bunker-qa.sh launch … --server bunker-mvp` →
+`agent=791648f6`, detached battery, 24 evidence rows: fresh-install OK (public-origin clone,
+`go build ./...`), tests rc=0, `act` 1 job green, upgrade from v0.1.0 clean, 3 GiB memory cap
+survived, clean `rc=2` on missing config, no network dependency; lint INFO (golangci-lint absent on
+the agent). The old `GUARD-DF-009` render blocker is gone in the current script (escaped
+`UI_PORTS`). Teardown verified: the agent home is gone from `bunker-mvp`.
+
+Not re-run, and why: the HTTP cap boundary (preserved tick-3 artifact `cap/cap-probe.json`
+already matches the published table) and the classifier-latency path (no credential; this lane
+never mints one). The CLI `rc=2` half of the egress contract was not reproduced locally — the
+blocked shell invocation was not retried, and the bunker `chaos-errorpath` cell supplies the
+observation instead.
+
+No code, policy or board row was changed; no row closed; ids came from `board_next_id.py`
+(`GUARD-DF-022`, `DOC-31`, both free at file time); `boardctl validate` run after filing.
+Left behind: `docs/dogfood/2026-11-14-run8-tick5-override-wiring.md` and this entry.
+
+- ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=no new-evidence=yes head=0a5a791 perf=measured-no-finding install=PASS(rerun,bunker-mvp,agent=791648f6) rows=GUARD-DF-022,DOC-31 cited=GUARD-DF-020,GUARD-DF-019,GUARD-DF-009,GUARD-DF-007,DOC-17
