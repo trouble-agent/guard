@@ -18,6 +18,14 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: install-python-test-dependency
+        run: python -m pip install pytest
+
       - name: build
         run: go build ./...
 
@@ -31,6 +39,15 @@ jobs:
 
       - name: test
         run: go test ./... -count=1
+
+      - name: python-tests
+        working-directory: connectors/python
+        run: python -m pytest
+
+      # STATUS: PASS | TIER: T1 | EVIDENCE: none:worker-branch-local-controls
+      # ch:trace row=QA-GUARD-007 spec=.github/workflows/ci.yml wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#QA-GUARD-007 test=connectors/python/test_guard_client.py doc=.github/workflows/ci.yml evidence=none:worker-branch-local-controls witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
+      - name: docs-check
+        run: make docs-check
 
       - name: gitleaks
         # gitleaks-action@v2 requires a paid license on org repos; use the
