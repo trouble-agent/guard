@@ -243,3 +243,14 @@
 {"id":235,"timestamp":"2026-11-15T06:10:18Z","event_type":"task_completed","task_id":"REL-GUARD-010","actor":"foreman","detail":"{\"status\":\"complete\"}"}
 {"id":236,"timestamp":"2026-11-15T06:10:39Z","event_type":"task_updated","task_id":"REL-GUARD-003","actor":"foreman","detail":"{\"title\":\"RELEASE cut v0.2.0 (OWNER-GATED): readiness re-verified 2026-11-15 pass 8; candidate 7b8837f (tree a3beeaf), 8/8 gates green + exact-SHA CI success 43663689471; explicit Bane authorization required before tag\"}"}
 {"id":237,"timestamp":"2026-11-15T06:11:19Z","event_type":"task_created","task_id":"REL-GUARD-011","actor":"foreman","detail":"{\"id\":\"REL-GUARD-011\",\"status\":\"pending\"}"}
+{"id":238,"timestamp":"2026-11-15T17:42:10Z","event_type":"task_completed","task_id":"QA-GUARD-007","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":239,"timestamp":"2026-11-15T17:42:11Z","event_type":"task_completed","task_id":"GUARD-DF-019","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":240,"timestamp":"2026-11-15T17:42:11Z","event_type":"task_completed","task_id":"GUARD-DF-008-R2","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":241,"timestamp":"2026-11-15T17:42:11Z","event_type":"task_completed","task_id":"GUARD-DF-022","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":242,"timestamp":"2026-11-15T17:42:11Z","event_type":"task_completed","task_id":"REL-GUARD-011","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":243,"timestamp":"2026-11-15T17:43:56Z","event_type":"task_created","task_id":"INT-CI-4","actor":"foreman","detail":"{\"id\":\"INT-CI-4\",\"status\":\"pending\"}"}
+{"id":244,"timestamp":"2026-11-15T17:45:26Z","event_type":"task_completed","task_id":"GUARD-DF-021","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":245,"timestamp":"2026-11-15T17:47:52Z","event_type":"task_created","task_id":"DOC-32","actor":"foreman","detail":"{\"id\":\"DOC-32\",\"status\":\"pending\"}"}
+{"id":246,"timestamp":"2026-11-15T17:47:52Z","event_type":"task_completed","task_id":"DOC-31","actor":"foreman","detail":"{\"status\":\"complete\"}"}
+{"id":247,"timestamp":"2026-11-15T17:52:22Z","event_type":"task_updated","task_id":"GUARD-DF-020","actor":"foreman","detail":"{\"status\":\"pending\"}"}
+{"id":248,"timestamp":"2026-11-15T17:52:22Z","event_type":"task_created","task_id":"GUARD-DF-020-R2","actor":"foreman","detail":"{\"id\":\"GUARD-DF-020-R2\",\"status\":\"pending\"}"}
