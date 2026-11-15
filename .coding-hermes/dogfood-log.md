@@ -482,3 +482,49 @@ The preceding duplicate-fire record incorrectly stated that the checkout had no 
 This correction does not invalidate the already-committed run-8 product, performance, or install evidence: that evidence was measured at `4d4a2954affaceeb6dbc4d22824424e32ab6e900`, and the current product-only diff to `b11864b5830c981f80941ab871bd934895ecd198` is empty. It does mean the prior statement that the fire independently verified a marker-free checkout is withdrawn. No product use, benchmark, install battery, or new board row was run on this re-fire. `GUARD-DF-018` and `GUARD-DF-019` remain the two existing live findings; their committed row and paired `task_created` event counts remain 1 each; `boardctl validate` remains `RESULT: OK (73 warning(s))`, rc 0.
 
 - ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=yes correction=stale-REBASE_HEAD live-checkout=unmeasured rows=GUARD-DF-018,GUARD-DF-019
+
+## Third fire — the cap gap closed, and the cost behind it
+
+Prior fires of this id were records-only because run 8 had already filed its two findings. This fire
+did new work instead of re-recording: it exercised the one thing run 8 explicitly named as unexercised
+("the 8 MiB HTTP body cap was exercised only up to 22.6 KB; the rejection [above the cap was not
+exercised]") and put a number on the cost of large bodies.
+
+All measurements were taken against a preserved run-8 binary built from the tested commit `4d4a295`
+(sha256 `cdd690fcdd3a29314e3864558f72ed878d96546d9acc028652c6484a81392f2b`, served on
+`127.0.0.1:18791`), never against the live checkout — which still carries the stale `.git/REBASE_HEAD`
+marker recorded in the correction above and therefore remains an unmeasured boundary. Benchmarks ran in
+a scratch `git archive 4d4a295`-shaped export of HEAD under `.hermes/cache/scratch/`, never in the repo.
+
+Cap boundary, both sides, egress at product default: 7 MiB -> 200 allow (1394.8 ms); exactly 8,388,608 B
+-> 200 allow, score 0.08 (1208.1 ms); 8,388,609 B -> **400 `bad request: unexpected EOF`** (28.8 ms);
+9 MiB -> 400, same body (26.1 ms). The boundary is exact at `8<<20` (no off-by-one) and
+`connectors/README.md` already documents truncation->400, so the defect is what the caller is told: an
+unnamed, truncated-JSON-shaped answer for a size problem, delivered in 28 ms with no classification
+attempted. That is DF-G4, which `GUARD-DF-008(c)` claimed fixed when it was closed `complete`.
+
+Attribution before filing: with `GUARD_EGRESS_ENABLED=false` the same binary still takes 1181-1205 ms at
+8 MiB but 1 ms at 41 B, so the cost is local and runs before `Classify` (`guard.go:187` ->
+`guard.go:190`). An in-export benchmark (`-benchtime 5x`, AMD Ryzen 7 7840HS, loadavg 29.5):
+`NormalizeAll` 793.8 ms/op at 8 MiB (10.57 MB/s) and 2.46 ms/op at 24 KB (10.02 MB/s) — constant
+throughput, so per-byte linear work rather than a threshold artifact. `ExpandBase64` 371.1 ms plus
+`ExpandHex` 317.0 ms are 87% of it; rot13/fold/invisible account for the remaining ~139 ms and
+`ExpandURL` short-circuits (0.15 ms). Hot path: `normalize.go:89` `[A-Za-z0-9+/]{16,}={0,2}` scanned over
+the whole body at `:93`, and `normalize.go:115` `\b[0-9a-fA-F]{16,}\b` scanned at `:119`; `maxExpanded`
+(`:47`) bounds only the appended decoded text, nothing bounds the scan over the input.
+
+Judged worth filing because a user feels it: 1.2-1.5 s per call on document-length input, and
+`GUARD-DF-018` says the verdict only reads the first ~19 KB — ~99.8% of that scan is invisible to the
+classifier. Filed with a 5x before/after target and a "do not just delete the scans" note, because
+encoding expansion is the product's stated value; the defect is the unbounded scan, not the feature.
+
+Install leg: **not re-run, and not a silent pass.** This tick's earlier fire left a complete ephemeral
+bunker battery at `/tmp/bunker-qa-evidence-20261114T234313Z-926128.jsonl` on `bunker-mvp`
+(instance `08c686df`): `launch OK`, `fresh-install OK`, `tests OK`, `lint INFO`, `docker_build N/A`,
+`compose_config N/A`. The product tree is byte-identical to the commit that battery graded
+(`git diff --stat 4d4a295..HEAD -- . ':!.coding-hermes' ':!docs'` is empty), so re-running would grade
+the same bytes; re-running was declined on that ground, not for lack of a host.
+
+Evidence document: `docs/dogfood/2026-11-14-run8-tick3-cap-and-perf.md`.
+
+- ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=no new-evidence=yes head=c62f815 product=4d4a295-invariant verdict=SHIPPABLE-WITH-SECURITY-SHAPED-ROUGH-EDGE install=PASS(inherited,byte-identical-product,not-rerun) perf=MEASURED-normaliz-0.79s@8MiB rows=GUARD-DF-020,GUARD-DF-008-R2 cited=GUARD-DF-018,GUARD-DF-008,DOC-27
