@@ -83,6 +83,9 @@ const OperatorTokenHeader = "X-Operator-Token"
 // every user on the host).
 const GuardTokenEnv = "GUARD_TOKEN"
 
+// maxBodyBytes is the inclusive HTTP request-body ceiling for /check.
+const maxBodyBytes = 8 << 20 // 8 MiB
+
 // GuardEgressEnv controls whether the hosted Jev classifier may receive
 // untrusted content. Egress is enabled by default for backwards compatibility;
 // set GUARD_EGRESS_ENABLED=false to refuse classification rather than send data.
@@ -241,7 +244,16 @@ func newHandler(g *guard.Guard, token string, egressEnabled bool) http.Handler {
 			return
 		}
 		var in guard.Input
-		if err := json.NewDecoder(io.LimitReader(r.Body, 8<<20)).Decode(&in); err != nil {
+		body, err := io.ReadAll(io.LimitReader(r.Body, maxBodyBytes+1))
+		if err != nil {
+			http.Error(w, "bad request: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if len(body) > maxBodyBytes {
+			http.Error(w, "request body exceeds 8 MiB (8388608 bytes)", http.StatusRequestEntityTooLarge)
+			return
+		}
+		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&in); err != nil {
 			http.Error(w, "bad request: "+err.Error(), http.StatusBadRequest)
 			return
 		}

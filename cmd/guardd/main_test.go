@@ -100,6 +100,61 @@ func TestCheckRequiresOperatorToken(t *testing.T) {
 }
 
 // AC2: /healthz stays open (no header) even when a token is configured.
+// TestCheckBodySizeBoundary preserves the inclusive 8 MiB ceiling while
+// distinguishing an oversized body from malformed JSON.
+func TestCheckBodySizeBoundary(t *testing.T) {
+	srv := httptest.NewServer(newHandler(stubGuard(), "token", true))
+	defer srv.Close()
+
+	prefix := []byte(`{"content":"`)
+	suffix := []byte(`"}`)
+	exact := append(append([]byte{}, prefix...), bytes.Repeat([]byte("a"), maxBodyBytes-len(prefix)-len(suffix))...)
+	exact = append(exact, suffix...)
+	if len(exact) != maxBodyBytes {
+		t.Fatalf("test fixture length = %d, want %d", len(exact), maxBodyBytes)
+	}
+
+	post := func(body []byte) (int, string) {
+		t.Helper()
+		req, err := http.NewRequest(http.MethodPost, srv.URL+"/check", bytes.NewReader(body))
+		if err != nil {
+			t.Fatalf("build request: %v", err)
+		}
+		req.Header.Set(OperatorTokenHeader, "token")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("post /check: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		raw, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatalf("read response: %v", err)
+		}
+		return resp.StatusCode, string(raw)
+	}
+
+	if status, body := post(exact); status != http.StatusOK {
+		t.Fatalf("exactly 8 MiB status = %d, want 200 (body: %q)", status, strings.TrimSpace(body))
+	}
+
+	over := append(append([]byte{}, exact...), 'x')
+	status, body := post(over)
+	if status != http.StatusRequestEntityTooLarge {
+		t.Fatalf("8 MiB + 1 status = %d, want 413 (body: %q)", status, strings.TrimSpace(body))
+	}
+	if !strings.Contains(body, "8 MiB") && !strings.Contains(body, "8388608") {
+		t.Fatalf("oversized body = %q, want a message naming 8 MiB or 8388608", strings.TrimSpace(body))
+	}
+
+	status, body = post([]byte(`{"content":"unterminated`))
+	if status != http.StatusBadRequest {
+		t.Fatalf("small malformed JSON status = %d, want 400 (body: %q)", status, strings.TrimSpace(body))
+	}
+	if strings.Contains(body, "8 MiB") || strings.Contains(body, "8388608") {
+		t.Fatalf("small malformed JSON was classified as oversized: %q", strings.TrimSpace(body))
+	}
+}
+
 func TestHealthzStaysOpenWithTokenSet(t *testing.T) {
 	srv := httptest.NewServer(newHandler(stubGuard(), "s3cr3t-token", true))
 	defer srv.Close()
