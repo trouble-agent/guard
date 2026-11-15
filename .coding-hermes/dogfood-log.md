@@ -406,3 +406,71 @@ Left behind: this log record only. No rows, events, reports, code, visibility, o
 - Board readback: GUARD-DF-018 and GUARD-DF-019 each appear exactly once (`grep -c` = 1), both minted with board_next_id.py GUARD-DF --count 2 and verified free before append, both status pending with acceptance_criteria 496/327 chars; `boardctl -C /home/kara/trouble-agent/guard validate` -> RESULT: OK (73 warning(s)), the same pre-existing warnings as before the run.
 - Left behind in canonical repo: the two board rows + their events, this log entry, and docs/dogfood/2026-11-14-run8-integration.md (integration report with the diagnostics trail). No product code, no test, no visibility or permission changed. Controller evidence: /home/kara/.hermes/cache/scratch/guard-dogfood-20261114-231736/ (guardd binary, 12 probe harnesses, perf/perf-cli.json, perf/perf-http-warm.json, bunker-launch.log, bunker-collect.log).
 - Not covered: lint (runner absent on the agent); multi-key failover and key rotation; parallel-load throughput; HTTP rejection above the 8 MiB body cap; and the ~19 KB boundary was measured against one provider/model in one session — nothing here claims it is provider-independent.
+
+## 2026-11-14 — duplicate fire of dogfood run 8 (records-only; no new delivery)
+
+This fire carried the tick id `guard-dogfood-2026-11-14-23-17-36`, which already has a committed run
+record (the run-8 section above; heading count for that id in this file remains **1**). The delivery
+commit `792b373` is timestamped `2026-11-14T18:57:59-05:00`, 66 s before this fire's own first probe
+(`date -Is` = `2026-11-14T18:59:05-05:00`), so this is a same-tick re-fire, not a new run. Per the
+duplicate-fire gate it is records-only: no product use, benchmark, install battery or new board row
+was run or filed by this fire.
+
+Record read before taking the records-only branch, and the legs it names were all walked — real use
+on five surfaces, perf measurement, the bunker install leg, and board readback — so this is not an
+unfinished record that a closeout would freeze.
+
+Verification, re-derived from committed blobs and independent paths rather than from the prior
+executor's prose:
+
+- Canonical repo from the scheduler row: `/home/kara/trouble-agent/guard`; remote `origin`, default
+  branch `main`. `git fetch origin main` then `git rev-parse HEAD origin/main` -> both
+  `792b373cfc63333df74c2dc7650373a33c184bb1`; `git rev-list --left-right --count HEAD...origin/main`
+  -> `0 0`. `git branch -r --contains HEAD` lists `origin/main`. Clean working tree.
+- The verdict still describes the shipped tree: `git diff --stat 4d4a295..HEAD` (tested HEAD -> current
+  HEAD) is 4 bookkeeping files only (`.coding-hermes/board/events.jsonl`,
+  `.coding-hermes/board/tasks.jsonl`, `.coding-hermes/dogfood-log.md`,
+  `docs/dogfood/2026-11-14-run8-integration.md`, 242 insertions). **No product code changed.**
+- Board rows read from `git show HEAD:.coding-hermes/board/tasks.jsonl`: `GUARD-DF-018` pending / P2 /
+  496-char acceptance criteria, `GUARD-DF-019` pending / P4 / 327-char acceptance criteria; each bare
+  id appears exactly once. Paired events read from the committed `events.jsonl` (key path
+  `event_type`/`task_id`, confirmed by `keys` on the last line first): `task_created` for both rows,
+  actor `foreman`, timestamps `2026-11-14T23:54:00Z` and `2026-11-14T23:54:21Z`. Rows carry
+  `created_at` matching those instants; there is no `tick_id` field on this board's rows or event
+  details, so tick provenance rests on the timestamps and this log.
+- `boardctl -C /home/kara/trouble-agent/guard validate` -> `RESULT: OK (73 warning(s))`, rc=0, the same
+  pre-existing legacy-shape warnings as before the run. Row count 116 in the working tree == 116 in
+  the committed blob (no uncommitted board drift).
+- Cited perf paths reproduce their numbers. `perf/perf-cli.json`: process-start runs
+  `6.6, 2.6, 2.3, 2.3, 3.0` ms (median 2.6); `cold_benign` wall 477.6, 472.8, 386.9, 346.8, 424.0 ms
+  (median 424.0, binary self-report 342–473 ms). `perf/perf-http-warm.json`: 41 B median 284.3 ms
+  (266.0–552.2), 24,222 B median 298.1 ms (288.2–412.3) — flat in input size, which is the truncation
+  seen from the cost side.
+- Install leg ledger reconciled at collect time: `/tmp/bunker-qa-evidence-20261114T234313Z-926128.jsonl`
+  holds **25** rows = the 23 battery cells the record quotes (9 of them `toolchain-bootstrap OK`, plus
+  `launch OK` and `collect OK` control rows). Cells: fresh-install OK, tests OK, ci-pass OK, upgrade OK,
+  chaos-resource PASS, chaos-errorpath OK, chaos-disconnect INFO, chaos-resource/corruption/shutdown/
+  docker/compose/ui N/A by repository shape, lint INFO (golangci-lint absent on that agent). Teardown
+  re-verified at this fire: `bunker info 08c686df --server bunker-mvp` -> `not_found: agent "08c686df"
+  not found`.
+- Both findings' premises re-checked at current HEAD instead of trusted: `guard.go:187`
+  `NormalizeAll(in.Content, g.Normalizers)` -> `guard.go:190` `g.Classifier.Classify(ctx, text)` is
+  still the only normalization of the payload; `jev.go:166` marshals the whole content as the
+  classifier `State` with no cap, chunking or truncation notice (the only size limit in the tree is the
+  HTTP body `io.LimitReader(r.Body, 8<<20)` at `cmd/guardd/main.go:244`, and the CLI's stdin read
+  remains uncapped). The shipped console script still exposes only
+  `--endpoint/--token/--timeout/--fail-open` plus the positional content (`connectors/python/guard_client.py:285-310`),
+  so the library's `source`/`channel` arguments stay unreachable from the entrypoint; the no-source call
+  is at `guard_client.py:342` (the run-8 record cited :345 — a 3-line anchor drift, premise unchanged).
+  Both P2/P4 rows remain live.
+
+Ownership at fire start: no Git-operation markers and no `index.lock` in the checkout,
+`ps -eo pid,ppid,etime,args | grep trouble-agent/guard` matched nothing, so no live worker, collector,
+guard or judge held the tree. `git worktree list --porcelain` shows 15 linked worktrees under
+scratch/worktrees (booking residue, all detached or already-merged `wt/*` branches); none carries an
+in-progress marker and none was touched by this fire.
+
+Left behind: this log record only. No row, event, report, code, visibility or permission changed, and
+no duplicate filing was created for either finding.
+
+- ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=yes of=run8 head=792b373 origin/main=792b373 verdict=SHIPPABLE-WITH-GUARD-DF-018 install=PASS(verified-teardown,not-rerun) perf=verified-not-retimed rows=GUARD-DF-018,GUARD-DF-019
