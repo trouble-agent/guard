@@ -7,21 +7,21 @@
   "wave_budget": 7,
   "worker_model": "openai/gpt-6.1-terra",
   "worker_provider": "xkiro",
-  "status": "dispatched",
+  "status": "merged",
   "tasks": [
     {
       "id": "DOC-32",
       "worktree": "/home/kara/worktrees/guard-DOC-32",
       "branch": "wt/DOC-32",
       "base_sha": "7905bfd",
-      "dispatch_status": "planned"
+      "dispatch_status": "merged"
     },
     {
       "id": "GUARD-DF-020-R2",
       "worktree": "/home/kara/worktrees/guard-GUARD-DF-020-R2",
       "branch": "wt/GUARD-DF-020-R2",
       "base_sha": "7905bfd",
-      "dispatch_status": "planned"
+      "dispatch_status": "merged"
     }
   ]
 }
