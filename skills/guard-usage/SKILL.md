@@ -110,9 +110,10 @@ if not v.deliver: ...    # quarantine/review
   it is the complete normalized-state size. The 20,000-byte boundary is
   intentionally stricter than Jev's documented normal text path around 32,000
   bytes so provider-side suffix dropping cannot become a silent allow.
-- Deterministic normalization scans only a 128 KiB prefix plus a 16 KiB suffix.
-  Encodings in the omitted middle are not claimed to be detected; all default
-  transforms remain enabled within that window.
+- Deterministic normalization runs only within the single 20,000-byte
+  classifier cap. Raw content above that cap receives an explicit
+  classification-limit verdict before normalization; all default transforms
+  remain enabled for accepted content.
 - `attack_class` is noisy near the threshold — benign text often carries
   masquerade at 0.1–0.4. Trust `route`, not the label, at the margin.
 - **`duration_ms` and `cost_usd` cover ALL classifier calls the verdict

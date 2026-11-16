@@ -79,11 +79,10 @@ reveals nothing about the later stages:
 - **HTTP body size**: capped at **8 MiB (8,388,608 bytes)**. A body of exactly
   8 MiB is accepted; the first byte over the cap returns `413` and names the
   limit instead of being reported as malformed JSON. This cap is HTTP-only.
-- **Oversized normalization scan**: deterministic encoding scans use a 128 KiB
-  prefix plus a 16 KiB suffix window. The original content is preserved for the
-  classifier, but an encoded payload in the omitted middle is not claimed to be
-  detected. Base64/hex/ROT13/URL, invisible-character, and homoglyph detection
-  remains enabled within the scan window.
+- **Normalization and classifier limit**: deterministic encoding, invisible-
+  character, and homoglyph normalization runs only on content within the single
+  **20,000-byte classifier cap**. Raw content above that cap is rejected with an
+  explicit classification-limit verdict before normalization.
 - **CLI stdin**: when content is read from stdin, the CLI reads it to EOF with
   no size cap and buffers the whole input in memory (`io.ReadAll(os.Stdin)`,
   main.go:189). Large pipelines can therefore consume substantial memory.
