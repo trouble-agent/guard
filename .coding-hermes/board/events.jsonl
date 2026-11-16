@@ -263,3 +263,6 @@
 {"id":1794782735157477261,"timestamp":"2026-11-16T01:19:48","event_type":"task_completed","task_id":"DOC-32","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
 {"id":1794782735157477262,"timestamp":"2026-11-16T01:19:48","event_type":"task_completed","task_id":"GUARD-DF-020-R2","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
 {"id":1794782735157477263,"timestamp":"2026-11-16T01:40:44","event_type":"task_created","task_id":"INT-CI-5","actor":"foreman","detail":"{\"id\":\"INT-CI-5\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477264,"timestamp":"2026-11-16T17:33:10","event_type":"task_completed","task_id":"INT-CI-5","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
+{"id":1794782735157477265,"timestamp":"2026-11-16T17:34:51","event_type":"task_created","task_id":"INT-HYGIENE-1","actor":"foreman","detail":"{\"id\":\"INT-HYGIENE-1\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477266,"timestamp":"2026-11-16T17:42:16","event_type":"task_completed","task_id":"INT-HYGIENE-1","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
