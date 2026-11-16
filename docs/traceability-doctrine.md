@@ -100,6 +100,8 @@ EVIDENCE: exact paths, commands, outputs, witnesses, and any known gaps
 
 `STATUS: PASS` requires that all acceptance criteria are satisfied. `TIER:` must name the actual evidence floor, and `EVIDENCE:` must point to the artifacts that support it. If the status is not PASS, `EVIDENCE:` must also identify the missing criterion, blocker, or failing observation.
 
+For a docs-only close-out, the marker must cite the stable commit containing the documented change and the commands or prior-run verdict evidence that support the close-out. It may use an explicit `docs-only` exemption when no independent judge is required, but it must not cite the run currently grading that marker; preserve any known evidence gap in `EVIDENCE:` or `RESIDUAL:` rather than using a self-citing or pending verdict.
+
 ## Repository-local verification
 
 From the repository root, the minimum documentation check is:
