@@ -127,12 +127,3 @@ func TestGuardRejectsInputAboveClassifierCapBeforeNormalization(t *testing.T) {
 		t.Fatalf("reason = %q, want classification-limit explanation", res.Reason)
 	}
 }
-
-func containsString(values []string, want string) bool {
-	for _, value := range values {
-		if value == want {
-			return true
-		}
-	}
-	return false
-}
