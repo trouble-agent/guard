@@ -1,7 +1,7 @@
 {
   "tick": "guard-foreman-2026-11-17-21-02-51",
   "project": "trouble-agent/guard",
-  "mode": "serial",
+  "mode": "serial-with-refill",
   "wave_budget": 11,
   "ready_rows_at_compose": 1,
   "base_sha": "5b9785f",
@@ -12,7 +12,24 @@
       "provider": "xkiro",
       "worktree": null,
       "branch": "main",
-      "note": "single ready row; serial in-checkout dispatch (no worktree)"
+      "passes": 3,
+      "commits": ["b954066", "b26dff3", "67d3910"],
+      "foreman_direct_fixup": "e858bcb",
+      "judge": "PASS 8d4432ae (b7e04f91/73c0349b/1f6ad9cb FAIL on wording + one false history claim)",
+      "outcome": "closed"
+    },
+    {
+      "row": "REL-GUARD-013",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "worktree": null,
+      "branch": "main",
+      "passes": 1,
+      "commits": ["30556eb"],
+      "judge": "PASS 5c9d3be0",
+      "outcome": "closed",
+      "note": "filed by this tick from REL-GUARD-012's closeout finding, then dispatched in the same tick as a refill"
     }
-  ]
+  ],
+  "final": {"ready_now": 0, "blocked": ["REL-GUARD-003", "REL-GUARD-007"], "board_commits": ["52988c8", "28e54d9", "e329c43"]}
 }
