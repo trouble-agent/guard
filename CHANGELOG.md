@@ -45,13 +45,14 @@ changes.
   and GO-2026-6809 (`crypto/x509`) (REL-GUARD-008).
 - `make docs-check` requires `jq`; when `jq` is absent, it emits the install
   instruction "Install jq and re-run (see README Prerequisites, GUARD-DF-004)."
-- Committed benchmarks for the 8 MiB normalization path and for an
-  egress-disabled `/check` iteration. Oversized-payload normalization was
-  briefly bounded to a prefix/suffix scan window for performance, measured at
-  551 MB/s on that benchmark at the time. The bound never fired on the
-  production path, because content above the 20,000-byte classification cap is
-  rejected before any normalizer runs — so guard verdicts are unchanged; the
-  window machinery is removed in GUARD-DF-020-R2 (GUARD-DF-020).
+- Committed benchmarks for 8 MiB normalization and for an 8 MiB egress-disabled
+  `/check` request — the `/check` case measures the above-cap rejection, since
+  content over the 20,000-byte classification cap never reaches a normalizer.
+  Oversized-payload normalization was briefly bounded to a prefix/suffix scan
+  window for performance, measured at 551 MB/s on the normalization benchmark
+  at the time; GUARD-DF-020-R2 later removed that window as unreachable, so
+  the shipped code retains no speedup from it and guard verdicts are unchanged
+  (GUARD-DF-020).
 - Normalizing no longer carries a scan window: the 128 KiB prefix plus 16 KiB
   suffix bound was unreachable — content over the 20,000-byte classification
   cap is rejected before any normalizer runs — so it is removed and
