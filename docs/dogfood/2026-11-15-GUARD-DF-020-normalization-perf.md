@@ -1,5 +1,17 @@
 # GUARD-DF-020 normalization performance evidence
 
+> **Errata (2026-11-17).** This record describes commit bf4aa5d. The bounded
+> 128 KiB prefix / 16 KiB suffix scan window documented below under "Detection
+> boundary" was removed as unreachable by GUARD-DF-020-R2 (98179da,
+> 2026-11-15): normalization now runs over all accepted content, and content
+> above the 20,000-byte classification cap is rejected before any normalizer
+> runs — so the window and its documented detection limitation no longer
+> describe shipped behavior. The regression test cited below as
+> `TestBase64DetectionAtSixMiB` was never committed under that name; the
+> committed tests are `normalize_test.go::TestBase64Expansion` and
+> `normalize_bench_test.go::BenchmarkNormalizeAll8MiB`. The measurements below
+> are preserved as recorded at the commit under test.
+
 Date: 2026-11-15
 Commit under test before closeout: bf4aa5d90377a7ee37179de01f87622322a52bc0
 Host: AMD Ryzen 7 7840HS, 16 logical CPUs
@@ -66,7 +78,7 @@ an observable after measurement, not a false identical-run comparison.
 
 ## Trace marker
 
-ch:trace row=GUARD-DF-020 spec=normalize.go wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#GUARD-DF-020 test=normalize_bench_test.go::BenchmarkNormalizeAll8MiB,normalize_test.go::TestBase64DetectionAtSixMiB doc=docs/dogfood/2026-11-15-GUARD-DF-020-normalization-perf.md evidence=docs/dogfood/2026-11-15-GUARD-DF-020-normalization-perf.md witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
+ch:trace row=GUARD-DF-020 spec=normalize.go wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#GUARD-DF-020 test=normalize_bench_test.go::BenchmarkNormalizeAll8MiB,normalize_test.go::TestBase64Expansion doc=docs/dogfood/2026-11-15-GUARD-DF-020-normalization-perf.md evidence=docs/dogfood/2026-11-15-GUARD-DF-020-normalization-perf.md witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
 STATUS: PARTIAL (worker branch; implementation and local evidence complete, publication and tier-2 pending)
 TIER: T1 (repo tests and benchmarks invoked locally; loaded-host measurement, no idle-host claim)
 EVIDENCE: this committed artifact plus benchmark output above

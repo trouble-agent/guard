@@ -45,14 +45,18 @@ changes.
   and GO-2026-6809 (`crypto/x509`) (REL-GUARD-008).
 - `make docs-check` requires `jq`; when `jq` is absent, it emits the install
   instruction "Install jq and re-run (see README Prerequisites, GUARD-DF-004)."
-- Normalization cost on oversized input was cut by bounding the scan of
-  multi-megabyte payloads (8 MiB normalized at 145 MB/s; an 8 MiB
-  egress-disabled `/check` at ~57.8 ms per iteration) (GUARD-DF-020).
+- Multi-megabyte payloads no longer spend multi-second time in normalization:
+  8 MiB of input normalizes at 551 MB/s against a recorded 10.57 MB/s
+  baseline, and an 8 MiB egress-disabled `/check` iteration completes in
+  ~57.8 ms, down from a recorded ~1192 ms. The mechanism bounds the
+  per-encoding candidate scan on oversized payloads (GUARD-DF-020).
 - Normalizing no longer carries a scan window: the 128 KiB prefix plus 16 KiB
   suffix bound was unreachable — content over the 20,000-byte classification
-  cap is rejected before any normalizer runs — so it is removed and the docs
-  now describe the shipped behavior: normalization covers all accepted
-  content, and anything above the cap is rejected explicitly
+  cap is rejected before any normalizer runs — so it is removed and
+  normalization covers all accepted content, with anything above the cap
+  rejected explicitly. The product docs (README, connectors/README,
+  skills/guard-usage) already describe cap-only behavior, and the dated
+  dogfood record of the window measurement is now marked superseded
   (GUARD-DF-020-R2).
 
 ### Fixed
