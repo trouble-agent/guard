@@ -7,10 +7,14 @@
 > above the 20,000-byte classification cap is rejected before any normalizer
 > runs — so the window and its documented detection limitation no longer
 > describe shipped behavior. The regression test cited below as
-> `TestBase64DetectionAtSixMiB` was never committed under that name; the
-> committed tests are `normalize_test.go::TestBase64Expansion` and
-> `normalize_bench_test.go::BenchmarkNormalizeAll8MiB`. The measurements below
-> are preserved as recorded at the commit under test.
+> `TestBase64DetectionAtSixMiB` was committed in 0782562 and removed together
+> with the window machinery in 98179da (GUARD-DF-020-R2);
+> `normalize_test.go::TestBase64Expansion` and
+> `normalize_bench_test.go::BenchmarkNormalizeAll8MiB` remain. The benchmark
+> drives `NormalizeAll` directly, while production rejects content above the
+> 20,000-byte cap before normalization, so the window was unreachable in
+> production — which is why it was removed. The measurements below are
+> preserved as recorded at the commit under test.
 
 Date: 2026-11-15
 Commit under test before closeout: bf4aa5d90377a7ee37179de01f87622322a52bc0
