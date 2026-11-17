@@ -8,7 +8,8 @@ in git and cut with goreleaser.
 
 ## [0.2.0] - 2026-11-04
 
-First release since v0.1.0 (2026-10-02): 3 features, 19 fixes, no breaking
+First release since v0.1.0 (2026-10-02): 3 features and 28 fixes over the
+v0.1.0..HEAD commit range, counted by conventional-commit subject; no breaking
 changes.
 
 ### Added
