@@ -275,3 +275,7 @@
 {"id":1794782735157477273,"timestamp":"2026-11-17T22:11:50","event_type":"task_updated","task_id":"REL-GUARD-012","actor":"foreman","detail":"{\"status\":\"in_progress\"}","tick_number":null}
 {"id":1794782735157477274,"timestamp":"2026-11-17T22:14:16","event_type":"task_completed","task_id":"REL-GUARD-012","actor":"foreman","detail":"{\"commit\":\"e858bcb\",\"evidence_run\":\"8d4432ae\",\"judge\":\"PASS\",\"rounds\":4,\"ci\":\"success on e858bcb\"}","tick_number":null}
 {"id":1794782735157477275,"timestamp":"2026-11-17T22:14:20","event_type":"task_completed","task_id":"REL-GUARD-012","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
+{"id":1794782735157477276,"timestamp":"2026-11-17T22:14:43","event_type":"task_updated","task_id":"REL-GUARD-013","actor":"foreman","detail":"{\"status\":\"in_progress\"}","tick_number":null}
+{"id":1794782735157477277,"timestamp":"2026-11-17T22:30:04","event_type":"task_updated","task_id":"REL-GUARD-013","actor":"foreman","detail":"{\"status\":\"in_progress\"}","tick_number":null}
+{"id":1794782735157477278,"timestamp":"2026-11-17T22:32:08","event_type":"task_completed","task_id":"REL-GUARD-013","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
+{"id":1794782735157477279,"timestamp":"2026-11-17T22:32:08","event_type":"task_completed","task_id":"REL-GUARD-013","actor":"foreman","detail":"{\"commit\":\"30556eb\",\"evidence_run\":\"5c9d3be0\",\"judge\":\"PASS\",\"counts\":{\"feat\":3,\"fix\":28},\"ci\":\"success on 30556eb\"}","tick_number":null}
