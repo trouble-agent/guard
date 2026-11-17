@@ -1,0 +1,18 @@
+{
+  "tick": "guard-foreman-2026-11-17-21-02-51",
+  "project": "trouble-agent/guard",
+  "mode": "serial",
+  "wave_budget": 11,
+  "ready_rows_at_compose": 1,
+  "base_sha": "5b9785f",
+  "workers": [
+    {
+      "row": "REL-GUARD-012",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "worktree": null,
+      "branch": "main",
+      "note": "single ready row; serial in-checkout dispatch (no worktree)"
+    }
+  ]
+}

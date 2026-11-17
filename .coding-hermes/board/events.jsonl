@@ -267,3 +267,4 @@
 {"id":1794782735157477265,"timestamp":"2026-11-16T17:34:51","event_type":"task_created","task_id":"INT-HYGIENE-1","actor":"foreman","detail":"{\"id\":\"INT-HYGIENE-1\",\"status\":\"pending\"}","tick_number":null}
 {"id":1794782735157477266,"timestamp":"2026-11-16T17:42:16","event_type":"task_completed","task_id":"INT-HYGIENE-1","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
 {"id":1794782735157477267,"timestamp":"2026-11-17T20:58:31","event_type":"task_created","task_id":"REL-GUARD-012","actor":"foreman","detail":"{\"id\":\"REL-GUARD-012\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477268,"timestamp":"2026-11-17T21:19:35","event_type":"task_updated","task_id":"REL-GUARD-012","actor":"foreman","detail":"{\"status\":\"in_progress\"}","tick_number":null}
