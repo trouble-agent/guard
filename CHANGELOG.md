@@ -45,6 +45,15 @@ changes.
   and GO-2026-6809 (`crypto/x509`) (REL-GUARD-008).
 - `make docs-check` requires `jq`; when `jq` is absent, it emits the install
   instruction "Install jq and re-run (see README Prerequisites, GUARD-DF-004)."
+- Normalization cost on oversized input was cut by bounding the scan of
+  multi-megabyte payloads (8 MiB normalized at 145 MB/s; an 8 MiB
+  egress-disabled `/check` at ~57.8 ms per iteration) (GUARD-DF-020).
+- Normalizing no longer carries a scan window: the 128 KiB prefix plus 16 KiB
+  suffix bound was unreachable — content over the 20,000-byte classification
+  cap is rejected before any normalizer runs — so it is removed and the docs
+  now describe the shipped behavior: normalization covers all accepted
+  content, and anything above the cap is rejected explicitly
+  (GUARD-DF-020-R2).
 
 ### Fixed
 
@@ -71,6 +80,12 @@ changes.
   dogfood lane (run 6, 2026-10-29).
 - golangci-lint is enforced through make lint and CI, with errcheck and
   ineffassign fixes making the gate green (QA-GUARD-006; QA-GUARD-001-R2).
+- Long input whose normalized form exceeds the 20,000-byte classification
+  budget is no longer scored on a truncated prefix: over-budget normalized
+  state now returns an explicit classification-window guard_error naming the
+  byte count, and `bytes_seen` reports the complete normalized-state length, so
+  expanded content past the old scan window is classified or rejected loudly
+  instead of delivered at a low risk score (GUARD-DF-018).
 
 ch:trace row=REL-GUARD-006 spec=CHANGELOG.md#[0.2.0] wave=none:serial-worker test=make-docs-check doc=CHANGELOG.md prompt=none:ephemeral-brief evidence=none:worker-acceptance-output witness=none:ephemeral-acceptance verdict=none:foreman-judge commit=none:foreman-commit memory=none:not-written
 ch:trace row=REL-GUARD-011 spec=CHANGELOG.md#0.2.0 wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#REL-GUARD-011 test=make docs-check doc=CHANGELOG.md evidence=none:worker-branch witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
