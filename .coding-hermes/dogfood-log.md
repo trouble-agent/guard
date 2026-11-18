@@ -826,3 +826,24 @@ probes and raw rows: `.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/
   runs — these probes avoid it.
 
 - ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes delivery=5 new-evidence=yes surface=real-prose(21chunks:18deliver/3review/0block/0error) warm-http=254ms-12B/261ms-3.7KB-deliver/541ms-4KB-review non-deliver-penalty=+76%wall/+46%cost(pol-detail) drift=0.07(n=8) perf-row=no(not-user-felt) rows-filed=2(GUARD-DF-025-P4,GUARD-DF-026-P5) install=PASS(inherited,teardown-reverified,7a98d021-gone) verdict=SHIPPABLE
+## Delivery 5 provenance delta (2026-11-18T02:2xZ)
+
+Fifth inbound dispatch of tick `guard-dogfood-2026-11-18-00-54-47` (gateway.log 2026-11-17
+21:17:19 -0500). Provenance-only fire; no product walk. Facts verified at fire time:
+
+- The entry above titled "Delivery 5 — real user prose" was produced by the FOURTH dispatch
+  (inbound 2026-11-17 20:52:19 -0500), which finished and committed 5884e2a at 02:16:42Z, 37 s
+  before this dispatch arrived, and self-labeled "delivery 5". This fire is the actual fifth
+  dispatch and adds no product work. Later fires counting deliveries of this tick should count
+  entries by their commit timestamps against the gateway dispatch lines, not by entry labels.
+- Product delta since the record commit: `git diff --name-only 5884e2a..HEAD` = 0 files;
+  HEAD == origin/main == 5884e2a at fire start; working tree clean.
+- Board: GUARD-DF-025 (P4, pending) and GUARD-DF-026 (P5, pending) present in the HEAD tree,
+  one paired `task_created` event each in events.jsonl; `boardctl validate` = OK (76
+  legacy-shape warnings, no duplicate-id errors).
+- Evidence: 39 files committed under `.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/`.
+- Residue: no listener on :18799 (this lane's own serve instance already stopped). The guardd on
+  :18768 (pid 858520) serves `/home/kara/.hermes/stand-in/docs/guard/probe-20261118/guardd` — the
+  docs lane's instance, left running.
+
+- ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes delivery=5 new-evidence=no product-diff-since-walk=0 rows-filed=0 provenance=verified(head=5884e2a,origin-parity) numbering-correction=prior-entry-was-dispatch-4 residue=none-own(docs-lane-:18768-left) verdict=SHIPPABLE(carry-forward)
