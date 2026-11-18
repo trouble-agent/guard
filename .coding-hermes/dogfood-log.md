@@ -662,3 +662,14 @@ report). Pre-existing agent `f6a5f076` (created 00:08, before this tick) is not 
 left untouched. Left behind: `docs/dogfood/2026-11-18-run9-tick1-integration.md` and this entry.
 
 - ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=no new-evidence=yes head=7c08590 verdict=SHIPPABLE install=PENDING-AT-WRITE(bunker-mvp,agent=7a98d021,harvested-at-close) perf=measured-no-finding-12x-1MiB rows=GUARD-DF-023 cited=GUARD-DF-020,GUARD-DF-020-R2,GUARD-DF-022,DOC-31,REL-GUARD-007
+
+Addendum to the run 9 tick 1 entry above (same fire): the install leg completed. Battery on
+`bunker-mvp` agent=7a98d021 finished ~01:11 UTC, 23 evidence rows: fresh-install OK (`go build ./...`
+on a public-origin clone, go 1.27.4 bootstrap), tests rc=0, ci-pass OK (act 1 job green), upgrade
+from v0.1.0 clean, chaos-resource PASS (3G cap), chaos-errorpath OK (rc=2 missing config), lint INFO
+(golangci-lint absent on agent), docker-deploy/chaos-shutdown SKIPPED by the live-controller safety
+gate. Evidence committed at `.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/`.
+Teardown proven from `bunker list`: agent gone; pre-existing `f6a5f076` (not this fire's) left
+running. **Final install grade: PASS (rerun, bunker-mvp, agent=7a98d021).**
+
+- ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=no new-evidence=yes head=7f1e91c install=PASS(rerun,bunker-mvp,agent=7a98d021) perf=measured-no-finding-12x-1MiB rows=GUARD-DF-023 cited=GUARD-DF-020,GUARD-DF-020-R2

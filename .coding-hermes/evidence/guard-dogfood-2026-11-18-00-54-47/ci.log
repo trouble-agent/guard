@@ -1,0 +1,85 @@
+time="2026-11-18T01:08:00Z" level=info msg="Using docker host 'unix:///run/bunker/7a98d021/docker.sock', and daemon socket 'unix:///run/bunker/7a98d021/docker.sock'"
+[ci/ci] ⭐ Run Set up job
+[ci/ci] 🚀  Start image=catthehacker/ubuntu:act-latest
+[ci/ci]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[ci/ci]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[ci/ci]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[ci/ci]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[ci/ci]   ✅  Success - Set up job
+[ci/ci]   ☁  git clone 'https://github.com/actions/setup-go' # ref=v5
+[ci/ci]   ☁  git clone 'https://github.com/actions/setup-python' # ref=v5
+[ci/ci]   ☁  git clone 'https://github.com/golangci/golangci-lint-action' # ref=v7
+[ci/ci] ⭐ Run Main checkout
+[ci/ci]   🐳  docker cp src=/home/bunker-7a98d021/qa-guard/. dst=/home/bunker-7a98d021/qa-guard
+[ci/ci]   ✅  Success - Main checkout [186.973552ms]
+[ci/ci] ⭐ Run Main setup-go
+[ci/ci]   🐳  docker cp src=/home/bunker-7a98d021/.cache/act/actions-setup-go@v5/ dst=/var/run/act/actions/actions-setup-go@v5/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-go@v5/dist/setup/index.js] user= workdir=
+[ci/ci]   🚧  ::warning::Restore cache failed: Dependencies file is not found in /home/bunker-7a98d021/qa-guard. Supported file pattern: go.sum
+[ci/ci]   ❓ add-matcher /run/act/actions/actions-setup-go@v5/matchers.json
+[ci/ci]   ❓  ::group::go env
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ✅  Success - Main setup-go [12.109508927s]
+[ci/ci]   ⚙  ::set-output:: go-version=1.26.11
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/go/1.26.11/x64/bin
+[ci/ci]   ⚙  ::add-path:: /root/go/bin
+[ci/ci] ⭐ Run Main setup-python
+[ci/ci]   🐳  docker cp src=/home/bunker-7a98d021/.cache/act/actions-setup-python@v5/ dst=/var/run/act/actions/actions-setup-python@v5/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-python@v5/dist/setup/index.js] user= workdir=
+[ci/ci]   ❓  ::group::Installed versions
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ❓ add-matcher /run/act/actions/actions-setup-python@v5/.github/python.json
+[ci/ci]   ✅  Success - Main setup-python [10.700584077s]
+[ci/ci]   ⚙  ::set-env:: pythonLocation=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: PKG_CONFIG_PATH=/opt/hostedtoolcache/Python/3.15.2/x64/lib/pkgconfig
+[ci/ci]   ⚙  ::set-env:: Python_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: Python2_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: Python3_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: LD_LIBRARY_PATH=/opt/hostedtoolcache/Python/3.15.2/x64/lib
+[ci/ci]   ⚙  ::set-output:: python-version=3.15.2
+[ci/ci]   ⚙  ::set-output:: python-path=/opt/hostedtoolcache/Python/3.15.2/x64/bin/python
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/Python/3.15.2/x64/bin
+[ci/ci] ⭐ Run Main install-python-test-dependency
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/3] user= workdir=
+[ci/ci]   ✅  Success - Main install-python-test-dependency [3.190476066s]
+[ci/ci] ⭐ Run Main build
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/4] user= workdir=
+[ci/ci]   ✅  Success - Main build [18.384058434s]
+[ci/ci] ⭐ Run Main vet
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/5] user= workdir=
+[ci/ci]   ✅  Success - Main vet [3.888262835s]
+[ci/ci] ⭐ Run Main lint
+[ci/ci]   🐳  docker cp src=/home/bunker-7a98d021/.cache/act/golangci-golangci-lint-action@v7/ dst=/var/run/act/actions/golangci-golangci-lint-action@v7/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/golangci-golangci-lint-action@v7/dist/run/index.js] user= workdir=
+[ci/ci]   ❓  ::group::prepare environment
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ❓  ::group::run golangci-lint
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ✅  Success - Main lint [8.901405956s]
+[ci/ci]   ⚙  ::add-path:: /root/golangci-lint-2.15.0-linux-amd64
+[ci/ci] ⭐ Run Main test
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/7] user= workdir=
+[ci/ci]   ✅  Success - Main test [9.618575792s]
+[ci/ci] ⭐ Run Main python-tests
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/8] user= workdir=connectors/python
+[ci/ci]   ✅  Success - Main python-tests [8.065635969s]
+[ci/ci] ⭐ Run Main docs-check
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/9] user= workdir=
+[ci/ci]   ✅  Success - Main docs-check [2.148729382s]
+[ci/ci] ⭐ Run Main gitleaks
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/10] user= workdir=
+[ci/ci]   ✅  Success - Main gitleaks [1.089662879s]
+[ci/ci] ⭐ Run Post lint
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/golangci-golangci-lint-action@v7/dist/post_run/index.js] user= workdir=
+[ci/ci]   ✅  Success - Post lint [436.875654ms]
+[ci/ci] ⭐ Run Post setup-python
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-python@v5/dist/cache-save/index.js] user= workdir=
+[ci/ci]   ✅  Success - Post setup-python [272.545686ms]
+[ci/ci] ⭐ Run Post setup-go
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-go@v5/dist/cache-save/index.js] user= workdir=
+[ci/ci]   ✅  Success - Post setup-go [327.044872ms]
+[ci/ci] ⭐ Run Complete job
+[ci/ci] Cleaning up container for job ci
+[ci/ci]   ✅  Success - Complete job
+[ci/ci] 🏁  Job succeeded

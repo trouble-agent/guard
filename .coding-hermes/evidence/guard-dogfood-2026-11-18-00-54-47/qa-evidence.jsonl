@@ -1,0 +1,25 @@
+{"project": "guard", "cell": "launch", "status": "OK", "detail": "agent=7a98d021 server=bunker-mvp ttl=4h cpu=4.0 memory=default script_bytes=153537 \u2014 battery started detached (qa-run.sh); phase B: bunker-qa.sh collect --evidence /tmp/bunker-qa-evidence-20261118T010643Z-265004.jsonl", "ts": "2026-11-18T01:07:15Z"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "go 1.27.4 installed (discovered; ~/tools/go; floor=1.26.11 ambient=1.22.2 installed=1.27.4)", "ts": "2026-11-18T01:07:18.381586+00:00"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "system gcc/g++ toolchain (~/tools/bin wrappers -> gcc/g++) \u2014 preferred over zig-cc for C++ cgo deps (MCP-008)", "ts": "2026-11-18T01:07:24.193849+00:00"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "make available (preinstalled) \u2014 GNU Make 4.3", "ts": "2026-11-18T01:07:24.256815+00:00"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "jq installed (static jq-linux64 -> jq-1.8.2 at /home/bunker-7a98d021/tools/bin/jq)", "ts": "2026-11-18T01:07:25.025337+00:00"}
+{"project": "guard", "cell": "fresh-install", "status": "OK", "detail": "; no artifact expected for [go build ./...] \u2014 a compile/dependency-install leg ships code, not binaries (set QA_EXPECTED_ARTIFACT=<name> to assert one)", "ts": "2026-11-18T01:07:43.509876+00:00"}
+{"project": "guard", "cell": "lint", "status": "INFO", "detail": "lint runner unavailable on agent: golangci-lint \u2014 lint was not run", "ts": "2026-11-18T01:07:43.569837+00:00"}
+{"project": "guard", "cell": "tests", "status": "OK", "detail": " (rc=0)", "ts": "2026-11-18T01:07:54.555323+00:00"}
+{"project": "guard", "cell": "docker_build", "status": "N/A", "detail": "no Dockerfile trigger", "ts": "2026-11-18T01:07:54.603721+00:00"}
+{"project": "guard", "cell": "compose_config", "status": "N/A", "detail": "no compose file trigger", "ts": "2026-11-18T01:07:54.644991+00:00"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "compose plugin installed (~/.docker/cli-plugins/docker-compose)", "ts": "2026-11-18T01:07:56.327534+00:00"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "buildx plugin installed (github.com/docker/buildx v0.39.0 360040a78d6113dc84e5d4dcdf0f438e1be7a41f)", "ts": "2026-11-18T01:07:57.536640+00:00"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "node+npm installed (v22.15.0)", "ts": "2026-11-18T01:08:00.313555+00:00"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "HARNESS-COMPOSE=ok (docker compose version passes)", "ts": "2026-11-18T01:08:00.555447+00:00"}
+{"project": "guard", "cell": "toolchain-bootstrap", "status": "OK", "detail": "HARNESS_NODE=ok (node v22.15.0, npm 10.9.2)", "ts": "2026-11-18T01:08:00.765628+00:00"}
+{"project": "guard", "cell": "ci-pass", "status": "OK", "detail": "act: 1 jobs green \u2014 act_result=pass rc=0 (1 triggerable workflow(s)) jq=/home/bunker-7a98d021/tools/bin/jq", "ts": "2026-11-18T01:10:49.510179+00:00"}
+{"project": "guard", "cell": "upgrade", "status": "OK", "detail": "previous release v0.1.0 (tree via git archive) \u2192 HEAD reinstall clean", "ts": "2026-11-18T01:10:51.977553+00:00"}
+{"project": "guard", "cell": "docker-deploy", "status": "SKIPPED", "detail": "safety gate: controller is the live Hermes host; Compose lifecycle cells are forced off", "ts": "2026-11-18T01:10:52.034417+00:00"}
+{"project": "guard", "cell": "ui-probe", "status": "N/A", "detail": "no web UI detected", "ts": "2026-11-18T01:10:52.097678+00:00"}
+{"project": "guard", "cell": "chaos-disconnect", "status": "INFO", "detail": "passes with network cut (no network dep)", "ts": "2026-11-18T01:10:58.654402+00:00"}
+{"project": "guard", "cell": "chaos-shutdown", "status": "SKIPPED", "detail": "safety gate: controller is the live Hermes host; Compose lifecycle cells are forced off", "ts": "2026-11-18T01:10:58.712244+00:00"}
+{"project": "guard", "cell": "chaos-corruption", "status": "N/A", "detail": "no db/state files in repo", "ts": "2026-11-18T01:10:58.753413+00:00"}
+{"project": "guard", "cell": "chaos-resource", "status": "PASS", "detail": "suite survives 3G memory cap (cap=3145728KB child_saw=3145728 subshell_saw=3145728 parent_saw=unlimited)", "ts": "2026-11-18T01:11:04.640333+00:00"}
+{"project": "guard", "cell": "chaos-errorpath", "status": "OK", "detail": "clean error on missing config (rc=2)", "ts": "2026-11-18T01:11:05.486880+00:00"}
+{"cell":"collect","status":"OK","detail":"agent=7a98d021 (bunker-mvp) — pulled 23 evidence row(s), merge-deduped by ts; per-cell logs saved to /tmp/bunker-qa-evidence-20261118T010643Z-265004.jsonl.logs; chaos-disconnect log captured at /tmp/bunker-qa-evidence-20261118T010643Z-265004.jsonl.chaos-disconnect.log (222 bytes); agent KEPT (launch","host":"bunker-mvp","collect_attempt":1,"attempt_started":"2026-11-18T01:14:09.505Z","attempt_finished":"2026-11-18T01:14:11.154Z","duration_ms":1640,"ts":"2026-11-18T01:14:11Z"}
