@@ -1,0 +1,41 @@
+{
+  "scheduler_tick_id": "guard-foreman-2026-11-18-21-49-43",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "wave_budget": 11,
+  "workers_dispatched": 7,
+  "composed_at": "2026-11-18T22:18:00Z",
+  "base_sha": "3fe10a2",
+  "worker_model": "openai/gpt-6.1-terra@xkiro",
+  "lane_evidence": "terra alive: 3/3 probe turns answered at gateway (147.6s, 148.2s, 236.8s per gateway.log) — earlier client-side rc=124s were timeout artifacts: per-call latency 88-237s under saturation (load 14-17, 472 queued admissions, sibling SpecLang wave flowing on gpt-6.1-sol since 22:09Z). Worker briefs carry a latency warning; poll patience extended.",
+  "pre_wave_harvest": [
+    {"task_id": "GUARD-DF-024", "outcome": "19:21Z wave worktree found clean at base 77759d5, zero worker output — dead wave state; row resumed into the same worktree this tick"},
+    {"task_id": "DOC-35", "outcome": "same — resumed"},
+    {"task_id": "DOC-40", "outcome": "same — resumed, brief rewritten for HEAD 3fe10a2 with re-verified true lines (main.go:146/147 flags, 196 CLI timeout, 281 HTTP timeout)"}
+  ],
+  "workers": [
+    {"task_id": "GUARD-DF-024", "task_ids": ["GUARD-DF-024"], "mode": "resume", "worktree": "/home/kara/worktrees/guard-GUARD-DF-024", "branch": "wt/GUARD-DF-024", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/dogfood/2026-11-18-run9-tick1-integration.md only", "brief": "/home/kara/.hermes/cache/scratch/guard-21-49-43/brief-GUARD-DF-024.txt"},
+    {"task_id": "DOC-35", "task_ids": ["DOC-35"], "mode": "resume", "worktree": "/home/kara/worktrees/guard-DOC-35", "branch": "wt/DOC-35", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/ADOPTION.md only", "brief": "/home/kara/.hermes/cache/scratch/guard-21-49-43/brief-DOC-35.txt"},
+    {"task_id": "DOC-40", "task_ids": ["DOC-40", "DOC-42"], "mode": "resume", "worktree": "/home/kara/worktrees/guard-DOC-40", "branch": "wt/DOC-40", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "connectors/README.md + Makefile docs-check anchor table (one commit covers both rows)", "brief": "/home/kara/.hermes/cache/scratch/guard-21-49-43/brief-DOC-40.txt"},
+    {"task_id": "README-cluster", "task_ids": ["DOC-33", "DOC-41", "DOC-43", "DOC-37", "GUARD-DF-025"], "mode": "new", "worktree": "/home/kara/worktrees/guard-README-cluster", "branch": "wt/README-cluster", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "README.md only (5 rows, one worker per the file-seam doctrine, one commit)", "brief": "/home/kara/.hermes/cache/scratch/guard-21-49-43/brief-README-cluster.txt"},
+    {"task_id": "OPS-cluster", "task_ids": ["DOC-36", "DOC-38"], "mode": "new", "worktree": "/home/kara/worktrees/guard-OPS-cluster", "branch": "wt/OPS-cluster", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/operations.md only (DOC-36 §8 + DOC-38 items 1-2)", "brief": "/home/kara/.hermes/cache/scratch/guard-21-49-43/brief-OPS-cluster.txt"},
+    {"task_id": "SKILL-cluster", "task_ids": ["DOC-44", "DOC-20-R2", "DOC-38"], "mode": "new", "worktree": "/home/kara/worktrees/guard-SKILL-cluster", "branch": "wt/SKILL-cluster", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "skills/guard-usage/SKILL.md only (DOC-44 + DOC-20-R2 + DOC-38 items i-ii)", "brief": "/home/kara/.hermes/cache/scratch/guard-21-49-43/brief-SKILL-cluster.txt"},
+    {"task_id": "CAL-cluster", "task_ids": ["GUARD-DF-026", "DOC-38"], "mode": "new", "worktree": "/home/kara/worktrees/guard-CAL-cluster", "branch": "wt/CAL-cluster", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/threshold-calibration.md only (DF-026 drift quantification + DOC-38 item iii marker repair)", "brief": "/home/kara/.hermes/cache/scratch/guard-21-49-43/brief-CAL-cluster.txt"}
+  ],
+  "independence_check": "No depends_on edges among the 14 rows (all depends_on=[]). File-seam grouping per wave-dispatch-pitfalls doctrine (same-file rows = ONE worker, one commit): README.md{DOC-33,DOC-41,DOC-43,DOC-37,DF-025} -> README-cluster; docs/operations.md{DOC-36,DOC-38(1)(2)} -> OPS-cluster; skills/guard-usage/SKILL.md{DOC-44,DOC-20-R2,DOC-38(i)(ii)} -> SKILL-cluster; docs/threshold-calibration.md{DF-026,DOC-38(iii)} -> CAL-cluster; connectors/README.md+Makefile{DOC-40,DOC-42} -> DOC-40 worker; docs/ADOPTION.md{DOC-35}; docs/dogfood/...integration.md{DF-024}. DOC-38 deliberately spans OPS/SKILL/CAL per its own AC's three defect sites; closes on the last landing with all three commits cited.",
+  "deferred": [
+    {"task_id": "DOC-34", "reason": "row-level: its scope spans SKILL.md + docs/operations.md + Makefile docs-check carrier list — all three files are owned by SKILL-cluster, OPS-cluster and the DOC-40 worker this wave; dispatching it would guarantee a 3-way merge conflict. Next tick opens it with a clean seam."}
+  ],
+  "owner_gated": ["REL-GUARD-003", "REL-GUARD-007"],
+  "judge_lane": "gitreins tier-2 judge lane (deepseek GITREINS_LLM_API_KEY) returned 402 at 19:47Z per the 19:21Z manifest and remains unfunded — cluster rows close tier1-only with local gate evidence; outage verdicts kept in history",
+  "gitreins_tasks": ["GUARD-DF-024", "DOC-35", "DOC-40", "README-cluster", "OPS-cluster", "SKILL-cluster", "CAL-cluster"],
+  "processes": {
+    "GUARD-DF-024": "proc_78e8e0709069 (pid 3362866)",
+    "DOC-35": "proc_e3eb6fb60a48 (pid 3363768)",
+    "DOC-40": "proc_97c892067006 (pid 3364844)",
+    "README-cluster": "proc_f37d80b8a1bf (pid 3366489)",
+    "OPS-cluster": "proc_1cf26b6a2258 (pid 3369620)",
+    "SKILL-cluster": "proc_01b2e2083ee6 (pid 3372164)",
+    "CAL-cluster": "proc_ef652f7bdbcb (pid 3374841)"
+  }
+}
