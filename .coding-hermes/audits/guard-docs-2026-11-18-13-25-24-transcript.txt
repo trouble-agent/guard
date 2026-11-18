@@ -1,0 +1,95 @@
+=== SCOPE ===
+repo: /home/kara/trouble-agent/guard
+audited revision: 9ac733775fa332fe277839cdad00d53a4039ac09 (board: file DOC-41, DOC-42, DOC-43 from the guard documentation audit (delivery 5))
+go: go version go1.26.11 linux/amd64
+date: 2026-11-18T13:33:14Z
+
+=== 1. BUILD (fresh binary from the audited tip) ===
+build ok: /home/kara/.hermes/stand-in/docs/guard/d6/guardd
+guardd dev
+
+=== 2. SKILL CLAIM UNDER TEST: skills/guard-usage/SKILL.md:184-191 ===
+- A body over 8 MiB is truncated by `io.LimitReader` and surfaces as
+  `400 bad request: unexpected EOF` — the 8 MiB limit is not named in the
+  error (`cmd/guardd/main.go:244`, GUARD-DF-008c). The CLI's stdin path uses
+  `io.ReadAll(os.Stdin)` (`cmd/guardd/main.go:169-173`) and has no explicit
+  input cap in the source (GUARD-DF-008b). This is an implementation statement,
+  not a multi-gigabyte measurement; a bounded finite-input probe does not measure
+  behavior at that scale (GUARD-DF-017).
+- go.mod declares go 1.26.11; newer toolchains are fine.
+
+=== 3. SOURCE: body cap in cmd/guardd/main.go ===
+// maxBodyBytes is the inclusive HTTP request-body ceiling for /check.
+const maxBodyBytes = 8 << 20 // 8 MiB
+		body, err := io.ReadAll(io.LimitReader(r.Body, maxBodyBytes+1))
+		if err != nil {
+			http.Error(w, "bad request: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		if len(body) > maxBodyBytes {
+			http.Error(w, "request body exceeds 8 MiB (8388608 bytes)", http.StatusRequestEntityTooLarge)
+			return
+
+=== 4. LIVE PROBE of /check (binary above, scratch port 18772, egress disabled) ===
+-- small malformed body (122 bytes):
+   status=400
+   body: bad request: unexpected EOF
+-- over-cap MALFORMED body (8 MiB + 1 = 8388609 bytes):
+   bytes sent: 8388609
+   status=413
+   body: request body exceeds 8 MiB (8388608 bytes)
+
+=== 5. MAKEFILE jq ANCHOR CENSUS (DOC-20-R2) ===
+-- skill citation (skills/guard-usage/SKILL.md:23):
+  `Makefile:31-32` and shells out to it at `Makefile:86,88,91,104`). The gate
+-- grep -n jq Makefile at audited HEAD:
+32:	command -v jq >/dev/null 2>&1 \
+33:	  || { echo "docs-check FAIL: jq was not found on PATH — this target shells out to jq (four times) to compare verdict JSON. Install jq and re-run (see README Prerequisites, GUARD-DF-004)."; exit 1; }; \
+87:	if ! jq -S . "$$TMPHOME/readme_expected.json" > "$$TMPHOME/expected.sorted.json" 2>/dev/null; then \
+89:	  jq -S . "$$TMPHOME/readme_expected.stripped.json" > "$$TMPHOME/expected.sorted.json" 2>/dev/null \
+92:	jq -S . "$$OUT" > "$$TMPHOME/actual.sorted.json" \
+105:	jq -e '.decision == "block" and .errored == true and (.reason | contains("fail-closed"))' "$$TMPHOME/empty.json" > /dev/null \
+-- what the cited numbers point at now:
+   Makefile:31 -> 	@set -e; \
+   Makefile:86 -> 	fi; \
+   Makefile:88 -> 	  sed -E 's/([0-9a-z"\}\]])[[:space:]]*\/\/[[:space:]].*/\1/' "$$TMPHOME/readme_expected.json" > "$$TMPHOME/readme_expected.stripped.json"; \
+   Makefile:91 -> 	fi; \
+   Makefile:104 -> 	fi; \
+-- the same census at DOC-20's closeout commit 50442a5 (the citations were true then):
+31:	command -v jq >/dev/null 2>&1 \
+32:	  || { echo "docs-check FAIL: jq was not found on PATH — this target shells out to jq (four times) to compare verdict JSON. Install jq and re-run (see README Prerequisites, GUARD-DF-004)."; exit 1; }; \
+86:	if ! jq -S . "$$TMPHOME/readme_expected.json" > "$$TMPHOME/expected.sorted.json" 2>/dev/null; then \
+88:	  jq -S . "$$TMPHOME/readme_expected.stripped.json" > "$$TMPHOME/expected.sorted.json" 2>/dev/null \
+91:	jq -S . "$$OUT" > "$$TMPHOME/actual.sorted.json" \
+104:	jq -e '.decision == "block" and .errored == true and (.reason | contains("fail-closed"))' "$$TMPHOME/empty.json" > /dev/null \
+-- which commit moved them:
+10bc527 Addresses QA-GUARD-006: enforce golangci-lint in Make and CI
+d2f4ad4 feat(release): version prep for v0.2.0 — changelog, guardd version stamp, python connector bump
+889d0ce docs: repair connector anchors and anchor gate. Addresses DOC-22.
+-- drift commit d2f4ad4 vs its parent, docs-check region only:
+
+=== 6. RE-SCOPE: connectors/README.md citations of main.go:130-137 (DOC-40 widening) ===
+261:[`cmd/guardd/main.go:130-137`](../cmd/guardd/main.go),
+295:[`cmd/guardd/main.go:130-137`](../cmd/guardd/main.go),
+-- what 130-137 actually is:
+func newGuard(classifier guard.Classifier, pol guard.Policy, sources ...string) *guard.Guard {
+	warnf := func(format string, args ...any) {
+		log.Printf("guardd: "+format, args...)
+	}
+	g := &guard.Guard{Classifier: classifier, Policy: pol, Warnf: warnf}
+	guard.WarnUnknownOverrideKeys(pol, warnf, sources...)
+	return g
+}
+-- the real HTTP/CLI deadline lines:
+196:	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+281:		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+
+=== 7. GATE OBSERVATION: make docs-check at the audited tip (PASS despite 4) ===
+docs-check: anchor main.go:278 ok: 278: 			http.Error(w, "content is required", http.StatusBadRequest)
+docs-check: anchor main.go:350-366 ok: 350: func resolveToken(envVal, tokenfilePath, argvToken string) (token string, prov tokenProvenance, err error) { ... 366: }
+docs-check: anchor main.go:352-353 ok: 352: 	case envVal != "": ... 353: 		return envVal, tokenFromEnv, nil
+docs-check: anchor main.go:373-387 ok: 373: func readTokenFile(path string) ([]byte, error) { ... 387: }
+docs-check: PASS
+
+=== 8. TREE STATE AFTER PROBES ===
+   (empty above = clean)
