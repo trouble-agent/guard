@@ -289,3 +289,5 @@
 {"id":1794782735157477287,"timestamp":"2026-11-18T01:54:42","event_type":"task_created","task_id":"DOC-38","actor":"foreman","detail":"{\"id\":\"DOC-38\",\"status\":\"pending\"}","tick_number":null}
 {"id":1794782735157477288,"timestamp":"2026-11-18T02:14:43","event_type":"task_created","task_id":"GUARD-DF-025","actor":"foreman","detail":"{\"id\":\"GUARD-DF-025\",\"status\":\"pending\"}","tick_number":null}
 {"id":1794782735157477289,"timestamp":"2026-11-18T02:14:50","event_type":"task_created","task_id":"GUARD-DF-026","actor":"foreman","detail":"{\"id\":\"GUARD-DF-026\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477290,"timestamp":"2026-11-18T02:26:20","event_type":"task_created","task_id":"DOC-39","actor":"foreman","detail":"{\"id\":\"DOC-39\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477291,"timestamp":"2026-11-18T02:26:20","event_type":"task_updated","task_id":"DOC-35","actor":"foreman","detail":"{\"status\":\"pending\"}","tick_number":null}
