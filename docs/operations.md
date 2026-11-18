@@ -10,6 +10,14 @@ Build the service binary from the repository root:
 make build
 ```
 
+Record which build you are about to run before you start it:
+
+```sh
+./bin/guardd -version
+```
+
+`-version` prints one line, `guardd <version>`, and exits 0; it is handled before policy resolution, token resolution, classifier construction, or any egress, so it needs no operator token, policy file, classifier key, or network access. Note that line when you start a service so a later incident can be attributed to a release. `make build` stamps the version through ldflags (`-X main.version=$(VERSION)`, default `v0.2.0`); a binary produced by a plain `go build` reports `guardd dev` and cannot be matched to a CHANGELOG entry.
+
 Use a dedicated operator token supplied through the environment, and bind explicitly to loopback:
 
 ```sh

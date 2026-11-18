@@ -31,6 +31,7 @@ One Go core, three consumption shapes, one `Result` contract. Route on
 
 ```bash
 go build -o bin/guardd ./cmd/guardd
+./bin/guardd -version                                # build version, exit 0 — no key/token/network needed
 printf '%s' "$msg" | ./bin/guardd                    # CLI, stdin
 ./bin/guardd -content "$msg" -source github_pr       # CLI, one-shot
 # -channel <label> — currently an inert annotation: it is passed to
@@ -40,6 +41,23 @@ printf '%s' "$msg" | ./bin/guardd                    # CLI, stdin
 ./bin/guardd -serve 127.0.0.1:8768 -tokenfile <0600-file>  # HTTP (preferred; or GUARD_TOKEN env)
 ./bin/guardd -serve 127.0.0.1:8768 -token <secret>         # dev: works but warns (token visible in ps)
 ```
+
+**`-version` tells you which build you are running, and `dev` is a build
+defect, not a mystery.** The flag prints one line (`guardd v0.2.0`) and exits
+0 — it is handled before policy resolution, token resolution, classifier
+construction, and any egress, so it works on a box with no
+`$OPENROUTER_API_KEY`, no `GUARD_TOKEN`, and no network; use it as the first
+line of any release check or deploy smoke test. `main.version` is a
+build-time variable (default `"dev"` in `cmd/guardd/main.go`): release builds
+inject it via ldflags — `make build` passes
+`-X main.version=$(VERSION)` (default `v0.2.0`, `Makefile:2,8`) and goreleaser
+passes `-X main.version={{.Version}}` (`.goreleaser.yaml`) — while a plain
+`go build` / `go build ./...` / `go run` injects nothing and reports
+`guardd dev`. So a binary answering `guardd dev` was compiled by hand and
+cannot be matched to the CHANGELOG: gate on
+`test "$(./bin/guardd -version)" != "guardd dev"` before calling a build
+releasable, and re-read the command (not a changelog line) when attributing a
+running service to a release.
 
 ```python
 import sys; sys.path.insert(0, 'connectors/python')

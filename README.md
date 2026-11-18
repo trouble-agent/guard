@@ -34,6 +34,7 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
 
 ```bash
 go build -o guardd ./cmd/guardd          # produces ./guardd
+./guardd -version                        # print the build version and exit (a plain go build says "dev")
 printf '%s' "hello, world" | ./guardd          # CLI: classify via stdin
 GUARD_TOKEN=s3cr3t ./guardd -serve :8768       # or serve over HTTP
 cat > policy.json <<'JSON'                       # create a per-source policy fixture
@@ -185,7 +186,7 @@ declared in the Makefile's `.PHONY` list and runs as `make <target>`:
 
 | Target | What it runs | When you use it |
 |---|---|---|
-| `build` | `go build -o bin/guardd ./cmd/guardd` (`client/` is a library package — only `cmd/guardd` produces a binary) | You want the CLI binary locally |
+| `build` | `go build -ldflags "-X main.version=$(VERSION)" -o bin/guardd ./cmd/guardd`, so `./bin/guardd -version` reports the stamped `VERSION` (default `v0.2.0`) instead of `dev` (`client/` is a library package — only `cmd/guardd` produces a binary) | You want the CLI binary locally |
 | `test` | `go test ./...` | Before every commit |
 | `vet` | `go vet ./...` | Static analysis alongside the tests |
 | `lint` | `golangci-lint run ./...` using the repository's pinned `.golangci.yml` configuration | Style pass before opening a PR |
@@ -362,6 +363,9 @@ than treating the verdict as a block.
 ## Three consumption shapes
 
 ```bash
+# 0. Version — what this binary is (no key, token, or network needed)
+guardd -version
+
 # 1. CLI — pipe anything through it
 printf '%s' "$message" | guardd
 guardd -content "$message" -source github_pr -pretty
@@ -552,9 +556,39 @@ Nothing in the pipeline requires touching another layer to grow.
 ## Build
 
 ```bash
-go build ./...                                   # library + CLI
+go build ./...                                   # library + CLI, version "dev"
 go build -ldflags="-s -w" -o bin/guardd ./cmd/guardd   # stripped static binary
+make build                                       # binary with the version stamped: ./bin/guardd -version → guardd v0.2.0
 ```
+
+### `-version` — the stamped build version (and why `dev` is not a release build)
+
+`guardd -version` prints one line, `guardd <version>`, and exits 0. It is
+handled before anything else in `main()` — no policy file, operator token,
+classifier key, or network call — so it is safe for a release-check script or
+a smoke test on a box that has no credentials at all:
+
+```bash
+./bin/guardd -version                            # guardd v0.2.0
+test "$(./bin/guardd -version)" != "guardd dev" || { echo "FATAL: unstamped build"; exit 1; }
+```
+
+The version is a build-time variable (`main.version` in `cmd/guardd/main.go`,
+default `"dev"`), not something read from the environment or the git tag at
+runtime:
+
+| Built by | ldflags injection | `guardd -version` prints |
+|---|---|---|
+| `make build` | `-X main.version=$(VERSION)`, with `VERSION ?= v0.2.0` (`Makefile:2,8`) | `guardd v0.2.0` |
+| goreleaser (`.github/workflows/release.yml`) | `-s -w -X main.version={{.Version}}` (`.goreleaser.yaml`) | `guardd v0.2.0` for tag `v0.2.0` |
+| plain `go build` / `go build ./...` / `go run` | none | `guardd dev` |
+
+So `guardd dev` means "compiled by hand without ldflags", not "version
+unknown": such a binary cannot be matched against the CHANGELOG, and a
+scripted release check that expects a tag fails there — which is the point.
+Build releases with `make build` (or goreleaser) and record
+`guardd -version` before deploying; the same command is what you re-read when
+you need to attribute a running service to a release.
 
 ## Further docs
 
