@@ -673,3 +673,65 @@ Teardown proven from `bunker list`: agent gone; pre-existing `f6a5f076` (not thi
 running. **Final install grade: PASS (rerun, bunker-mvp, agent=7a98d021).**
 
 - ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=no new-evidence=yes head=7f1e91c install=PASS(rerun,bunker-mvp,agent=7a98d021) perf=measured-no-finding-12x-1MiB rows=GUARD-DF-023 cited=GUARD-DF-020,GUARD-DF-020-R2
+
+## Duplicate delivery of `guard-dogfood-2026-11-18-00-54-47` — 2026-11-18T01:2x UTC (same fire, second inbound)
+
+The gateway delivered this fire id twice (19:54:51 and 20:17:08 local); the run 9 walk above was
+already delivered, so this pass owns provenance plus the one leg the earlier entry did not measure
+honestly — the Step 2b perf attribution — and nothing else. No product re-walk was performed.
+
+Product identity re-checked at the tip: `HEAD == origin/main == 5d87a56`, `bin/guardd v0.2.0`,
+`git diff --name-only 7f1e91c..HEAD` = board + log only (0 product files), so the tree under test is
+byte-identical to the one the walk graded. `boardctl -C .coding-hermes/board validate` → `RESULT: OK
+(76 warning(s))`, the same baseline as before this tick.
+
+Provenance of the earlier delivery, verified against the committed tree (not the log's prose):
+
+- `GUARD-DF-023` present exactly once on `HEAD:.coding-hermes/board/tasks.jsonl`, `status=pending`,
+  `P4`, with its paired `task_created` event on `HEAD:.coding-hermes/board/events.jsonl` — no
+  unpaired row, no duplicate id.
+- `.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/` is committed (3 files); the battery
+  ledger carries the cells the addendum claims, including the `collect` row stating 23 evidence rows
+  pulled.
+- Install teardown independently re-listed from `bunker list --server bunker-mvp`: `7a98d021` is
+  **gone**. Pre-existing `f6a5f076` (00:08Z), `cf-node`, `ci-e2e-01` remain and were not touched;
+  `28faabcc` (0 B, created 01:21:37Z, after this fire's battery closed) is named by no row and no
+  spawn log — foreign, left running. Install grade therefore stands: **PASS (rerun, bunker-mvp,
+  agent=7a98d021)**.
+
+### Correction to the run 9 tick 1 performance section (Step 2b re-measured)
+
+Re-measured on the same tree rather than inherited. The report's table (and both `ch:trace` lines,
+which say `perf=measured-no-finding-12x-1MiB`) credits a normalization speedup that the numbers do
+not support:
+
+- A body over **20,000 raw bytes never reaches normalization** — README:315-330 and README:540
+  document the window, and the live answer at 1 MiB is `{"errored":true,"decision":"block",
+  "route":"quarantine","reason":"guard_error (classification window): input is 1048576 bytes;
+  maximum is 20000 bytes","classified_bytes":0,"truncated":true}`. So the table's 64 KiB (0.90 ms)
+  and 1 MiB (7.81 ms) rows time **body-read + reject**, not normalization, and the sentence
+  "~7x and ~12x faster … the `GUARD-DF-020` / `GUARD-DF-020-R2` normalization work landing" is not
+  demonstrated by them; the 11-14 baseline they compare against predates the rejection, so the
+  comparison is not like-for-like.
+- My medians of 10 on a token-guarded server: 20,001 B 0.7 ms, 64 KiB 1.0 ms, 1 MiB 9.5 ms,
+  8 MiB 9.7 ms — the last is a distinct `413 request body exceeds 8 MiB (8388608 bytes)`, which is
+  why the curve is flat above 1 MiB.
+- The one comparable row **does** reproduce: 4 KiB with `GUARD_EGRESS_ENABLED=false` → 0.8 ms
+  median (n=10) with `classified_bytes: 4096`, i.e. normalization really ran.
+- Real end-to-end headline for a user (egress ON, 4 KiB, provider round-trip included): **249.5 ms
+  median** (n=10; min 235.9, max 302.2). Nothing here is user-felt slowness, so no PERF row is
+  filed against the product — the defect is in the published evidence, not the code.
+- Filed: **`GUARD-DF-024`** (P3) — restate or re-measure that table; acceptance makes the attribution
+  greppable so it cannot decay back.
+- Explained, not filed (matches the documented contract exactly): base64-alphabet-heavy content
+  doubles during normalization, so a 16,384-byte body of `a`/`x` reports `bytes_seen: 32773` and is
+  rejected while the same size of plain prose classifies. README:540 already says normalized-state
+  overflow is rejected and that `bytes_seen` carries the normalized length — behavior is correct and
+  documented; the practical limit is ≈9,997 bytes for base64-dense text versus 20,000 otherwise.
+
+Id `GUARD-DF-024` minted by `board_next_id.py … GUARD-DF` (free at mint time, `grep`-verified before
+append), appended compact-JSON with its paired `task_created` event (event id
+1794782735157477281 = numeric max + 1), and `boardctl validate` re-run after filing: `RESULT: OK
+(76 warning(s))` — unchanged baseline, no duplicate-id error.
+
+- ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes new-evidence=yes head=5d87a56 verdict=SHIPPABLE install=PASS(reverified-teardown,bunker-mvp,agent=7a98d021) perf=re-measured-corrected(reject-path-not-normalization;4KiB-0.8ms-egressoff;4KiB-249.5ms-egresson) rows=GUARD-DF-024 supersedes-claim=perf-12x-1MiB cited=GUARD-DF-020,GUARD-DF-020-R2,GUARD-DF-023
