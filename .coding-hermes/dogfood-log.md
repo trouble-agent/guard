@@ -847,3 +847,57 @@ Fifth inbound dispatch of tick `guard-dogfood-2026-11-18-00-54-47` (gateway.log 
   docs lane's instance, left running.
 
 - ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes delivery=5 new-evidence=no product-diff-since-walk=0 rows-filed=0 provenance=verified(head=5884e2a,origin-parity) numbering-correction=prior-entry-was-dispatch-4 residue=none-own(docs-lane-:18768-left) verdict=SHIPPABLE(carry-forward)
+
+## Delivery 6 — the released-artifact notice, measured (2026-11-18T02:2xZ, tick `guard-dogfood-2026-11-18-00-54-47`)
+
+Sixth inbound dispatch of this tick (gateway.log: 19:54:51, 20:17:08, 20:27:42, 20:52:19,
+21:17:19, 21:20:23 -0500 — all six into session 966207ed). Provenance first: HEAD ==
+origin/main == **98dba4e** on `main`, `git rev-list --left-right --count HEAD...origin/main` =
+`0 0`, working tree clean. No `.go`, `cmd/`, `data/` or docs file has changed since the
+delivery-4 walk, so re-driving the CLI/HTTP/corpus surfaces would only re-stamp evidence that
+already exists.
+
+What had never been done in five deliveries: take the ONLY artifact a stranger can install
+today — the v0.1.0 tarball — and check the five factual claims the HEAD README notice
+(lines 119-137) makes about it. Delivery 1 used that binary as an upgrade source; nobody had
+held it against the notice's own sentences.
+
+- Integrity: tarball HTTP 200, 2,935,335 bytes, sha256 `b75cb31a…af4e3`, matches the published
+  `checksums.txt` (`sha256sum -c` → OK, rc=0).
+- Claim "lacks `GUARD_EGRESS_ENABLED` kill switch": `GUARD_EGRESS_ENABLED=off ./guardd -content
+  "hello world, benign"` still returned `provider=jev cost_usd=0.000026502` — the switch is
+  inert in v0.1.0. True.
+- Claim "lacks the exit-code contract": `-serve` without `-token` → **rc=1** (not 2); a
+  classified run → rc=0. True.
+- Claim "lacks token precedence": `-h` offers `-channel -content -fail-closed -pretty -serve
+  -source -token` only — no `-tokenfile`, no env surface. True.
+- Claim "lacks `load_bearing_normalizations`": the JSON ends at `normalizations:["rot13"]` on
+  both a block and an allow verdict. True.
+- Corrected clause "does include the default local-only `-serve` binding": `-serve :18813
+  -token …` gave `LISTEN 127.0.0.1:18813` only, and a POST from 192.168.123.147 returned
+  `http=000` (refused). The 2026-10-20 correction is accurate.
+
+The released binary does its core job: injection prose → `block/high/quarantine, score 0.98,
+class instruction_injection, 393 ms, $0.000029`; benign changelog line → `allow/deliver/low`;
+`POST /check` with `X-Operator-Token` → HTTP 200, same verdict shape. `-version` does not
+exist in v0.1.0 (`flag provided but not defined`) — that is the released-artifact half of
+GUARD-DF-023 (P4, pending), so no sibling row was filed for it.
+
+So: 5/5 notice claims are true as measured, the tarball is checksum-clean and functional, and
+the only install path a stranger has is *stale by an owner gate* (REL-GUARD-007, blocked, P1),
+not broken and not neglected. **No product defect → no board row** (`rows-filed=0`).
+
+Records: board file is byte-identical to the one delivery 5 censused (zero product files
+changed, tree clean), so that census carries; re-checked this fire — GUARD-DF-023 pending, and
+REL-GUARD-007 blocked/P1 in the release cluster. guard-foreman last ran 16:02:58→17:32:54 with
+a 6 h cooldown, so the pending dogfood rows are waiting on a lane that is ticking, not stalled.
+Residue: no listener on :18799 (this lane's own instance gone); the docs lane's guardd on
+:18768 is unchanged. Evidence: `.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/delivery6-release-artifact.md`.
+
+Dispatch note (not a product finding, not filed here): the lane's own scheduler row reads
+`enabled=true cooldown_s=259200 last_tick_status=failed consecutive_failures=2
+last_tick_started=19:54:48 last_tick_completed=20:55:01` — a 3-day cooldown that is not
+holding, with dispatches at 21:17:19 and 21:20:23 arriving after the recorded completion. That
+is the duplicate-dispatch class, which belongs to the scheduler board, not this one.
+
+- ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes delivery=6 new-evidence=yes surface=released-artifact-v0.1.0(5/5-notice-claims-measured-true,checksum-OK,block393ms/$0.000029) product-diff-since-walk=0 rows-filed=0 provenance=verified(head=98dba4e,origin-parity,tree-clean) residue=none-own verdict=SHIPPABLE(carry-forward;install=PASS-from-published-tarball)
