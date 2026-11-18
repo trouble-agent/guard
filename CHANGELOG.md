@@ -6,11 +6,13 @@ in git and cut with goreleaser.
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-11-04
-
-First release since v0.1.0 (2026-10-02): 3 features and 28 fixes over the
-v0.1.0..HEAD commit range, counted by conventional-commit subject; no breaking
-changes.
+No release has been cut since v0.1.0 (2026-10-02): there is no `v0.2.0` tag, no
+GitHub release and no Go module version for it, so everything below is
+unreleased work. The counts are dated to commit `9ac7337` (2026-11-18) and
+derived by conventional-commit subject over `v0.1.0..HEAD` — `git rev-list
+--count` gives 429 commits, `^feat(\(|:)` 5 features and `^fix(\(|:)` 29 fixes —
+because that range grows with every commit and an undated count goes stale on
+the next one. No breaking changes.
 
 ### Added
 
@@ -95,8 +97,7 @@ changes.
   expanded content past the old scan window is classified or rejected loudly
   instead of delivered at a low risk score (GUARD-DF-018).
 
-ch:trace row=REL-GUARD-006 spec=CHANGELOG.md#[0.2.0] wave=none:serial-worker test=make-docs-check doc=CHANGELOG.md prompt=none:ephemeral-brief evidence=none:worker-acceptance-output witness=none:ephemeral-acceptance verdict=none:foreman-judge commit=none:foreman-commit memory=none:not-written
-ch:trace row=REL-GUARD-011 spec=CHANGELOG.md#0.2.0 wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#REL-GUARD-011 test=make docs-check doc=CHANGELOG.md evidence=none:worker-branch witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
+ch:trace row=REL-GUARD-006 spec=CHANGELOG.md#unreleased wave=none:serial-worker test=make-docs-check doc=CHANGELOG.md prompt=none:ephemeral-brief evidence=none:worker-acceptance-output witness=none:ephemeral-acceptance verdict=none:foreman-judge commit=none:foreman-commit memory=none:not-written
+ch:trace row=REL-GUARD-011 spec=CHANGELOG.md#unreleased wave=.coding-hermes/waves/guard-foreman-2026-11-15-16-29-26.json#REL-GUARD-011 test=make-docs-check doc=CHANGELOG.md evidence=none:worker-branch witness=none:worker-branch verdict=none:pending-tier2 commit=none:worker-commit memory=none:not-written
 
 [Unreleased]: https://github.com/trouble-agent/guard/compare/v0.1.0...HEAD
-[0.2.0]: https://github.com/trouble-agent/guard/compare/v0.1.0...v0.2.0
