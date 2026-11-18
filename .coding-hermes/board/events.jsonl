@@ -301,3 +301,5 @@
 {"id":1794782735157477299,"timestamp":"2026-11-18T13:34:39","event_type":"task_updated","task_id":"DOC-35","actor":"foreman","detail":"{\"status\":\"in_progress\"}","tick_number":null}
 {"id":1794782735157477300,"timestamp":"2026-11-18T13:34:39","event_type":"task_updated","task_id":"DOC-39","actor":"foreman","detail":"{\"status\":\"in_progress\"}","tick_number":null}
 {"id":1794782735157477301,"timestamp":"2026-11-18T13:34:39","event_type":"task_updated","task_id":"DOC-40","actor":"foreman","detail":"{\"status\":\"in_progress\"}","tick_number":null}
+{"id":1794782735157477302,"timestamp":"2026-11-18T19:28:48","event_type":"task_completed","task_id":"DOC-39","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
+{"id":1794782735157477303,"timestamp":"2026-11-18T19:28:48","event_type":"task_completed","task_id":"GUARD-DF-023","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}

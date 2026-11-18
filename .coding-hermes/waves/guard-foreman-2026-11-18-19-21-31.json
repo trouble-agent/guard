@@ -1,0 +1,25 @@
+{
+  "scheduler_tick_id": "guard-foreman-2026-11-18-19-21-31",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "wave_budget": 9,
+  "workers_dispatched": 5,
+  "composed_at": "2026-11-18T19:58:00Z",
+  "base_sha": "77759d5",
+  "worker_model": "openai/gpt-6.1-terra@xkiro",
+  "pre_wave_harvest": [
+    {"task_id": "DOC-39", "outcome": "harvested 13:24Z worker staged diff, merged ff 6fe88de, tier1-only verdict 8faf65ab, closed"},
+    {"task_id": "GUARD-DF-023", "outcome": "harvested 13:24Z worker dirty diff, merged ff 77759d5, tier1-only verdict 5b45f346, closed"}
+  ],
+  "workers": [
+    {"task_id": "GUARD-DF-024", "worktree": "/home/kara/worktrees/guard-GUARD-DF-024", "branch": "wt/GUARD-DF-024", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/dogfood/2026-11-18-run9-tick1-integration.md only", "brief": "/home/kara/.hermes/cache/scratch/guard-19-21-31/brief-GUARD-DF-024.txt"},
+    {"task_id": "DOC-35", "worktree": "/home/kara/worktrees/guard-DOC-35", "branch": "wt/DOC-35", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/ADOPTION.md only", "brief": "/home/kara/.hermes/cache/scratch/guard-19-21-31/brief-DOC-35.txt"},
+    {"task_id": "DOC-40", "worktree": "/home/kara/worktrees/guard-DOC-40", "branch": "wt/DOC-40", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "connectors/README.md + Makefile docs-check anchor table", "brief": "/home/kara/.hermes/cache/scratch/guard-19-21-31/brief-DOC-40.txt"},
+    {"task_id": "DOC-33", "worktree": "/home/kara/worktrees/guard-DOC-33", "branch": "wt/DOC-33", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "README.md HTTP shape subsection", "brief": "/home/kara/.hermes/cache/scratch/guard-19-21-31/brief-DOC-33.txt"},
+    {"task_id": "DOC-36", "worktree": "/home/kara/worktrees/guard-DOC-36", "branch": "wt/DOC-36", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/operations.md §8 only", "brief": "/home/kara/.hermes/cache/scratch/guard-19-21-31/brief-DOC-36.txt"}
+  ],
+  "independence_check": "No depends_on edges among the five rows (all depends_on=[]). Disjoint file sets: DF-024=docs/dogfood/…; DOC-35=docs/ADOPTION.md; DOC-40=connectors/README.md+Makefile; DOC-33=README.md (DF-023's README version section already merged before dispatch — no seam); DOC-36=docs/operations.md. Deferred for file collisions: DOC-34 (SKILL/operations/Makefile), DOC-37/DOC-41/DOC-43 (README), DOC-38 (operations+SKILL), DOC-42 (connectors/README), DOC-44/DOC-20-R2 (SKILL.md), GUARD-DF-025/026 (wider scope).",
+  "deferred": ["DOC-34", "DOC-37", "DOC-38", "DOC-41", "DOC-42", "DOC-43", "DOC-44", "DOC-20-R2", "GUARD-DF-025", "GUARD-DF-026"],
+  "owner_gated": ["REL-GUARD-003", "REL-GUARD-007"],
+  "judge_lane": "gitreins tier-2 judge lane (deepseek GITREINS_LLM_API_KEY) returned 402 Payment Required on DOC-39 at 19:47Z — wave rows close tier1-only with local evidence; outage verdicts kept in history"
+}
