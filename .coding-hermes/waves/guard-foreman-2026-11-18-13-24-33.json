@@ -1,0 +1,27 @@
+{
+  "scheduler_tick_id": "guard-foreman-2026-11-18-13-24-33",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "wave_budget": 5,
+  "composed_at": "2026-11-18T13:35:00Z",
+  "base_sha": "9ac7337",
+  "worker_model": "openai/gpt-6.1-terra@xkiro",
+  "workers": [
+    {"task_id": "GUARD-DF-024", "worktree": "/home/kara/worktrees/guard-GUARD-DF-024", "branch": "wt/GUARD-DF-024", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/dogfood/2026-11-18-run9-tick1-integration.md only", "brief": "/tmp/brief-guard-GUARD-DF-024.txt"},
+    {"task_id": "GUARD-DF-023", "worktree": "/home/kara/worktrees/guard-GUARD-DF-023", "branch": "wt/GUARD-DF-023", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "README.md + skills/guard-usage/SKILL.md (and docs/operations.md only if the -version gap is fixed there too)", "brief": "/tmp/brief-guard-GUARD-DF-023.txt"},
+    {"task_id": "DOC-35", "worktree": "/home/kara/worktrees/guard-DOC-35", "branch": "wt/DOC-35", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "docs/ADOPTION.md only", "brief": "/tmp/brief-guard-DOC-35.txt"},
+    {"task_id": "DOC-39", "worktree": "/home/kara/worktrees/guard-DOC-39", "branch": "wt/DOC-39", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "CHANGELOG.md only", "brief": "/tmp/brief-guard-DOC-39.txt"},
+    {"task_id": "DOC-40", "worktree": "/home/kara/worktrees/guard-DOC-40", "branch": "wt/DOC-40", "model": "openai/gpt-6.1-terra", "provider": "xkiro", "scope": "connectors/README.md + Makefile docs-check anchor table (subject-token gate)", "brief": "/tmp/brief-guard-DOC-40.txt"}
+  ],
+  "processes": {
+    "GUARD-DF-024": "proc_86523ac91c00 (pid 267704)",
+    "GUARD-DF-023": "proc_a9eb92c6f5f8 (pid 267872)",
+    "DOC-35": "proc_b9bc945ceb63 (pid 268006)",
+    "DOC-39": "proc_cffb34f0f0b9 (pid 268586)",
+    "DOC-40": "proc_abe3856e7ccb (pid 268923) — EXITED code 1 gateway-disconnect, worktree clean at base; RESUMED as proc_b05f398b5379 (pid 538319, session local-c78252b1c8b8...)"
+  },
+  "independence_check": "No depends_on edges among the five rows (all depends_on=[]). Disjoint file sets: GUARD-DF-024 = docs/dogfood/2026-11-18-run9-tick1-integration.md; GUARD-DF-023 = README.md + skills/guard-usage/SKILL.md (per AC; docs/operations.md optional); DOC-35 = docs/ADOPTION.md; DOC-39 = CHANGELOG.md (DOC-38 explicitly excludes CHANGELOG markers from its own scope, so no cross-row seam); DOC-40 = connectors/README.md + Makefile anchor table. Excluded for file collisions: README cluster DOC-33/DOC-37/DOC-41/DOC-43/GUARD-DF-025 (share README.md with DF-023), DOC-34 (shares SKILL.md/operations.md/Makefile), DOC-36/DOC-38 (share operations.md/SKILL.md), DOC-42 (shares connectors/README.md), GUARD-DF-026 (shares docs/threshold-calibration.md with DOC-38).",
+  "deferred": ["DOC-33", "DOC-34", "DOC-36", "DOC-37", "DOC-38", "DOC-41", "DOC-42", "DOC-43", "GUARD-DF-025", "GUARD-DF-026"],
+  "owner_gated": ["REL-GUARD-003", "REL-GUARD-007"],
+  "plan_review": {"card": "t_9f66eb73", "comment": "PLAN posted 2026-11-18T13:32Z", "status": "plan-unreviewed (request-review rejected: empty judge response; executed as drafted)"}
+}
