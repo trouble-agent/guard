@@ -281,3 +281,6 @@
 {"id":1794782735157477279,"timestamp":"2026-11-17T22:32:08","event_type":"task_completed","task_id":"REL-GUARD-013","actor":"foreman","detail":"{\"commit\":\"30556eb\",\"evidence_run\":\"5c9d3be0\",\"judge\":\"PASS\",\"counts\":{\"feat\":3,\"fix\":28},\"ci\":\"success on 30556eb\"}","tick_number":null}
 {"id":1794782735157477280,"timestamp":"2026-11-18T01:08:55","event_type":"task_created","task_id":"GUARD-DF-023","actor":"foreman","detail":"{\"id\":\"GUARD-DF-023\",\"status\":\"pending\"}","tick_number":null}
 {"id":1794782735157477281,"timestamp":"2026-11-18T01:25:53","event_type":"task_created","task_id":"GUARD-DF-024","actor":"foreman","detail":"{\"id\":\"GUARD-DF-024\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477282,"timestamp":"2026-11-18T01:36:58","event_type":"task_created","task_id":"DOC-33","actor":"foreman","detail":"{\"id\":\"DOC-33\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477283,"timestamp":"2026-11-18T01:36:58","event_type":"task_created","task_id":"DOC-34","actor":"foreman","detail":"{\"id\":\"DOC-34\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477284,"timestamp":"2026-11-18T01:36:58","event_type":"task_created","task_id":"DOC-35","actor":"foreman","detail":"{\"id\":\"DOC-35\",\"status\":\"pending\"}","tick_number":null}
