@@ -735,3 +735,48 @@ append), appended compact-JSON with its paired `task_created` event (event id
 (76 warning(s))` — unchanged baseline, no duplicate-id error.
 
 - ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes new-evidence=yes head=5d87a56 verdict=SHIPPABLE install=PASS(reverified-teardown,bunker-mvp,agent=7a98d021) perf=re-measured-corrected(reject-path-not-normalization;4KiB-0.8ms-egressoff;4KiB-249.5ms-egresson) rows=GUARD-DF-024 supersedes-claim=perf-12x-1MiB cited=GUARD-DF-020,GUARD-DF-020-R2,GUARD-DF-023
+
+### Delivery 4 delta — records-only reconciliation at an unchanged tree (no product re-walk)
+
+Fourth delivery of tick `guard-dogfood-2026-11-18-00-54-47` (gateway dispatches 19:54:51, 20:17:08,
+20:27:42 local, then this one). The product tree is byte-identical to the tree delivery 3 walked —
+`git diff --name-only 7c08590..HEAD` contains no `.go`, no `cmd/`, no `data/` file (only
+`.coding-hermes/` and `docs/dogfood/`) — so re-walking a third time would produce the same evidence
+with a newer timestamp. What a duplicate fire can still add honestly is a check of the *records*
+delivery 3 left and one cheap independent number. Both are below; **no product row is filed.**
+
+- **Ledger arithmetic, re-derived (the `23` in the `collect` row is not the file's length).**
+  Committed `HEAD:.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/qa-evidence.jsonl`
+  is **25 lines**: 15 cell rows (`fresh-install`, `tests`, `ci-pass`, `upgrade`, `lint`,
+  `docker_build`, `compose_config`, `docker-deploy`, `ui-probe`, `chaos-*` ×5, `launch`) +
+  1 `collect` + **9 `toolchain-bootstrap`** rows appended after `collect` ran. The `collect` row's
+  "pulled 23 evidence row(s)" is a mid-run count of what the collector merged at that instant, not
+  the battery's final size. Anyone quoting "23 rows" from that row is quoting a snapshot; the
+  artifact that governs is the 25-line file.
+- **Install teardown re-verified on the independent surface.** `bunker --server bunker-mvp list`
+  today: `7a98d021` **absent** (gone), `ci-e2e-01`, `cf-node`, `f6a5f076` (00:08Z, foreign) present
+  and untouched. Install grade **PASS** stands, and nothing from this tick's battery is still
+  burning bunker-mvp disk.
+- **Gap that was UNVERIFIED for months now observably runs.** The `chaos-disconnect` cell in this
+  tick's ledger reads `INFO — passes with network cut (no network dep)`, and `QA-GUARD-005` is
+  `complete` with its `-R2` successor chain closed. The arm that `QA-GUARD-005` opened (GOPROXY=off +
+  GOTOOLCHAIN=local blocking the toolchain floor, cell unprovable) is no longer unprovable on this
+  host. Recorded because the standing summary still lists it as unverified.
+- **`lint` cell is still `INFO — golangci-lint unavailable on agent`**: the emulator's toolchain
+  floor, already carried by `QA-GUARD-001` / `QA-GUARD-004` / `QA-GUARD-001-R2` (all `complete`).
+  Not a product fact and not re-filed.
+- **Perf (Step 2b) re-timed at the identical tree, fresh server, `-tokenfile`, n=9 per arm**
+  (`evidence/…/delivery4/perf-arm.sh`, raw times in `egress{off,on}-times.txt`):
+  4 KiB POST `/check` with `GUARD_EGRESS_ENABLED=false` → **median 0.838 ms** (min 0.678, max 1.477),
+  `classified_bytes: 8091` — the body was base64-dense, so it doubled in normalization exactly as
+  the contract above describes; normalization really ran and stays sub-millisecond.
+  Same body with egress ON → **median 338.7 ms** (min 321.5, max 395.6), `route: deliver`,
+  `reason: no injection signals above threshold`; cold (process start → first 200) **719 ms** vs
+  **22 ms** with egress off. Delivery 3 measured 249.5 ms for the same operation; the 90 ms spread is
+  the hosted-classifier round-trip on an unchanged binary, not a regression, and a third of a second
+  on a message-classification call is not user-felt. **No PERF row.**
+- **Rows filed this tick: none.** `GUARD-DF-024` (P3, filed by delivery 3) remains the only open row
+  from this tick and covers the one real defect found (published perf attribution). Verdict of the
+  run is unchanged: **SHIPPABLE**.
+
+- ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes delivery=4 new-evidence=yes product-diff-since-walk=0 guard-rows-filed=0 perf=re-timed(4KiB-0.838ms-egressoff-classified8091;4KiB-338.7ms-egresson;cold-719ms) ledger-rows=25(15cell+9bootstrap+1collect) install=PASS(teardown-reverified,bunker-mvp,7a98d021-gone) gaps-closed=QA-GUARD-005(chaos-disconnect-now-runs) verdict=SHIPPABLE cited=GUARD-DF-024,QA-GUARD-005,QA-GUARD-001-R2
