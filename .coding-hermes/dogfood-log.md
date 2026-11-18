@@ -627,3 +627,38 @@ No code, policy or board row was changed; no row closed; ids came from `board_ne
 Left behind: `docs/dogfood/2026-11-14-run8-tick5-override-wiring.md` and this entry.
 
 - ch:trace tick=guard-dogfood-2026-11-14-23-17-36 duplicate=no new-evidence=yes head=0a5a791 perf=measured-no-finding install=PASS(rerun,bunker-mvp,agent=791648f6) rows=GUARD-DF-022,DOC-31 cited=GUARD-DF-020,GUARD-DF-019,GUARD-DF-009,GUARD-DF-007,DOC-17
+
+## 2026-11-18 — run 9, tick 1: product surface re-walk after GUARD-DF-020/R2 (`guard-dogfood-2026-11-18-00-54-47`)
+
+Product changed since the last record (59 commits, head now `7c08590` = origin/main), so this was a
+real re-walk, not a records-only fire. Headline: the closed normalization perf work is live and
+user-felt — `/check` at 1 MiB went from the 96–99 ms recorded on 11-14 to **7.8 ms median** (n=10,
+~12×), 64 KiB from 6.4–8.0 ms to 0.90 ms. No PERF row: a win nobody can feel as a cost is not a
+finding, and the rows that own it (`GUARD-DF-020`, `GUARD-DF-020-R2`) are already complete.
+
+Walked, all at `7c08590`: build (`make build` 0.47 s, `-version` → `guardd v0.2.0`); documented
+fail-closed scratch-HOME CLI reproduction (exact verdict, rc=2, cold < 10 ms); real classification
+via the documented key-discovery order (`allow`, score 0.2, `typesafe/jev-1.13-20260917`,
+`duration_ms: 720`, `cost_usd: 0.0000278`; warm CLI 0.40–0.58 s over 5 runs — the wall is the
+classifier round-trip); serve mode with the Quick Start policy fixture (webhook override moves bands
+0.85/0.50 → 0.55/0.40 live, `override_source` carried; `/healthz` and `/health` both 200 < 2 ms);
+HTTP auth negative (401 whose message names `X-Operator-Token`); **egress-ON `/check` classification
+(580 ms, $0.0000276)** — the leg the 11-14 fire recorded as unverified is now measured; Python
+connector installed as a real consumer in a fresh venv (`guard-agent-client 0.2.0`; library,
+console script exit-code contract, routeless-verdict fail-closed, `fail_mode="open"` flagged-not-
+trusted); documented error paths (invalid policy JSON → rc=1 with parse position; tokenfile 0640 →
+rc=1 with the chmod remedy in the message); inert-override startup warning corroborates closed
+`GUARD-DF-022`.
+
+Filed: `GUARD-DF-023` (P4) — the `-version` flag is absent from README, `skills/guard-usage`, and
+`docs/operations.md` (grep census 0/0/0); discoverable only via `-h` and CHANGELOG. Id minted from
+the canonical origin/main board copy (`board_next_id.py`, free at file time; `boardctl validate`
+OK with 76 pre-existing warnings after filing). Not re-filed, owned elsewhere: unknown-JSON-field
+tolerance (`DOC-31`); v0.1.0-as-latest released-surface state (`REL-GUARD-007`, owner-gated).
+
+Install leg: `bunker-qa.sh launch … --server bunker-mvp --keep` → `agent=7a98d021` launched
+01:06 UTC, disk preflight 78.5% (< 94%); battery ran detached, harvested at close (see tick
+report). Pre-existing agent `f6a5f076` (created 00:08, before this tick) is not this fire's and was
+left untouched. Left behind: `docs/dogfood/2026-11-18-run9-tick1-integration.md` and this entry.
+
+- ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=no new-evidence=yes head=7c08590 verdict=SHIPPABLE install=PENDING-AT-WRITE(bunker-mvp,agent=7a98d021,harvested-at-close) perf=measured-no-finding-12x-1MiB rows=GUARD-DF-023 cited=GUARD-DF-020,GUARD-DF-020-R2,GUARD-DF-022,DOC-31,REL-GUARD-007
