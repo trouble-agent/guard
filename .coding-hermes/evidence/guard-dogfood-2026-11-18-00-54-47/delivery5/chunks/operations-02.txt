@@ -1,0 +1,38 @@
+| Valid token and `POST`, non-empty `content` | `200 OK` with a JSON `Result` body |
+
+The README [Quick Start](../README.md#quick-start) fixture defines base bands of `block_at: 0.85` and `review_at: 0.50`, plus a `webhook` override with `block_at: 0.55` and `review_at: 0.40`. With that policy loaded, these requests demonstrate base selection versus the source-selected override (the `jq` projection keeps the relevant response fields visible):
+
+```sh
+curl -sS -X POST \
+  -H 'X-Operator-Token: replace-with-a-long-random-secret' \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"message to classify"}' \
+  http://127.0.0.1:8768/check | jq '{effective_block_at, override_source}'
+# {"effective_block_at":0.85,"override_source":null}
+
+curl -sS -X POST \
+  -H 'X-Operator-Token: replace-with-a-long-random-secret' \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"message to classify","source":"webhook"}' \
+  http://127.0.0.1:8768/check | jq '{effective_block_at, override_source}'
+# {"effective_block_at":0.55,"override_source":"webhook"}
+```
+
+HTTP 200 means the request was processed and a `Result` was returned; inspect its `errored`, `decision`, `route`, and `reason` fields. It does not by itself mean live classification succeeded.
+
+ch:trace row=DOC-31 spec=docs/traceability-doctrine.md#close-out-shape wave=guard-foreman-2026-11-15-16-29-26 test=make-docs-check doc=docs/operations.md#/check evidence=docs/operations.md#quick-start-fixture-cross-check+docs/traceability-doctrine.md#close-out-shape witness=none:documentation verdict=PASS:docs-only-exemption commit=3f6d0e06af0be3a4ef09e08f41d3362346948a42 memory=none:docs-only
+
+STATUS: PASS
+TIER: T3 — docs-only close-out under the explicit exemption in `docs/traceability-doctrine.md#close-out-shape`; `make docs-check` and `go test ./... -count=1` were run, and the field/override claims were re-read in source and in the README Quick Start fixture.
+RESIDUAL: the known evidence gap remains: the two `curl` transcript comments show the `jq` projection shape, not a recorded live classifier response; they assume the Quick Start policy is loaded. This does not block the docs-only close-out because the marker cites the stable DOC-31 commit and prior tier-2 verdict evidence, rather than the run currently grading this marker.
+EVIDENCE: docs/operations.md §5 `/check` contract; README.md:42-46 (base `block_at` 0.85 / `review_at` 0.50 plus `webhook` override 0.55 / 0.40); guard.go:69-75 (`Input` fields), guard.go:96/106 (`OverrideSource`, `effective_block_at`), policy.go:90-108 (`selectFor` reads only `Overrides[source]`), cmd/guardd/main.go:256 (decoder without `DisallowUnknownFields`), main.go:260 (empty `content` -> 400); policy_test.go:365-397 (override selection); `make docs-check` PASS; `go test ./... -count=1` all four packages ok; prior tier-2 verdicts `f318c8ef` and `0f5f3f23` checked every `/check` contract criterion as PASS. Stable DOC-31 contract commit: `3f6d0e06af0be3a4ef09e08f41d3362346948a42`.
+
+## 6. Classifier egress behavior
+
+`GUARD_EGRESS_ENABLED` defaults to `true` when unset. With egress enabled, content submitted for classification may be sent to the hosted Jev API outside this host. Set it to `false` to disable external classification; recognized false values also include `0`, `no`, and `off` (case-insensitive, with surrounding whitespace ignored). This setting is read at process start, so a change requires a restart.
+
+When disabled, `guardd` has no local classifier. `/check` still returns HTTP 200 with an in-band errored `Result` explaining that egress is disabled; it does not make a live classifier call. With the default fail-closed policy the error result blocks/quarantines. Confirm the active mode from the startup warning and `egress_enabled` in the health response.
+
+## 7. Policy startup behavior
+
+Without a policy path, the built-in default policy is used. `GUARD_POLICY=/path/to/policy.json` selects a policy file; the `-policy /path/to/policy.json` flag takes precedence if both are provided. A named policy file that is missing, unreadable, invalid JSON, or has invalid score bands causes startup to fail. The process does not silently fall back to the default policy: correct the file/path before restarting.

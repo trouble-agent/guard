@@ -1,0 +1,16 @@
+{"tag":"user-guide-01","score":0.41,"route":"deliver","decision":"allow","duration_ms":600,"cost_usd":0.000124278,"classified_bytes":7379,"load_bearing":[]}
+{"tag":"user-guide-01","score":0.45,"route":"deliver","decision":"allow","duration_ms":463,"cost_usd":0.000124278,"classified_bytes":7379,"load_bearing":[]}
+{"tag":"user-guide-01","score":0.44,"route":"deliver","decision":"allow","duration_ms":417,"cost_usd":0.000124278,"classified_bytes":7379,"load_bearing":[]}
+{"tag":"user-guide-01","score":0.43,"route":"deliver","decision":"allow","duration_ms":427,"cost_usd":0.000124278,"classified_bytes":7379,"load_bearing":[]}
+{"tag":"user-guide-01","score":0.38,"route":"deliver","decision":"allow","duration_ms":530,"cost_usd":0.000124278,"classified_bytes":7379,"load_bearing":[]}
+{"tag":"user-guide-01","score":0.41,"route":"deliver","decision":"allow","duration_ms":517,"cost_usd":0.000124278,"classified_bytes":7379,"load_bearing":[]}
+{"tag":"user-guide-01","score":0.45,"route":"deliver","decision":"allow","duration_ms":357,"cost_usd":0.000124278,"classified_bytes":7379,"load_bearing":[]}
+{"tag":"user-guide-01","score":0.39,"route":"deliver","decision":"allow","duration_ms":464,"cost_usd":0.000124278,"classified_bytes":7379,"load_bearing":[]}
+{"tag":"README-02","score":0.82,"route":"review","decision":"allow","duration_ms":755,"cost_usd":0.000225582,"classified_bytes":12101,"load_bearing":["rot13"]}
+{"tag":"README-02","score":0.79,"route":"review","decision":"allow","duration_ms":1012,"cost_usd":0.000225582,"classified_bytes":12101,"load_bearing":["rot13"]}
+{"tag":"README-02","score":0.81,"route":"review","decision":"allow","duration_ms":863,"cost_usd":0.000225582,"classified_bytes":12101,"load_bearing":["rot13"]}
+{"tag":"README-02","score":0.8,"route":"review","decision":"allow","duration_ms":752,"cost_usd":0.000225582,"classified_bytes":12101,"load_bearing":["rot13"]}
+{"tag":"README-02","score":0.8,"route":"review","decision":"allow","duration_ms":881,"cost_usd":0.000225582,"classified_bytes":12101,"load_bearing":["rot13"]}
+{"tag":"README-02","score":0.8,"route":"review","decision":"allow","duration_ms":877,"cost_usd":0.000225582,"classified_bytes":12101,"load_bearing":["rot13"]}
+{"tag":"README-02","score":0.79,"route":"review","decision":"allow","duration_ms":781,"cost_usd":0.000225582,"classified_bytes":12101,"load_bearing":["rot13"]}
+{"tag":"README-02","score":0.79,"route":"review","decision":"allow","duration_ms":732,"cost_usd":0.000225582,"classified_bytes":12101,"load_bearing":["rot13"]}

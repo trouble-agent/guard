@@ -1,0 +1,73 @@
+---
+name: guard-usage
+description: Use when integrating or running the guard message-security filter (CLI, guardd HTTP service, or Python connector) — entry points, prerequisites, and the pitfalls that cost time.
+---
+
+# guard — usage for agents
+
+**What it is:** a lightweight prompt-injection filter for untrusted text.
+One Go core, three consumption shapes, one `Result` contract. Route on
+`result.route` + `result.constraints`, never on `decision` alone.
+
+## Prerequisites
+
+- Go ≥1.26.11 to build (`go build ./...` — go.mod declares `go 1.26.11`); zero external deps.
+  A newer toolchain downloads itself from the `go` directive's toolchain floor.
+- An OpenRouter API key for ANY classification (Jev decisions model at
+  `openrouter.ai/api/alpha/decisions`). Key load order:
+  `$OPENROUTER_API_KEY` → `~/.hermes/.env` → `~/9router-deploy/.env.shared`
+  (regex `sk-or-v1-…`, tried in order on 401/402/429). An expired key in the
+  first file yields opaque `guard_error (fail-closed): key rejected: http 401`
+  block verdicts — check `errored` in the Result when a block looks wrong.
+- **`jq` for `make docs-check`** (the README-drift gate probes for it at
+  `Makefile:31-32` and shells out to it at `Makefile:86,88,91,104`). The gate
+  checks for the tool before parsing: without jq, `make docs-check` exits 2
+  with `docs-check FAIL: jq was not found on PATH`; with jq present, it ends
+  with `docs-check: PASS` (GUARD-DF-004).
+- Full prerequisite detail, key discovery, and a first-run walkthrough:
+  README.md "Quick Start". This file is the agent-facing summary.
+
+## Entry points
+
+```bash
+go build -o bin/guardd ./cmd/guardd
+printf '%s' "$msg" | ./bin/guardd                    # CLI, stdin
+./bin/guardd -content "$msg" -source github_pr       # CLI, one-shot
+# -channel <label> — currently an inert annotation: it is passed to
+# Input.Channel and no non-test code reads it, so it does not reach the
+# classifier or the Result (GUARD-DF-008d). Do not rely on it.
+./bin/guardd -content "$msg" -source task-router -channel router
+./bin/guardd -serve 127.0.0.1:8768 -tokenfile <0600-file>  # HTTP (preferred; or GUARD_TOKEN env)
+./bin/guardd -serve 127.0.0.1:8768 -token <secret>         # dev: works but warns (token visible in ps)
+```
+
+```python
+import sys; sys.path.insert(0, 'connectors/python')
+from guard_client import Guard
+g = Guard(endpoint='http://127.0.0.1:8768', fail_mode='open')
+v = g.check(content, source='task-router', channel='router')
+if v.errored: ...        # outage path — check BEFORE honouring constraints (GUARD-DF-001)
+if not v.deliver: ...    # quarantine/review
+```
+
+## Policy and per-source overrides — read this before promising a tightening
+
+- `Policy` is a Go struct (`policy.go`): `BlockAt`, `ReviewAt`,
+  `QuotedDowngrade`, `FailClosed`, `Overrides map[string]Override`.
+- `Overrides` is keyed on **`Input.Source`** — never on the policy id. A key
+  that matches no source the caller passes is **silently ignored**: no error,
+  no warning, the base bands simply apply (GUARD-DF-007). A typo'd source label
+  (`"webook"`) disables the tightening invisibly.
+- **The served/CLI shapes CAN supply a Policy** (GUARD-DF-005 landed):
+  `-policy <file>` or `GUARD_POLICY=<file>` loads a policy file (JSON matching
+  `guard.Policy`), validated strictly at startup — bands in (0,1],
+  `review_at <= block_at`, omitted global fields inheriting the shipped
+  defaults — and guardd refuses to run on a bad file instead of falling back to
+  looser bands (`cmd/guardd/main.go`, `resolvePolicy`/`loadPolicyFile`). With
+  no file named, guardd runs `guard.DefaultPolicy()`. An in-process Go consumer
+  (crier) still builds its own `&guard.Guard{...}`.
+- **A verdict reports which row of the table decided it** (GUARD-DF-011):
+  `override_source` names the `Overrides` key the message selected (absent =
+  the policy's own bands decided) and `effective_block_at` /
+  `effective_review_at` are the bands that were actually compared — on error
+  verdicts too, since the selected row is what resolves the fail-closed stance.

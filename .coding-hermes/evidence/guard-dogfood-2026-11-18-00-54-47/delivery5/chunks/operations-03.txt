@@ -1,0 +1,35 @@
+
+```sh
+GUARD_POLICY=/etc/guard/policy.json GUARD_TOKEN='…' \
+  ./bin/guardd -serve 127.0.0.1:8768
+```
+
+## 8. Log interpretation
+
+- `guardd: token loaded from GUARD_TOKEN` or `guardd: token loaded from tokenfile` identifies the selected credential source. A `-token` startup emits a warning that the secret is exposed through the process list.
+- `WARNING: classifier egress is DISABLED; ...` confirms that classification is disabled and `/check` will return an in-band error result. The enabled warning explicitly states that submitted content can leave the host.
+- `guardd listening on ...` is emitted only after the TCP bind succeeds. If the address is already in use, expect a `serve: listen tcp ...` failure and no listening banner; check for another process or choose a free port.
+- Authentication refusals return 401 to the caller. The handler does not log each refusal in `main.go`; use an upstream access log, if configured, for request-level auditing. Do not infer that a refusal was logged by guardd itself.
+- A startup line containing `guardd: GUARD: policy ... override key(s) ["..."] not selected by any source seen so far` means an override key is unused and therefore inert. Override keys must be the exact `Input.Source` values the caller sends (for example, `webhook`), never the policy ID; correct the policy key or the request's `source` field and restart. This advisory warning does not change thresholds, verdicts, or fail-closed behavior, and the same key is not repeated on every request.
+- Classification outcomes are returned in each `/check` JSON `Result`, not as a documented per-request guardd log line. Inspect the response fields (`errored`, `decision`, `route`, `reason`, and policy metadata) when diagnosing an outcome.
+
+## 9. Bounded recovery and restart
+
+Use this short, bounded sequence; avoid restart loops:
+
+1. Check `GET /healthz` once. If it returns 200, record `egress_enabled` and continue to the authenticated request check. If it fails, inspect the service manager's status and recent logs.
+2. Confirm the process is configured with a token and that a token file has mode `0400` or `0600`. Verify the request header uses the same token source selected by precedence.
+3. For `/check` 400/405 responses, correct the method or request body instead of restarting. For a 200 response with `errored:true`, read `reason`; with egress disabled, this is expected and restarting without changing configuration will not enable classification.
+4. For a failed startup, inspect the first fatal error. Fix an invalid `GUARD_POLICY` file or bind conflict before another attempt. Do not repeatedly restart with unchanged inputs.
+5. Restart once using the service manager or the original launch command. If managing the process directly, send `TERM`, wait up to 10 seconds, then use `KILL` only if it remains. Re-check the listening log line and both health endpoint and authenticated `/check` after restart.
+6. If the process still fails, preserve its logs and configuration context (never copy the token itself) and escalate to the service owner. Do not broaden the bind address or disable fail-closed behavior as a troubleshooting shortcut.
+
+## Source anchors
+
+These line references are exact for the source revision this runbook was checked against; re-check them when `cmd/guardd/main.go` changes.
+
+- `cmd/guardd/main.go:120-153` — command flags, egress default selection, policy resolution, token resolution, and serving-mode wiring.
+- `cmd/guardd/main.go:207-247` — health endpoints, authentication/method/body checks, and `Result` response.
+- `cmd/guardd/main.go:250-290` — token requirement, bind normalization, egress warnings, and post-bind listening log.
+- `cmd/guardd/main.go:303-347` — token precedence and owner-only token-file permission validation.
+- `cmd/guardd/main.go:375-395` and `cmd/guardd/main.go:418-470` — policy selection, parsing, and validation failure behavior.

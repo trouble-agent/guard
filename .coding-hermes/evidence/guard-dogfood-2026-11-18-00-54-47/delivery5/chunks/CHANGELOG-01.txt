@@ -1,0 +1,76 @@
+# Changelog
+
+All notable changes to guard are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are tagged
+in git and cut with goreleaser.
+
+## [Unreleased]
+
+## [0.2.0] - 2026-11-04
+
+First release since v0.1.0 (2026-10-02): 3 features and 28 fixes over the
+v0.1.0..HEAD commit range, counted by conventional-commit subject; no breaking
+changes.
+
+### Added
+
+- Policy files: `-policy <file>` / `GUARD_POLICY` load a JSON decision table
+  (matching guard.Policy) so per-source overrides are installable without
+  writing Go. A missing or invalid file is a startup failure, never a silent
+  fall-back to the default bands (GUARD-DF-005).
+- Conventional `/health` alias served from the healthz handler, so generic
+  orchestrators that probe `/health` pass liveness discovery
+  (REVIEW-GUARD-005).
+- pip-installable Python client via `connectors/python/pyproject.toml`
+  (GUARD-004).
+- `guardd -version` prints the stamped build version. Release builds inject it
+  via ldflags (Makefile `-X main.version=$(VERSION)`, goreleaser
+  `-X main.version={{.Version}}`); a plain `go build` reports `dev`.
+
+### Changed
+
+- Python distribution renamed `guard-client` → `guard-agent-client` (import
+  name unchanged): the PyPI name `guard-client` belongs to an unrelated
+  project, so the old install instruction fetched the wrong package.
+  docs/ADOPTION.md now points at the repo path.
+- Python connector fail-open default removed: a truncated body or proxy error
+  page no longer parses as route=deliver. A verdict with no valid route now
+  routes to review with decision=error.
+- guardd CLI exits rc=2 on guard_error (no key configured, egress disabled,
+  classifier failure) so exit-status-keying callers can distinguish
+  "classified, blocked" from "never classified" (QA-GUARD-002).
+- Reported billing now includes the attribution classifier call's cost and
+  latency (GUARD-DF-006).
+- Building the Go release requires Go >=1.26.11, the minimum toolchain that
+  closes the reachable standard-library advisories GO-2026-6859 (`net/http`)
+  and GO-2026-6809 (`crypto/x509`) (REL-GUARD-008).
+- `make docs-check` requires `jq`; when `jq` is absent, it emits the install
+  instruction "Install jq and re-run (see README Prerequisites, GUARD-DF-004)."
+- Committed benchmarks for 8 MiB normalization and for an 8 MiB egress-disabled
+  `/check` request — the `/check` case measures the above-cap rejection, since
+  content over the 20,000-byte classification cap never reaches a normalizer.
+  Oversized-payload normalization was briefly bounded to a prefix/suffix scan
+  window for performance, measured at 551 MB/s on the normalization benchmark
+  at the time; GUARD-DF-020-R2 later removed that window as unreachable, so
+  the shipped code retains no speedup from it and guard verdicts are unchanged
+  (GUARD-DF-020).
+- Normalizing no longer carries a scan window: the 128 KiB prefix plus 16 KiB
+  suffix bound was unreachable — content over the 20,000-byte classification
+  cap is rejected before any normalizer runs — so it is removed and
+  normalization covers all accepted content, with anything above the cap
+  rejected explicitly. The product docs (README, connectors/README,
+  skills/guard-usage) already describe cap-only behavior, and the dated
+  dogfood record of the window measurement is now marked superseded
+  (GUARD-DF-020-R2).
+
+### Fixed
+
+- guardd logs its readiness banner only after the listen succeeds — a failed
+  bind no longer looks like a healthy start (GUARD-DF-014).
+- Per-source overrides: the applied override is reported on the verdict
+  (GUARD-DF-011); override-level fail-closed is honored on the guard-error
+  path (GUARD-DF-010); override keys matching no Input.Source are validated
+  with a warning (GUARD-DF-007).
+- Token handling: shared secret resolved by precedence env > tokenfile > argv
+  with constant-time comparison, argv tokens warned loudly (REVIEW-GUARD-001);
+  Go and Python clients send X-Operator-Token (REVIEW-GUARD-002).

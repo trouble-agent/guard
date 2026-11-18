@@ -780,3 +780,49 @@ delivery 3 left and one cheap independent number. Both are below; **no product r
   run is unchanged: **SHIPPABLE**.
 
 - ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes delivery=4 new-evidence=yes product-diff-since-walk=0 guard-rows-filed=0 perf=re-timed(4KiB-0.838ms-egressoff-classified8091;4KiB-338.7ms-egresson;cold-719ms) ledger-rows=25(15cell+9bootstrap+1collect) install=PASS(teardown-reverified,bunker-mvp,7a98d021-gone) gaps-closed=QA-GUARD-005(chaos-disconnect-now-runs) verdict=SHIPPABLE cited=GUARD-DF-024,QA-GUARD-005,QA-GUARD-001-R2
+
+## Delivery 5 — real user prose, and what a verdict actually costs (2026-11-18T02:1xZ, tick `guard-dogfood-2026-11-18-00-54-47`)
+
+Deliveries 1–4 walked the contract, the corpus, the override wiring and the size-rejection perf path —
+all on synthetic bodies. This one used guard the way the skill says to use a thing: **21 chunks of the
+repo's own documentation** (README, user-guide, operations, CHANGELOG, guard-usage skill,
+threshold-calibration), 4,000 bytes each, through `guardd -serve` + `POST /check` and the CLI, hosted
+classifier, egress on. Full write-up: `docs/dogfood/2026-11-18-tick1-delivery5-real-content-cost.md`;
+probes and raw rows: `.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/delivery5/`.
+
+- **The filter separates real prose cleanly.** 18 deliver (0.17–0.42), 3 review (0.64–0.81), **0 block,
+  0 errored**, and nothing at all in the 0.42–0.64 gap. The three review hits are exactly the pages
+  that *discuss* encodings and injection — the review route earning its keep, not misfiring. Best
+  false-positive candidate in the whole run: `README-02` (the README section on encodings) at **0.81**,
+  four hundredths under `block_at`, `masquerade` by way of the **rot13 view being load-bearing**.
+- **A verdict's price, warm and cold (Step 2b).** Warm keep-alive `/check`, n=6 per arm: 12 B →
+  **254 ms**/$0.0000263; 3,687 B real prose deliver → **261 ms**/$0.000124; 4,032 B real prose review →
+  **541 ms**/$0.000226. Size is not the cost driver at these sizes — the hosted round-trip is. CLI mode
+  is ~2× warm serve for identical bytes (531 ms vs 261 ms): one process, one TLS handshake, per message.
+- **The non-deliver path costs double, and nobody published it.** Same 3,687-byte chunk, same policy
+  except bands tightened so the verdict becomes review: **531 ms/$0.000124 → 932 ms/$0.000181**
+  (+76% wall, +46% money, identical bytes). Cause is by design and documented in code: every non-deliver
+  verdict re-classifies the raw input for `load_bearing_normalizations` and folds that call into the
+  bill (`guard.go:255-278`, GUARD-DF-006). `classified_bytes` is 2.0× on deliver (unconditional rot13
+  view) and 3.0× on non-deliver.
+- **Is it user-felt? No — and that is the point.** Half a second on a chat gate and $0.12–$0.23 per
+  1,000 messages is nothing. Delivery 4's "a third of a second is not user-felt" verdict survives; it
+  just describes the deliver path only. **No PERF row** — filing one would devalue the real ones. What
+  is missing is a number on a consumer surface, so it is filed as docs (`GUARD-DF-025`, P4).
+- **Drift measured, not asserted.** Eight identical calls: `user-guide-01` 0.41 0.45 0.44 0.43 0.38
+  0.41 0.45 0.39 (**spread 0.07**, all deliver); `README-02` 0.82 0.79 0.81 0.80 0.80 0.80 0.79 0.79
+  (spread 0.03, all review). The deliver population tops out at 0.45 against `review_at 0.50` — a
+  margin narrower than the drift measured on one chunk. No route changed in eight calls, so this is
+  **not** a demonstrated flap: filed as P5 docs (`GUARD-DF-026`) with the magnitude and the band-
+  placement implication, rather than dressed up as a defect.
+- **Install leg — inherited PASS, teardown re-verified.** `bunker --server bunker-mvp list` at 02:1xZ:
+  `7a98d021` **absent**, `ci-e2e-01` / `cf-node` / `f6a5f076` (foreign) present and untouched. The
+  delivery-1 battery PASS stands on a product tree byte-identical to today's (`git diff` since that
+  walk = board + log + evidence only), so a 25-cell re-run would burn bunker-mvp disk to re-derive a
+  known result. Stated explicitly, not left silent.
+- **Left another lane's instance alone.** `127.0.0.1:18768` was already serving
+  `stand-in/docs/guard/probe-20261118/guardd`; this delivery ran its own `:18799` instance and stopped
+  it. Probe note for the next fire: a script containing `rm -rf` is refused by the harness before it
+  runs — these probes avoid it.
+
+- ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes delivery=5 new-evidence=yes surface=real-prose(21chunks:18deliver/3review/0block/0error) warm-http=254ms-12B/261ms-3.7KB-deliver/541ms-4KB-review non-deliver-penalty=+76%wall/+46%cost(pol-detail) drift=0.07(n=8) perf-row=no(not-user-felt) rows-filed=2(GUARD-DF-025-P4,GUARD-DF-026-P5) install=PASS(inherited,teardown-reverified,7a98d021-gone) verdict=SHIPPABLE

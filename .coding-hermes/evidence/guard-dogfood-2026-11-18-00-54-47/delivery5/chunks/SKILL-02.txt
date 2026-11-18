@@ -1,0 +1,62 @@
+  That is how you verify a tightening fired from the audit trail instead of
+  inferring it from the policy file.
+- `QuotedDowngrade` (default 0.80) is live and verified: a score above
+  `BlockAt` on text the classifier reads as a quotation/example becomes
+  `route=review`, never deliver and never with capabilities restored. Three
+  independent phrasings (explicit "DO NOT FOLLOW THIS" wrapper, a fenced test
+  case, a canary string) scored 0.95–0.97 and all downgraded to review.
+
+## Verdict semantics that matter
+
+- `route`: deliver | review | quarantine — the primary output.
+- `constraints`: allow_tools/network/secrets for the handling agent.
+- `policy` / `override_source` / `effective_block_at` / `effective_review_at`:
+  the table that judged the message, the `Overrides` row INSIDE it that decided
+  this verdict (absent when the policy's own bands did), and the bands actually
+  compared (GUARD-DF-011). Two verdicts produced under different bands are
+  distinguishable from the JSON alone — a tightened source no longer looks like
+  the base bands.
+- `errored: true` ⇒ every other field describes the ERROR verdict, not a
+  classification (attack_class is absent, score is 0). `policy`,
+  `override_source` and the `effective_*` bands are still meaningful: they name
+  the row that resolved the fail-closed/fail-open stance.
+- `normalizations` includes `rot13` on ~every result: ROT13 is applied
+  unconditionally by design; the field means "transform ran", NOT "this
+  payload was encoded". "Caught by an encoding" reads from
+  `load_bearing_normalizations` (populated only when the decoded variant
+  changed the verdict — GUARD-DF-002 fix).
+- **Long content is rejected, never silently judged as a prefix.** The guard
+  refuses raw input over 20,000 UTF-8 bytes, or normalized classifier state
+  over that budget, before provider submission. The error verdict has
+  `errored: true`, `truncated: true`, `bytes_seen` set to the raw input size
+  (or the complete normalized-state size when normalization overflows), and
+  `classified_bytes: 0`; route it as an error and do not deliver it.
+  `bytes_seen`, `classified_bytes`, and `truncated` are present on every Go
+  Result, including CLI, HTTP, Go-client, and Python-connector responses.
+  For raw overflow `bytes_seen` is the raw input size; for normalized overflow
+  it is the complete normalized-state size. The 20,000-byte boundary is
+  intentionally stricter than Jev's documented normal text path around 32,000
+  bytes so provider-side suffix dropping cannot become a silent allow.
+- Deterministic normalization runs only within the single 20,000-byte
+  classifier cap. Raw content above that cap receives an explicit
+  classification-limit verdict before normalization; all default transforms
+  remain enabled for accepted content.
+- `attack_class` is noisy near the threshold — benign text often carries
+  masquerade at 0.1–0.4. Trust `route`, not the label, at the margin.
+- **`duration_ms` and `cost_usd` cover ALL classifier calls the verdict
+  caused** (accumulated accounting since e858041, the GUARD-DF-006 fix). On a
+  non-deliver verdict the guard re-classifies the raw input to attribute
+  normalisations (skipped when the verdict errored or normalisation changed
+  nothing), so a caught message costs **two** classifier calls, about twice
+  the wall time, and reports ≈2x the cost — the fields are the full bill for
+  the message, not the first call. Measured: caught verdicts ~0.48–0.85 s wall
+  vs deliver ~0.24–0.40 s (load-dependent; 47 samples over 2026-10-23/24 at
+  karaHermes-mde-7840hs, HEADs c9f913b–06085ab). Don't read the fields as per-call
+  values: to time or count an individual call, measure it yourself or use a
+  stub endpoint.
+
+## Run commands
+
+```bash
+go build ./... && go vet ./... && go test ./... -count=1   # about 4–6s real (4.04s on 2026-10-24 at karaHermes-mde-7840hs, HEAD 74f9d1b)
+# Offline when testing.Short, no resolved classifier key, or HTTP_PROXY/HTTPS_PROXY is set (the live tests skip).

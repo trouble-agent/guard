@@ -1,0 +1,4 @@
+
+STATUS: PASS
+TIER: T4 — source anchors and the bounded finite-input CLI probe were directly verified by the foreman; no multi-gigabyte behavior is claimed.
+EVIDENCE: `printf 'The quarterly report is ready for review.\n' | timeout 120 ./bin/guardd` on HEAD 6b7d176 returned rc=0 with `{"decision":"allow","route":"deliver","provider":"jev","duration_ms":401}` on a finite 40-byte stdin, and `grep -n` confirmed `io.ReadAll(os.Stdin)` at `cmd/guardd/main.go:169` plus `io.LimitReader(r.Body, 8<<20)` at `cmd/guardd/main.go:244`. The earlier `env -i ... go run` probe was discarded: it never reached guardd (go1.26.9 toolchain download failed under the empty HOME), so it is not evidence for anything.
