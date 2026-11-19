@@ -28,7 +28,11 @@ callers: crier (Go, in-process), task-router (Python, over HTTP), shell scripts
   resolve keys through this same order (`loadOpenRouterKeys`, `jev.go`).
   To reproduce the no-key example on a machine whose normal HOME contains a
   key, use an isolated HOME for the command, for example `TD=$(mktemp -d) &&
-  env -u OPENROUTER_API_KEY HOME=$TD bash -c 'printf "hello world" | ./guardd'`.
+  env -u OPENROUTER_API_KEY HOME=$TD bash -c 'printf "hello world\n" | ./guardd'`
+  (the newline is load-bearing: the JSON block below documents the 12-byte
+  `hello world\n` input with `bytes_seen: 12` / `classified_bytes: 29`, while
+  the 11-byte `printf "hello world"` reports `bytes_seen: 11` /
+  `classified_bytes: 27`).
 
 **Build and run**
 
@@ -88,7 +92,7 @@ reproduce the verdict below, use the scratch-HOME note that follows this block.)
 > discovery order (env → `~/.hermes/.env` → `~/9router-deploy/.env.shared`) finds
 > nothing:
 > ```bash
-> TD=$(mktemp -d) && env -u OPENROUTER_API_KEY HOME=$TD bash -c 'printf "hello world" | ./guardd'
+> TD=$(mktemp -d) && env -u OPENROUTER_API_KEY HOME=$TD bash -c 'printf "hello world\n" | ./guardd'
 > ```
 
 This is fail-closed working as designed: a guard that cannot judge must not
@@ -174,10 +178,12 @@ non-empty (the latter is treated as a network cut). Therefore, `make test`
 does not prove that the live route test ran. To prove it ran, use
 `go test -run TestLiveJevRoutesKnownCases -v -count=1` and look for `PASS`, not
 `SKIP`. The sibling quality gates are `make vet`, `make lint`, and
-`make docs-check` (the last replays this README's documented commands). CI
-runs the same build, vet, and test steps on every push and pull request
-(`.github/workflows/ci.yml`), plus a gitleaks secret scan. The build itself is
-covered under [Build](#build).
+`make docs-check` (the last replays this README's documented commands).
+`.github/workflows/ci.yml` is the authority for what CI runs on every push and
+pull request: four setup steps and seven work steps — `build`, `vet`, `lint`,
+`test`, `python-tests` (`pytest` in `connectors/python`), `docs-check` (the
+same `make docs-check` gate), and `gitleaks`. The build itself is covered
+under [Build](#build).
 
 ### Makefile targets
 
@@ -332,6 +338,32 @@ and `truncated: true`; callers must route it as an error and must not deliver it
 The limit applies to the Go core and therefore to CLI, HTTP, Go-client, and
 Python-connector responses.
 
+### Measured cost and latency
+
+Warm HTTP figures — one long-lived `guardd -serve`, keep-alive connections, six
+`/check` calls per payload, median of those six — taken from the 2026-11-18
+dogfood run's `http-warm.jsonl` and `pol-detail.jsonl`, both under
+`.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/delivery5/`:
+
+| Input | Content bytes | Route | Warm wall median | `cost_usd` per message |
+|---|---|---|---|---|
+| small deliver (`hello, world`, 88-byte HTTP payload) | 12 | `deliver` | 253 ms | $0.0000263 |
+| multi-KB deliver (4 KB doc chunk, 3,797-byte HTTP payload) | 3,687 | `deliver` | 258.5 ms | $0.0001243 |
+| multi-KB non-deliver (4 KB doc chunk, 4,187-byte HTTP payload) | 4,032 | `review` | 541 ms | $0.0002256 |
+
+`cost_usd` is the verdict's own field and tracks classifier tokens, not wall
+time, so a message's cost follows its bytes; wall time is dominated by the
+hosted provider call in either case. A non-deliver verdict with a normalized
+input pays a **second classifier call**: the attribution block
+(`guard.go:258-279`, GUARD-DF-002 / GUARD-DF-006) re-classifies the raw input
+to decide `load_bearing_normalizations`, then adds that call's cost and latency
+to the verdict — so review/block verdicts cost roughly 1.5–1.8× a deliver
+verdict for the same bytes (roughly twice the classifier work): the identical
+3,687-byte payload is $0.0001243 when it delivers and $0.0001811 when a tight
+band routes it to `review` (`pol-detail.jsonl`), and the review chunk above
+costs 1.8× the deliver chunk for 9% more input bytes because it classifies
+12,101 bytes rather than 7,379.
+
 ### Error verdicts
 
 On any classifier failure the verdict is a DIFFERENT shape: `errored=true`,
@@ -410,6 +442,31 @@ bind (a taken port, say) prints just `serve: listen tcp <addr>: bind: address
 already in use` and exits 1 — the startup banner is never a false green for a
 server that never listened. The CLI shapes (`stdin`, `-content`) are unaffected.
 
+The `/check` request contract — the exact status for every rejection — is
+tabulated in [connectors/README.md#http-contract](connectors/README.md#http-contract)
+and implemented in `newHandler` (`cmd/guardd/main.go:252-285`). There are five
+outcomes, checked in this order, and each reveals nothing about the stages
+after it:
+
+- `401` — missing or wrong `X-Operator-Token`; checked before the method and
+  before the body is read (`main.go:255-257`).
+- `405` — any method other than `POST`, body `POST only` (`main.go:259-261`).
+- `400` — a malformed or truncated JSON body, body `bad request: <parse
+  error>` (`main.go:273-275`).
+- `400` — JSON that decodes but carries an empty `content`, body `content is
+  required` (`main.go:277-279`).
+- `413` — a request body over the **8 MiB (8,388,608-byte)** HTTP body cap,
+  body `request body exceeds 8 MiB (8388608 bytes)` (`main.go:269-271`, read
+  through a `LimitReader` of cap+1 at `main.go:264`). A body of exactly 8 MiB
+  is accepted; the first byte over it is a `413`, not a JSON error.
+
+That 8 MiB cap is HTTP-only and separate from the **20,000-byte classifier
+cap**: a `/check` body well under 8 MiB can still be rejected by the classifier
+window, and that rejection is an errored verdict (`errored: true`,
+`truncated: true`, `classified_bytes: 0`) with an HTTP `200`, not an HTTP
+error — so a caller must read `errored` rather than keying on the status code
+alone (see "Classification window and accounting").
+
 ### Policy files (`-policy` / `GUARD_POLICY`)
 
 The default decision table (`guard.DefaultPolicy()`: block ≥ 0.85, review ≥
@@ -447,16 +504,54 @@ The file is JSON matching the `guard.Policy` struct:
   a literal `0` is indistinguishable from "omitted" in JSON, and a 0 would
   otherwise downgrade EVERY quarantine (the comparison is `Quoted >= 0`,
   always true). To run without the downgrade, set it to `1.0`.
-- `fail_closed` — the error stance; `-fail-closed=false` still overrides it
-  on the command line.
+- `fail_closed` — the error stance **of the library** (`guard.Policy`, and what
+  an embedder constructs). For the `guardd` binary the file value is NOT
+  consulted: guardd sets the stance from the `-fail-closed` flag on every run
+  *after* loading the policy (`pol.FailClosed = *fail`,
+  `cmd/guardd/main.go:169`, default `true`), so a top-level
+  `"fail_closed": false` in the file changes nothing unless you also pass
+  `-fail-closed=false`.
 - `overrides` — per-source tables keyed by the `source` the caller supplies
   (`-source` on the CLI, `source` in the `/check` body). Each entry may set
-  `block_at`, `review_at`, `fail_closed`; unset fields inherit the policy's
-  own values. An unknown source simply gets the global bands. The verdict names
+  `block_at`, `review_at`, `fail_closed`. An unset `block_at`/`review_at`
+  inherits the policy file's own band; an unset `fail_closed` inherits the
+  **flag** value, because guardd has already overwritten the policy's stance
+  before any override is resolved. An unknown source simply gets the global
+  bands. The verdict names
   the entry that decided it — `override_source` carries the key and
   `effective_block_at` / `effective_review_at` the bands it used (see "Which
   row of the table decided" above), so a misfiring Override is visible in the
   audit trail instead of only in this file.
+
+The two rules compose into the one way to loosen on error for a single source:
+the top-level stance stays fail-closed (the flag is not passed, so it defaults
+to `true` and overwrites `"fail_closed": true` identically), while the override
+carries its own `fail_closed`:
+
+```json
+{
+  "id": "loose-webhook",
+  "block_at": 0.85,
+  "review_at": 0.50,
+  "fail_closed": true,
+  "overrides": {
+    "webhook": {"fail_closed": false}
+  }
+}
+```
+
+```bash
+guardd -policy loose-webhook.json -source webhook -content "hello world"
+```
+
+On a box with no API key that run prints `decision: "allow"`,
+`route: "review"`, `errored: true`, `override_source: "webhook"`, and
+`reason: "guard_error (fail-open): no openrouter api key available"` — the
+`webhook` row loosened. The same policy without `-source webhook` stays
+`block`/`quarantine` with `override_source` absent, on the flag's fail-closed
+stance. A top-level `"fail_closed": false` with no override would NOT loosen
+anything: the flag's default `true` replaces it (only `-fail-closed=false`
+does).
 
 Loading is strict: a named file that is missing, is not valid
 `guard.Policy` JSON, carries a band outside (0, 1], or pairs
