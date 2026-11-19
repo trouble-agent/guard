@@ -321,3 +321,4 @@
 {"id":1794782735157477319,"timestamp":"2026-11-19T01:03:58","event_type":"task_completed","task_id":"DOC-35","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
 {"id":1794782735157477320,"timestamp":"2026-11-19T01:32:34","event_type":"task_completed","task_id":"GUARD-DF-026","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
 {"id":1794782735157477321,"timestamp":"2026-11-19T01:35:11","event_type":"task_completed","task_id":"DOC-34","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
+{"id":1794782735157477322,"timestamp":"2026-11-19T06:15:24","event_type":"task_updated","task_id":"REL-GUARD-003","actor":"foreman","detail":"{\"title\":\"RELEASE cut v0.2.0 (OWNER-GATED): readiness re-measured 2026-11-19 PM pass 2 at tip b182364, product tree df3066 unchanged since d5f2906, exact-head CI 44470366702 success; explicit authorization required before tag\"}","tick_number":null}
