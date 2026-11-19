@@ -153,10 +153,46 @@ itself is not the signal, the decoded payload is.
 - The attack classes are well separated at the top: 31/32 attacks score
   ≥ 0.85, the outlier being the structured_object exec payload at 0.80.
 
+## Determinism: identical input does not score identically
+
+Every figure above treats a score as a property of the *content*. It is not:
+the classifier is a hosted model (`typesafe/jev-1.13`), so the same bytes
+scored twice can return different scores. Measured directly — eight identical
+calls per chunk, same bytes, same default policy, same CLI surface
+(`guardd -content`), recorded in
+`.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/delivery5/var-detail.jsonl`
+(16 rows = 2 chunks × 8 calls; the harness that wrote it, `variance.sh`, sits
+beside it in the same directory):
+
+| chunk                                   | scores (n=8)                            | min – max     | spread    | routes   |
+|-----------------------------------------|-----------------------------------------|---------------|-----------|----------|
+| `user-guide-01` (mid-band benign prose) | 0.41 0.45 0.44 0.43 0.38 0.41 0.45 0.39 | 0.380 – 0.450 | **0.070** | 8× deliver |
+| `README-02` (near-block benign prose)   | 0.82 0.79 0.81 0.80 0.80 0.80 0.79 0.79 | 0.790 – 0.820 | **0.030** | 8× review  |
+
+Both chunks are verbatim excerpts of this repository's `docs/user-guide.md`
+and `README.md`, so the spread is measured on ordinary benign documentation
+rather than on adversarial or deliberately edge-case input.
+
+No route changed inside either sample (deliver 8/8, review 8/8), but the
+envelope is wide enough to reach a band. The concrete consequence at
+`review_at`: the shipped band is **0.50** and `user-guide-01`'s worst measured
+score is **0.45** — a 0.05 gap, narrower than that chunk's own 0.07 spread, so
+a re-run that drifts one spread above its measured max (0.45 + 0.07 = 0.52, an
+extrapolation rather than a measured score) would route review instead of
+deliver. At the other end, `README-02`'s highest score (0.82) sits 0.03 below
+`block_at 0.85` — the same magnitude as that chunk's spread. Neither figure is
+a code defect; both are how much headroom a band actually has.
+
+**Consumer guidance:** a band placed within roughly one measured spread of an
+expected score can change route between identical calls, so leave at least
+that much margin when tightening a band for a source.
+
 ## Residuals
 
-- Single measurement run, hosted model: scores drift run to run. The live
-  test's ±0.20 tolerance absorbs drift; re-run
+- Hosted model, not a deterministic function of its input: identical content
+  measurably drifts by 0.03–0.07 (measured in "Determinism" above), which is
+  why every figure in this report is a single-run measurement. The live test's
+  ±0.20 tolerance absorbs that drift; re-run
   `./data/corpus/run_calibration.sh` when the model version bumps and update
   this table.
 - The benign side was grown for GUARD-010 (13 → 33 near-misses, `bn-01`..
@@ -175,4 +211,4 @@ itself is not the signal, the decoded payload is.
   (`bn-18`, `bn-30`, `bn-33`) is where a PerSource Override pays for itself —
   via a policy file (`guardd -policy <file>` / `GUARD_POLICY=<file>`; see the
   README "Policy files" section for the JSON shape and validation rules).
-- ch:trace row=GUARD-008 spec=docs/threshold-calibration.md evidence=docs/threshold-calibration.md grown=GUARD-010
+- ch:trace row=GUARD-008,GUARD-DF-026 spec=docs/threshold-calibration.md evidence=docs/threshold-calibration.md,.coding-hermes/evidence/guard-dogfood-2026-11-18-00-54-47/delivery5/var-detail.jsonl grown=GUARD-010
