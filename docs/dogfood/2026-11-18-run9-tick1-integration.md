@@ -1,6 +1,7 @@
 # Dogfood run 9, tick 1 — 2026-11-18 (guard-dogfood-2026-11-18-00-54-47)
 
-Verdict: SHIPPABLE. One docs-census row filed (`GUARD-DF-023`); no other finding.
+Verdict: SHIPPABLE. Two rows filed: `GUARD-DF-023` (docs census) and
+`GUARD-DF-024` (this report's own perf attribution, corrected in place below).
 
 ## Promise
 
@@ -64,18 +65,43 @@ Every step below ran from the repo at `7c08590` (= origin/main at fire time).
    the fixture policy without any webhook request logs the startup warning
    naming the unselected key and `ValidateOverrideKeys`.
 
-## Performance (Step 2b) — measured, no row
+## Performance (Step 2b) — corrected: the large-body rows time the reject path
 
 - Warm CLI classify: 0.40–0.58 s (n=5); fail-closed cold CLI: < 10 ms (n=1).
-- `/check` egress-off, median of 10: **4 KiB 0.76 ms, 64 KiB 0.90 ms,
-  1 MiB 7.81 ms** (p90 9.50 ms).
-- The 2026-11-14 record published 6.4–8.0 ms @ 64 KiB and 96–99 ms @ 1 MiB.
-  Live today is ~7× and ~12× faster. This is the `GUARD-DF-020` /
-  `GUARD-DF-020-R2` normalization work landing (both rows complete;
-  benchmark doc claims 551 MB/s @ 8 MiB). Confirmed live with
-  `bytes_seen: 1013637` — a real 1 MiB body.
-- Nothing here is user-felt slowness, so **no PERF row was filed**; the
-  numbers corroborate the closed rows instead.
+- `/check` egress-off, median of 10 (p90 9.50 ms):
+  - 4 KiB — 0.76 ms; reaches normalization and the classifier
+    (`classified_bytes` non-zero: 8,197 for a 4,096-byte body, because the
+    rot13 view is appended).
+  - 64 KiB — 0.90 ms, **rejected** before normalization (`classified_bytes=0`).
+  - 1 MiB — 7.81 ms, **rejected** before normalization (`classified_bytes=0`).
+- Why: both large rows exceed the 20,000-byte classifier window, so the guard
+  refuses the body outright and the classifier is never called — the verdict is
+  `truncated: true`, `classified_bytes: 0`, reason
+  `guard_error (classification window): input is N bytes; maximum is 20000
+  bytes`. Those two rows time body-read plus that refusal, nothing else.
+- The 2026-11-14 record timed the same rejected path; its baseline predates the
+  classification window, so the two sets are not like-for-like:
+  - 64 KiB — 6.4–8.0 ms, **rejected**, not a normalization measurement.
+  - 1 MiB — 96–99 ms, **rejected**, not a normalization measurement.
+- This report originally credited that difference to the `GUARD-DF-020` /
+  `GUARD-DF-020-R2` normalization work. That attribution is withdrawn
+  (`GUARD-DF-024`): the numbers do not measure normalization at all.
+- No in-repo NormalizeAll throughput figure exists at ≤20 KB to back such a
+  claim. The benchmarks in `normalize_bench_test.go` measure 24 KiB
+  (`BenchmarkNormalizeAll24KB`) and 8 MiB (`BenchmarkNormalizeAll8MiB`, the
+  `docs/dogfood/2026-11-15-GUARD-DF-020-normalization-perf.md` figure of
+  551 MB/s) — both above the 20,000-byte window, i.e. input sizes the guard
+  now refuses before normalization. No speedup is claimed here.
+- Confirmed live on this tree (n=1 per size, `GUARD_EGRESS_ENABLED=false`,
+  `bin/guardd -serve`):
+  - 64 KiB — **rejected**: `classified_bytes=0`, `truncated: true`, reason
+    names `65536 bytes` against the 20000-byte maximum.
+  - 1 MiB — **rejected**: `classified_bytes=0`, `truncated: true`, reason
+    names `1048576 bytes` against the 20000-byte maximum.
+- Nothing here is user-felt slowness, so **no PERF row was filed**: the only
+  defect was this section's attribution, filed as the P3 docs row
+  `GUARD-DF-024`. The product behaviour these rows do prove is that oversized
+  bodies are refused outright rather than silently scored on a prefix.
 
 ## Findings
 
