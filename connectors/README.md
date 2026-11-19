@@ -63,16 +63,18 @@ restored; the consumer still routes a human look.
 Exact behaviour of `guardd -serve`'s `/check` endpoint (from `cmd/guardd/main.go`,
 `newHandler`). The result body is the same `Result` JSON as above.
 
-**Order of checks** — auth first, then method, then body. A rejected request
-reveals nothing about the later stages:
+**Order of checks** — auth first, then method, then the 8 MiB byte cap on the raw
+stream, then JSON decoding, then the emptiness check. The cap is enforced on the
+raw body before any parsing, so a body that is both over the cap and malformed
+answers `413`, not `400`. A rejected request reveals nothing about the later stages:
 
 | # | Trigger | Status | Body | Code |
 |---|---------|--------|------|------|
 | 1 | Missing or wrong `X-Operator-Token` header | `401` | `unauthorized: missing or invalid X-Operator-Token` | main.go:256-257 |
 | 2 | Method other than `POST` | `405` | `POST only` | main.go:260 |
-| 3 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:266 |
-| 4 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:278 |
-| 5 | Body exceeds 8 MiB (8,388,608 bytes) | `413` | `request body exceeds 8 MiB (8388608 bytes)` | main.go:270 |
+| 3 | Body exceeds 8 MiB (8,388,608 bytes) | `413` | `request body exceeds 8 MiB (8388608 bytes)` | main.go:269-270 |
+| 4 | Malformed / truncated JSON body | `400` | `bad request: <parse error>` | main.go:273-274 |
+| 5 | JSON decodes but `content` is empty | `400` | `content is required` | main.go:278 |
 
 **Limits:**
 
@@ -97,8 +99,8 @@ reveals nothing about the later stages:
   `0`, and `truncated` is `true` with `errored: true`; connectors must not
   deliver it.
 - **Classification timeout**: **120s** per request via
-  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:264). The CLI
-  form uses the same 120s budget (main.go:179), so CLI and HTTP verdicts agree
+  `context.WithTimeout(r.Context(), 120*time.Second)` (main.go:281). The CLI
+  form uses the same 120s budget (main.go:196), so CLI and HTTP verdicts agree
   on timing too.
 
 **`/healthz`** (and the identical conventional `/health` alias) — no auth, always `200` (GET and other methods are accepted; the
@@ -119,10 +121,10 @@ the code does today.
 **`GUARD_ENDPOINT`** — base URL of the guardd HTTP service. Default
 `http://127.0.0.1:8768` (loopback, port 8768). The Python connector resolves
 it as CLI `--endpoint` flag → `GUARD_ENDPOINT` environment variable → the
-built-in default ([`connectors/python/guard_client.py:264`](python/guard_client.py),
-[`connectors/python/guard_client.py:308-310`](python/guard_client.py)). The
+built-in default ([`connectors/python/guard_client.py:46`](python/guard_client.py),
+[`connectors/python/guard_client.py:311`](python/guard_client.py)). The
 library form is `Guard(endpoint=...)`, falling back to the module default
-([`connectors/python/guard_client.py:38`](python/guard_client.py)), which
+([`connectors/python/guard_client.py:46`](python/guard_client.py)), which
 snapshots `GUARD_ENDPOINT` at import time — set the variable before importing,
 or pass `endpoint=` explicitly, if you resolve late. The Go client has no
 environment default: `client.New(endpoint)` takes the URL explicitly
@@ -133,7 +135,7 @@ environment default: `client.New(endpoint)` takes the URL explicitly
 invalid X-Operator-Token` without it (see HTTP contract above). Clients
 resolve it explicit-argument first (Python `token=` constructor argument /
 `--token` flag, Go `Client.Token` field), else from the `GUARD_TOKEN`
-environment variable ([`connectors/python/guard_client.py:180`](python/guard_client.py),
+environment variable ([`connectors/python/guard_client.py:223`](python/guard_client.py),
 [`client/client.go:67-75`](../client/client.go)). There is no default value.
 
 **guardd's own token precedence (serving side)** — when `-serve` starts, it
@@ -169,15 +171,15 @@ the policy's base row.
   on every call, so a deployment that relies on source-scoped Overrides
   silently enforced the base thresholds for every shell caller. Omitting a
   flag still sends an empty label — existing callers keep their old verdicts.
-- guardd CLI: `-source` / `-channel` ([`cmd/guardd/main.go:131-132`](../cmd/guardd/main.go)).
+- guardd CLI: `-source` / `-channel` ([`cmd/guardd/main.go:146-147`](../cmd/guardd/main.go)).
 
 A source label no `overrides` key matches is silently inert (base bands apply,
 no error) — GUARD-DF-007 — so a typo'd label disables a tightening invisibly.
 
 **Timeout** — Python bounds each check with the `timeout` constructor
 argument (default `120.0` seconds) or the CLI `--timeout` flag (default 120)
-([`connectors/python/guard_client.py:172-175`](python/guard_client.py),
-[`connectors/python/guard_client.py:272-278`](python/guard_client.py)); the
+([`connectors/python/guard_client.py:217-224`](python/guard_client.py),
+[`connectors/python/guard_client.py:323`](python/guard_client.py)); the
 Go client's `New()` sets the same 120s ([`client/client.go:63-65`](../client/client.go)).
 guardd's own classification deadline is fixed at 120s (HTTP contract above).
 A timeout is a connector-side failure and follows the fail-mode rules below.
@@ -185,7 +187,7 @@ A timeout is a connector-side failure and follows the fail-mode rules below.
 **Fail mode** — Python: `fail_mode` constructor argument (`"closed"` is the
 default; `"open"` is the alternative) or the CLI `--fail-open` flag. In
 `open` mode any check failure (transport, timeout, HTTP error status, bad
-JSON — [`connectors/python/guard_client.py:212`](python/guard_client.py))
+JSON — [`connectors/python/guard_client.py:262-263`](python/guard_client.py))
 becomes a flagged REVIEW verdict that preserves capabilities and sets
 `errored=True`; in `closed` mode the same failure raises `GuardError` and
 nothing is delivered. Full semantics and the Go/CLI comparison are in
@@ -200,7 +202,7 @@ invoked.
 **Python CLI** (`guard` console script from `connectors/python/`, or
 `python connectors/python/guard_client.py`) — the exit code branches on the
 verdict's `route`, so shell callers never parse JSON
-([`connectors/python/guard_client.py:290-293`](python/guard_client.py)):
+([`connectors/python/guard_client.py:359-362`](python/guard_client.py)):
 
 | Exit | Meaning |
 |---|---|
@@ -216,7 +218,7 @@ JSON first.
 
 **guardd CLI** (one-shot `guardd`, content on stdin) — the exit code
 distinguishes *classified* from *never classified*, not the verdict's
-polarity ([`cmd/guardd/main.go:179-180`](../cmd/guardd/main.go)):
+polarity ([`cmd/guardd/main.go:206-207`](../cmd/guardd/main.go)):
 
 | Exit | Meaning |
 |---|---|
@@ -258,8 +260,8 @@ default `-fail-closed=true` yields `decision="block"`,
 `route="quarantine"`; `-fail-closed=false` yields `decision="allow"`,
 `route="review"`. Both include a `reason` beginning `guard_error (...)`; this
 is an in-band verdict, not an HTTP error response. (Sources:
-[`cmd/guardd/main.go:130-137`](../cmd/guardd/main.go),
-[`cmd/guardd/main.go:264-267`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:281`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:196`](../cmd/guardd/main.go),
 [`guard.go:192-216`](../guard.go),
 [`jev.go:161-164`](../jev.go).)
 
@@ -273,8 +275,8 @@ capabilities; Python preserves its configured outage capabilities
 (`allow_tools=true`, `allow_secrets=true`). An `errored` result must never be
 auto-delivered. (Sources:
 [`client/client.go:80-137`](../client/client.go),
-[`connectors/python/guard_client.py:170-182`](python/guard_client.py),
-[`connectors/python/guard_client.py:200-230`](python/guard_client.py).)
+[`connectors/python/guard_client.py:265-280`](python/guard_client.py),
+[`connectors/python/guard_client.py:208-211`](python/guard_client.py).)
 
 **HTTP errors from a reachable guardd:** for example, missing/invalid
 `X-Operator-Token` produces HTTP **401** with a plain-text
@@ -283,7 +285,7 @@ non-200 responses as check failures; fail-open mode then returns the same
 connector-local REVIEW verdict described above, while fail-closed returns/raises
 an error. This does not change guardd's response into a 200. (Sources:
 [`client/client.go:109-137`](../client/client.go),
-[`connectors/python/guard_client.py:200-230`](python/guard_client.py).)
+[`connectors/python/guard_client.py:262-263`](python/guard_client.py).)
 
 **Configuration:** guardd's HTTP classification deadline is fixed at 120s.
 The Go connector's timeout is configurable through `Client.Timeout` (zero uses
@@ -292,11 +294,11 @@ through the `timeout` constructor argument / CLI `--timeout` (default 120s),
 and its mode through `fail_mode` / CLI `--fail-open`. The server policy is
 configurable with `-fail-closed` (default true), affecting only the in-band
 classifier-error verdict, not the HTTP status. (Sources:
-[`cmd/guardd/main.go:130-137`](../cmd/guardd/main.go),
-[`cmd/guardd/main.go:264-267`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:281`](../cmd/guardd/main.go),
+[`cmd/guardd/main.go:196`](../cmd/guardd/main.go),
 [`client/client.go:53-64`](../client/client.go),
-[`connectors/python/guard_client.py:170-182`](python/guard_client.py),
-[`connectors/python/guard_client.py:264-287`](python/guard_client.py).)
+[`connectors/python/guard_client.py:349`](python/guard_client.py),
+[`connectors/python/guard_client.py:217-224`](python/guard_client.py).)
 
 ## Fail mode — choose per surface, never by default
 

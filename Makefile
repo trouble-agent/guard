@@ -105,67 +105,132 @@ docs-check: build
 	jq -e '.decision == "block" and .errored == true and (.reason | contains("fail-closed"))' "$$TMPHOME/empty.json" > /dev/null \
 	  || { echo "docs-check FAIL: empty-stdin run is not the fail-closed block verdict"; cat "$$TMPHOME/empty.json"; exit 1; }; \
 	echo "docs-check: empty-stdin fail-closed rc=2 OK"; \
-	echo "docs-check: checking connectors/README.md main.go line anchors (DOC-16)"; \
-	ANCHORS=$$(grep -oE 'main\.go:[0-9]+(-[0-9]+)?' connectors/README.md | sort -u); \
-	if [ -z "$$ANCHORS" ]; then \
-	  echo "docs-check FAIL: no main.go: anchors found in connectors/README.md — check ran on nothing (DOC-16)"; \
+	echo "docs-check: checking connectors/README.md line anchors (DOC-16/DOC-40)"; \
+	printf '%s\n' \
+	  'main.go:146-147|flag.String("source"' \
+	  'main.go:189|io.ReadAll(os.Stdin)' \
+	  'main.go:196|WithTimeout(context.Background(), 120*time.Second)' \
+	  'main.go:206-207|if res.Errored {' \
+	  'main.go:241-251|handleHealth := func' \
+	  'main.go:256-257|"unauthorized: missing or invalid "' \
+	  'main.go:260|"POST only"' \
+	  'main.go:269-270|if len(body) > maxBodyBytes {' \
+	  'main.go:273-274|json.NewDecoder(bytes.NewReader(body))' \
+	  'main.go:278|"content is required"' \
+	  'main.go:281|WithTimeout(r.Context(), 120*time.Second)' \
+	  'main.go:350-366|func resolveToken(' \
+	  'main.go:352-353|case envVal != "":' \
+	  'main.go:373-387|func readTokenFile(' \
+	  'guard_client.py:46|DEFAULT_ENDPOINT = os.environ.get("GUARD_ENDPOINT"' \
+	  'guard_client.py:208-211|CONSTRAINTS_FAIL_OPEN: Mapping[str, bool] = {' \
+	  'guard_client.py:217-224|timeout: float = 120.0,' \
+	  'guard_client.py:223|os.environ.get("GUARD_TOKEN"' \
+	  'guard_client.py:262-263|except Exception as exc:' \
+	  'guard_client.py:265-280|def _on_error(' \
+	  'guard_client.py:311|"--endpoint",' \
+	  'guard_client.py:323|"--timeout",' \
+	  'guard_client.py:349|"--fail-open",' \
+	  'guard_client.py:359-362|def _verdict_exit_code(' \
+	  > "$$TMPHOME/anchor_table.txt"; \
+	if [ ! -s "$$TMPHOME/anchor_table.txt" ]; then \
+	  echo "docs-check FAIL: anchor table is empty — the check would run on nothing (DOC-16)"; \
 	  exit 1; \
 	fi; \
-	MAINLINES=$$(wc -l < cmd/guardd/main.go); \
-	doctype_anchor_fail=0; \
-	for tok in $$ANCHORS; do \
-	  anchor_range="$${tok#main\.go:}"; \
-	  anchor_start="$${anchor_range%%-*}"; \
-	  anchor_end="$${anchor_range#*-}"; \
+	TABLE_TOKENS=$$(cut -d'|' -f1 "$$TMPHOME/anchor_table.txt"); \
+	README_ANCHORS=$$(grep -oE '(main\.go|guard_client\.py):[0-9]+(-[0-9]+)?' connectors/README.md | sort -u); \
+	if [ -z "$$README_ANCHORS" ]; then \
+	  echo "docs-check FAIL: no main.go:/guard_client.py: anchors found in connectors/README.md — check ran on nothing (DOC-16)"; \
+	  exit 1; \
+	fi; \
+	anchor_fail=0; \
+	for tok in $$README_ANCHORS; do \
+	  if ! printf '%s\n' "$$TABLE_TOKENS" | grep -Fxq -- "$$tok"; then \
+	    echo "docs-check FAIL: connectors/README.md cites $$tok but the anchor table carries no expected subject for it — add '$$tok|<substring the cited line must contain>' (DOC-40)"; \
+	    anchor_fail=1; \
+	  fi; \
+	done; \
+	for tok in $$TABLE_TOKENS; do \
+	  if ! grep -Fq -- "$$tok" connectors/README.md; then \
+	    echo "docs-check FAIL: anchor table entry $$tok is no longer cited in connectors/README.md — drop it or re-point the citation (DOC-40)"; \
+	    anchor_fail=1; \
+	  fi; \
+	done; \
+	while IFS='|' read -r anchor_tok anchor_subject; do \
+	  [ -n "$$anchor_tok" ] || continue; \
+	  anchor_file=$${anchor_tok%%:*}; \
+	  anchor_range=$${anchor_tok#*:}; \
+	  case "$$anchor_file" in \
+	    main.go) anchor_path=cmd/guardd/main.go ;; \
+	    guard_client.py) anchor_path=connectors/python/guard_client.py ;; \
+	    *) echo "docs-check FAIL: anchor table entry $$anchor_tok names an ungated file (only main.go and guard_client.py carry subjects)"; anchor_fail=1; continue ;; \
+	  esac; \
+	  if [ ! -f "$$anchor_path" ]; then \
+	    echo "docs-check FAIL: anchor $$anchor_tok -> $$anchor_path is missing"; \
+	    anchor_fail=1; continue; \
+	  fi; \
+	  file_lines=$$(wc -l < "$$anchor_path"); \
+	  anchor_start=$${anchor_range%%-*}; \
+	  anchor_end=$${anchor_range#*-}; \
 	  if [ "$$anchor_range" = "$$anchor_end" ]; then anchor_end=""; fi; \
-	  anchor_line=$$(sed -n "$${anchor_start}p" cmd/guardd/main.go); \
+	  anchor_line=$$(sed -n "$${anchor_start}p" "$$anchor_path"); \
 	  anchor_start_text="$$anchor_line"; \
 	  if [ -z "$$anchor_line" ]; then \
-	    echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is EMPTY/absent (cmd/guardd/main.go has $$MAINLINES lines)"; \
-	    doctype_anchor_fail=1; continue; \
+	    echo "docs-check FAIL: anchor $$anchor_tok -> $$anchor_path line $$anchor_start is EMPTY/absent ($$file_lines lines)"; \
+	    anchor_fail=1; continue; \
 	  fi; \
-	  case "$$anchor_line" in \
-	    *'//'*[![:space:]]*) \
-	      echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is a comment, not the cited behaviour: '$$anchor_line'"; \
-	      doctype_anchor_fail=1; continue;; \
-	    esac; \
+	  anchor_head=$$(printf '%s' "$$anchor_line" | sed 's/^[[:space:]]*//'); \
+	  anchor_is_comment=0; \
+	  case "$$anchor_file" in \
+	    main.go) case "$$anchor_line" in *'//'*[![:space:]]*) anchor_is_comment=1 ;; esac ;; \
+	    guard_client.py) case "$$anchor_head" in '#'*) anchor_is_comment=1 ;; esac ;; \
+	  esac; \
+	  if [ "$$anchor_is_comment" -ne 0 ]; then \
+	    echo "docs-check FAIL: anchor $$anchor_tok -> $$anchor_path line $$anchor_start is a comment, not the cited behaviour: '$$anchor_line'"; \
+	    anchor_fail=1; continue; \
+	  fi; \
 	  case "$$anchor_line" in \
 	    ""|*[![:space:]]*) ;; \
 	    *) \
-	      echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is whitespace/blank, not the cited behaviour: '$$anchor_line'"; \
-	      doctype_anchor_fail=1; continue;; \
+	      echo "docs-check FAIL: anchor $$anchor_tok -> $$anchor_path line $$anchor_start is whitespace/blank, not the cited behaviour: '$$anchor_line'"; \
+	      anchor_fail=1; continue;; \
 	  esac; \
 	  anchor_no_space=$$(printf '%s' "$$anchor_line" | tr -d '[:space:]'); \
 	  case "$$anchor_line" in \
 	    [[:space:]]*[{}][[:space:]]*) \
 	      case "$$anchor_no_space" in \
 	        '{'|'}') \
-	          echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is a lone brace line, not the cited behaviour: '$$anchor_line'"; \
-	          doctype_anchor_fail=1; continue;; \
+	          echo "docs-check FAIL: anchor $$anchor_tok -> $$anchor_path line $$anchor_start is a lone brace line, not the cited behaviour: '$$anchor_line'"; \
+	          anchor_fail=1; continue;; \
 	      esac;; \
 	    '{'|'}') \
-	      echo "docs-check FAIL: anchor $$tok -> line $$anchor_start is a lone brace line, not the cited behaviour: '$$anchor_line'"; \
-	      doctype_anchor_fail=1; continue;; \
+	      echo "docs-check FAIL: anchor $$anchor_tok -> $$anchor_path line $$anchor_start is a lone brace line, not the cited behaviour: '$$anchor_line'"; \
+	      anchor_fail=1; continue;; \
+	  esac; \
+	  case "$$anchor_line" in \
+	    *"$$anchor_subject"*) ;; \
+	    *) \
+	      echo "docs-check FAIL: anchor $$anchor_tok -> $$anchor_path line $$anchor_start does not carry the expected subject '$$anchor_subject' (line is: '$$anchor_line')"; \
+	      anchor_fail=1; continue;; \
 	  esac; \
 	  if [ -n "$$anchor_end" ]; then \
 	    if [ "$$anchor_start" -gt "$$anchor_end" ]; then \
-	      echo "docs-check FAIL: anchor $$tok range goes backwards"; \
-	      doctype_anchor_fail=1; continue; \
+	      echo "docs-check FAIL: anchor $$anchor_tok range goes backwards"; \
+	      anchor_fail=1; continue; \
 	    fi; \
-	    if [ "$$anchor_end" -gt "$$MAINLINES" ]; then \
-	      echo "docs-check FAIL: anchor $$tok range end $$anchor_end past EOF ($$MAINLINES lines)"; \
-	      doctype_anchor_fail=1; continue; \
+	    if [ "$$anchor_end" -gt "$$file_lines" ]; then \
+	      echo "docs-check FAIL: anchor $$anchor_tok range end $$anchor_end past EOF ($$file_lines lines)"; \
+	      anchor_fail=1; continue; \
 	    fi; \
-	    anchor_line=$$(sed -n "$${anchor_end}p" cmd/guardd/main.go); \
+	    anchor_line=$$(sed -n "$${anchor_end}p" "$$anchor_path"); \
 	    if [ -z "$$anchor_line" ]; then \
-	      echo "docs-check FAIL: anchor $$tok range end $$anchor_end is empty"; \
-	      doctype_anchor_fail=1; continue; \
+	      echo "docs-check FAIL: anchor $$anchor_tok range end $$anchor_end is empty"; \
+	      anchor_fail=1; continue; \
 	    fi; \
 	  fi; \
-	  echo "docs-check: anchor $$tok ok: $$anchor_start: $$anchor_start_text$${anchor_end:+ ... $$anchor_end: $$(sed -n "$${anchor_end}p" cmd/guardd/main.go)}"; \
-	done; \
-	if [ "$$doctype_anchor_fail" -ne 0 ]; then \
-	  echo "docs-check FAIL: stale/incoherent main.go line anchors (DOC-16 — update connectors/README.md to current line numbers)"; \
+	  echo "docs-check: anchor $$anchor_tok ok: $$anchor_start: $$anchor_start_text$${anchor_end:+ ... $$anchor_end: $$(sed -n "$${anchor_end}p" "$$anchor_path")}"; \
+	done < "$$TMPHOME/anchor_table.txt"; \
+	if [ "$$anchor_fail" -ne 0 ]; then \
+	  echo "docs-check FAIL: stale/incoherent connectors/README.md line anchors (DOC-16/DOC-40 — re-point the citation and update its table subject)"; \
 	  exit 1; \
 	fi; \
 	echo "docs-check: PASS"
