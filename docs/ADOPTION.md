@@ -65,14 +65,25 @@ guard-client` will install the wrong package):
 pip install /path/to/guard/connectors/python
 ```
 
-Pin it in a requirements file so an install is reproducible:
+Pin it in a requirements file so an install is reproducible. **No tag is
+usable yet**: `v0.1.0` (the only tag and the only GitHub release) predates both
+`pyproject.toml` and operator-token auth, so pinning it makes `pip` fail with
+*"does not appear to be a Python project"*, and its `guard_client.py` sends no
+`X-Operator-Token` even if you copy the module by hand. Pin an explicit commit
+sha instead — this one is verified end to end:
 
 ```bash
-pip install "guard-client @ git+https://github.com/trouble-agent/guard.git@v0.1.0#subdirectory=connectors/python"
+pip install "guard-agent-client @ git+https://github.com/trouble-agent/guard.git@594787295c3f44cd49938db99c4c771fceaa2357#subdirectory=connectors/python"
 ```
 
+To convince yourself the ref carries the header before you pin it, run
+`git show <sha>:connectors/python/guard_client.py | grep -c X-Operator-Token`
+— it must print a non-zero count, and the sha must also contain
+`connectors/python/pyproject.toml` (`git cat-file -e <sha>:connectors/python/pyproject.toml`).
+
 The distribution is named `guard-agent-client` (import name stays
-`guard_client`) specifically to avoid the `guard-client` PyPI collision.
+`guard_client`) specifically to avoid the `guard-client` PyPI collision — use
+that name in the requirement, not `guard-client`.
 
 ```python
 import os
@@ -144,15 +155,19 @@ carries its own `decision='error'` and always routes to review. Fail-open means
 The `client` package lives in this module, so a consumer always resolves it at
 the **same version as the module** — there is no separate `client` module to pin:
 
-```
-go get github.com/trouble-agent/guard@latest
+```bash
+go get github.com/trouble-agent/guard@594787295c3f44cd49938db99c4c771fceaa2357
 ```
 
-> **Version floor: v0.1.1 or later.** The published `v0.1.0` client cannot
-> authenticate — it sends no `X-Operator-Token` header, so every `/check` call
-> returns 401. `v0.1.1` adds `Client.Token` and the header. If you are pinned to
-> `v0.1.0`, you must upgrade; there is no workaround short of reimplementing the
-> HTTP call.
+> **No `v0.1.1` tag exists yet.** `git ls-remote --tags` and `gh release list`
+> show `v0.1.0` only, and `https://proxy.golang.org/github.com/trouble-agent/guard/@v/list`
+> lists exactly `v0.1.0` — so `@latest` resolves to a client that sends no
+> `X-Operator-Token`, and every `/check` returns 401. Pin the commit sha above
+> (the proxy derives the pseudo-version `v0.1.1-0.20261119000412-594787295c3f`
+> from it) until a real `v0.1.1` tag is published. Before pinning any ref, run
+> `git show <sha>:client/client.go | grep -c 'X-Operator-Token'` and require a
+> non-zero count. The module declares `go 1.26.11`; older toolchains will be
+> upgraded by `go get` or must set `GOTOOLCHAIN`.
 
 ```go
 import (
