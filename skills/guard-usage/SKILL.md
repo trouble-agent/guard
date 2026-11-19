@@ -19,11 +19,13 @@ One Go core, three consumption shapes, one `Result` contract. Route on
   (regex `sk-or-v1-…`, tried in order on 401/402/429). An expired key in the
   first file yields opaque `guard_error (fail-closed): key rejected: http 401`
   block verdicts — check `errored` in the Result when a block looks wrong.
-- **`jq` for `make docs-check`** (the README-drift gate probes for it at
-  `Makefile:31-32` and shells out to it at `Makefile:86,88,91,104`). The gate
-  checks for the tool before parsing: without jq, `make docs-check` exits 2
-  with `docs-check FAIL: jq was not found on PATH`; with jq present, it ends
-  with `docs-check: PASS` (GUARD-DF-004).
+- **`jq` for `make docs-check`** (the README-drift gate probes for it before
+  parsing anything and shells out to it in each JSON comparison — find both
+  with `grep -n 'jq' Makefile`; do not trust line numbers quoted in prose,
+  they drift with every Makefile edit). The gate checks for the tool before
+  parsing: without jq, `make docs-check` exits 2 with
+  `docs-check FAIL: jq was not found on PATH`; with jq present, it ends with
+  `docs-check: PASS` (GUARD-DF-004).
 - Full prerequisite detail, key discovery, and a first-run walkthrough:
   README.md "Quick Start". This file is the agent-facing summary.
 
@@ -50,7 +52,9 @@ construction, and any egress, so it works on a box with no
 line of any release check or deploy smoke test. `main.version` is a
 build-time variable (default `"dev"` in `cmd/guardd/main.go`): release builds
 inject it via ldflags — `make build` passes
-`-X main.version=$(VERSION)` (default `v0.2.0`, `Makefile:2,8`) and goreleaser
+`-X main.version=$(VERSION)` (default `v0.2.0`; `grep -n 'VERSION' Makefile`
+shows both the default and the ldflags line, so cite that instead of a line
+number) and goreleaser
 passes `-X main.version={{.Version}}` (`.goreleaser.yaml`) — while a plain
 `go build` / `go build ./...` / `go run` injects nothing and reports
 `guardd dev`. So a binary answering `guardd dev` was compiled by hand and
@@ -173,7 +177,7 @@ make docs-check                                            # needs jq (see Prere
   deliver cost) since e858041. Timing is dominated by the Jev API round trip;
   user+sys CPU was not the bottleneck in this observation.
 
-ch:trace row=GUARD-DF-016 spec=skills/guard-usage/SKILL.md#Performance wave=guard-dogfood-2026-11-12 test=./bin/guardd -content '<benign>' + injection:5-runs-each doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-timing-output witness=/home/kara/.hermes/cache/scratch/guard-df-016-timing.txt verdict=none:docs-only commit=none:worker-commit
+ch:trace row=GUARD-DF-016 spec=skills/guard-usage/SKILL.md#Performance wave=guard-dogfood-2026-11-12 test=./bin/guardd -content '<benign>' + injection:5-runs-each doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-timing-output witness=board:.coding-hermes/board/tasks.jsonl#GUARD-DF-016 verdict=none:docs-only commit=none:worker-commit
 
 ≈ The Jev API round trip dominates the CLI latency. Don't profile the Go code
 first — the network is the latency.
@@ -199,17 +203,22 @@ first — the network is the latency.
   **snapshots `GUARD_ENDPOINT` at import time** — set the env before importing,
   or pass `endpoint=` explicitly.
 - Malformed JSON to /check → HTTP 400 with a Go json parse message (readable).
-- A body over 8 MiB is truncated by `io.LimitReader` and surfaces as
-  `400 bad request: unexpected EOF` — the 8 MiB limit is not named in the
-  error (`cmd/guardd/main.go:244`, GUARD-DF-008c). The CLI's stdin path uses
-  `io.ReadAll(os.Stdin)` (`cmd/guardd/main.go:169-173`) and has no explicit
-  input cap in the source (GUARD-DF-008b). This is an implementation statement,
-  not a multi-gigabyte measurement; a bounded finite-input probe does not measure
-  behavior at that scale (GUARD-DF-017).
+- **A `POST /check` body over 8 MiB is refused with HTTP 413 and the limit is
+  named in the error.** The handler reads at most `maxBodyBytes+1` bytes
+  through `io.LimitReader` and rejects anything longer with
+  `413 request body exceeds 8 MiB (8388608 bytes)`. The ceiling is inclusive:
+  exactly 8,388,608 bytes is accepted and reaches the JSON decoder. The cap is
+  applied to the raw byte stream BEFORE `json.Decode`, so an over-cap body is
+  a 413 even when it is malformed JSON — never a `400 bad request: unexpected
+  EOF` (`cmd/guardd/main.go`, the `maxBodyBytes` constant and the `/check`
+  handler; GUARD-DF-008c). Verified live at HEAD 5947872: 8,388,609 bytes →
+  413 with that body; 8,388,608 bytes → past the size gate, surfacing the JSON
+  layer's `400 invalid character 'a'` instead.
+- The CLI's stdin path uses `io.ReadAll(os.Stdin)` and has no explicit input
+  cap in the source (GUARD-DF-008b; locate it with
+  `grep -n 'os.Stdin' cmd/guardd/main.go`). This is an implementation
+  statement, not a multi-gigabyte measurement; a bounded finite-input probe
+  does not measure behavior at that scale (GUARD-DF-017).
 - go.mod declares go 1.26.11; newer toolchains are fine.
 
 ch:trace row=GUARD-DF-017 spec=skills/guard-usage/SKILL.md,cmd/guardd/main.go wave=guard-GUARD-DF-017 test=bounded-cli-stdin-probe+source-anchor-check doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-probe-output witness=none:single-worker verdict=none:docs-only commit=none:worker-commit memory=none:pending
-
-STATUS: PASS
-TIER: T4 — source anchors and the bounded finite-input CLI probe were directly verified by the foreman; no multi-gigabyte behavior is claimed.
-EVIDENCE: `printf 'The quarterly report is ready for review.\n' | timeout 120 ./bin/guardd` on HEAD 6b7d176 returned rc=0 with `{"decision":"allow","route":"deliver","provider":"jev","duration_ms":401}` on a finite 40-byte stdin, and `grep -n` confirmed `io.ReadAll(os.Stdin)` at `cmd/guardd/main.go:169` plus `io.LimitReader(r.Body, 8<<20)` at `cmd/guardd/main.go:244`. The earlier `env -i ... go run` probe was discarded: it never reached guardd (go1.26.9 toolchain download failed under the empty HOME), so it is not evidence for anything.
