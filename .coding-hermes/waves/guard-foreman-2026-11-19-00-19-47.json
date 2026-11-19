@@ -1,0 +1,88 @@
+{
+  "scheduler_tick_id": "guard-foreman-2026-11-19-00-19-47",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "wave_budget": 5,
+  "workers_dispatched": 5,
+  "composed_at": "2026-11-19T00:32:00Z",
+  "base_sha": "5947872",
+  "worker_model": "openai/gpt-6.1-terra@xkiro",
+  "pre_wave_harvest": [
+    {
+      "wave": "23:39:36Z",
+      "outcome": "ALL 3 workers zero-output. Logs end: 'Hermes couldn't start the model connection: Gateway starting: deadline.' Worktrees clean, 0 commits ahead of base 9ab7804. Third consecutive dead wave (19:21Z xkiro 503 no-healthy-upstream, 21:49Z xkiro 503, 23:39Z gateway-startup deadline)."
+    },
+    {
+      "transport_probe": "hermes chat -q 'Reply with exactly: PROBE_OK' -m openai/gpt-6.1-terra --provider xkiro -Q -> exit 0, gateway logged 'response ready ... time=176.2s api_calls=1 response=65 chars'. Transport live but slow (176s trivial turn, box loadavg 23.5/16)."
+    },
+    {
+      "worktree_reset": "README-cluster, DOC-40, SKILL-cluster, OPS-cluster, GUARD-DF-024, CAL-cluster all fast-forwarded clean to 5947872 before dispatch."
+    }
+  ],
+  "workers": [
+    {
+      "task_id": "README-cluster",
+      "task_ids": ["DOC-33", "DOC-41", "DOC-43", "DOC-37", "GUARD-DF-025"],
+      "worktree": "/home/kara/worktrees/guard-README-cluster",
+      "branch": "wt/README-cluster",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "scope": "README.md only",
+      "brief": "/home/kara/.hermes/cache/scratch/guard-00-19-47/brief-README-cluster.txt",
+      "log": "/home/kara/.hermes/cache/scratch/guard-00-19-47/log-README-cluster.txt"
+    },
+    {
+      "task_id": "DOC-40",
+      "task_ids": ["DOC-40", "DOC-42"],
+      "worktree": "/home/kara/worktrees/guard-DOC-40",
+      "branch": "wt/DOC-40",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "scope": "connectors/README.md only",
+      "brief": "/home/kara/.hermes/cache/scratch/guard-00-19-47/brief-DOC-40.txt",
+      "log": "/home/kara/.hermes/cache/scratch/guard-00-19-47/log-DOC-40.txt"
+    },
+    {
+      "task_id": "SKILL-cluster",
+      "task_ids": ["DOC-44", "DOC-20-R2", "DOC-38(i-ii)"],
+      "worktree": "/home/kara/worktrees/guard-SKILL-cluster",
+      "branch": "wt/SKILL-cluster",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "scope": "skills/guard-usage/SKILL.md only",
+      "brief": "/home/kara/.hermes/cache/scratch/guard-00-19-47/brief-SKILL-cluster.txt",
+      "log": "/home/kara/.hermes/cache/scratch/guard-00-19-47/log-SKILL-cluster.txt"
+    },
+    {
+      "task_id": "OPS-cluster",
+      "task_ids": ["DOC-36", "DOC-38(1-2)"],
+      "worktree": "/home/kara/worktrees/guard-OPS-cluster",
+      "branch": "wt/OPS-cluster",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "scope": "docs/operations.md only",
+      "brief": "/home/kara/.hermes/cache/scratch/guard-00-19-47/brief-OPS-cluster.txt",
+      "log": "/home/kara/.hermes/cache/scratch/guard-00-19-47/log-OPS-cluster.txt"
+    },
+    {
+      "task_id": "GUARD-DF-024",
+      "task_ids": ["GUARD-DF-024"],
+      "worktree": "/home/kara/worktrees/guard-GUARD-DF-024",
+      "branch": "wt/GUARD-DF-024",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "scope": "docs/dogfood/2026-11-18-run9-tick1-integration.md only",
+      "brief": "/home/kara/.hermes/cache/scratch/guard-00-19-47/brief-GUARD-DF-024.txt",
+      "log": "/home/kara/.hermes/cache/scratch/guard-00-19-47/log-GUARD-DF-024.txt"
+    }
+  ],
+  "foreman_direct": [
+    "DOC-35 (docs/ADOPTION.md) — three dead dispatches; single-file doc edit, foreman handles it directly after the wave is dispatched"
+  ],
+  "not_dispatched": [
+    "CAL-cluster / GUARD-DF-026 (docs/threshold-calibration.md): wave budget spent (5/5), next tick",
+    "DOC-34 (skills/guard-usage/SKILL.md + docs/operations.md + Makefile): triple seam, collides with SKILL-cluster and OPS-cluster — deferred, unchanged",
+    "REL-GUARD-003 / REL-GUARD-007 / REL-GUARD-012 / REL-GUARD-013: owner-gated release rows — untouched"
+  ],
+  "judge_lane": "gitreins tier-2 judge lane was unfunded (deepseek 402) at 19:47Z/21:49Z. gitreins tasks already exist and are started for every cluster (README-cluster, OPS-cluster, SKILL-cluster, DOC-40, DOC-42, DOC-44, DOC-20-R2, GUARD-DF-024). Complete each after its commit; if the judge lane is still unfunded, close tier1-only with local gate evidence and keep the outage verdict in history."
+}

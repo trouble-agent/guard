@@ -1,0 +1,41 @@
+{
+  "tick": "guard-foreman-2026-11-19-00-57-33",
+  "project": "guard",
+  "workdir": "/home/kara/trouble-agent/guard",
+  "note": "Manifest reconstructed after dispatch: this tick began as a serial close-out of the previous wave, then dispatched two independent workers when both rows were confirmed to have no depends_on edges. Recorded here for audit; it was not written before dispatch.",
+  "budget": 12,
+  "workers": [
+    {
+      "task": "GUARD-DF-026",
+      "worktree": "/home/kara/worktrees/guard-CAL-cluster",
+      "branch": "wt/CAL-cluster",
+      "base": "8df6f62",
+      "files": ["docs/threshold-calibration.md"],
+      "model_attempted": "openai/gpt-6.1-terra @ xkiro",
+      "model_used": "accounts/fireworks/models/deepseek-v4p1-flash-1017-spot @ fireworks",
+      "model_switch_reason": "xkiro returned HTTP 404 'Model \"gpt-6.1-terra\" does not exist' for both dispatches and a bare probe hung past 90s; fireworks answered the same prompt immediately",
+      "commit": "44080c119e78081c5fe50f3e512d88f083189dcd",
+      "merge": "32ba3ed",
+      "gitreins_run": "47cf9ea4",
+      "result": "merged, gates green, pushed"
+    },
+    {
+      "task": "DOC-34",
+      "worktree": "/home/kara/worktrees/guard-DOC-34",
+      "branch": "wt/DOC-34",
+      "base": "8df6f62",
+      "files": ["Makefile", "docs/operations.md", "skills/guard-usage/SKILL.md"],
+      "model_attempted": "openai/gpt-6.1-terra @ xkiro",
+      "model_used": "accounts/fireworks/models/deepseek-v4p1-flash-1017-spot @ fireworks",
+      "model_switch_reason": "same xkiro 404/hang as above",
+      "commit": "73041a1",
+      "merge": "1061701",
+      "gitreins_run": "8ae7c6e0",
+      "result": "merged, gates green, pushed"
+    }
+  ],
+  "closed_this_tick": ["GUARD-DF-026", "DOC-34"],
+  "infra_notes": [
+    "gitreins tier2 judge unavailable for every completion this tick: HTTP 402 Payment Required from api.deepseek.com — verdicts are tier1-only and recorded as an infra outage, not a work failure."
+  ]
+}
