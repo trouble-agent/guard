@@ -1,0 +1,71 @@
+{
+  "scheduler_tick_id": "guard-foreman-2026-11-18-23-39-36",
+  "project": "guard",
+  "repo": "/home/kara/trouble-agent/guard",
+  "wave_budget": 3,
+  "workers_dispatched": 3,
+  "composed_at": "2026-11-19T00:04:00Z",
+  "base_sha": "9ab7804",
+  "worker_model": "openai/gpt-6.1-terra@xkiro",
+  "lane_evidence": "Root cause of BOTH dead waves (19:21Z, 21:49Z) identified: xkiro upstream returned HTTP 503 no-healthy-upstream for openai/gpt-6.1-terra — every first burst and staggered retry died on 503 (logs: ~/.hermes/cache/scratch/guard-21-49-43/log-*.txt). Provider probed per worker-cascade-failure doctrine before this dispatch; probe completed clean (exit 0, no 503 text) and a second probe captured the model reply. Dispatch staggered ~15s.",
+  "plan_review": "PLAN posted on kanban guard card t_bc8aedd1 at 23:58Z; request-review rejected by judge (non-goal card: 'empty response (nothing to evaluate)') — executing as drafted, stamp: plan-unreviewed (card t_bc8aedd1, 2026-11-18T23:58Z).",
+  "pre_wave_harvest": [
+    {
+      "task_id": "DOC-40",
+      "outcome": "21-49Z resume worker died 503; worktree clean at base — ff'd to 9ab7804, re-dispatched this tick"
+    },
+    {
+      "task_id": "DOC-35",
+      "outcome": "same — ff'd to 9ab7804, re-dispatched; AC placeholders (<ref>/<sha>) resolved to literal sha-pin instructions in the brief per card-manager 19:25Z dispatchability note"
+    },
+    {
+      "task_id": "GUARD-DF-024",
+      "outcome": "two dead dispatches (19:21Z, 21:49Z, both zero output); NOT re-dispatched this tick (wave budget spent) — next tick gives it a solo worker; row stays in_progress"
+    }
+  ],
+  "workers": [
+    {
+      "task_id": "DOC-40",
+      "task_ids": ["DOC-40", "DOC-42"],
+      "mode": "resume",
+      "worktree": "/home/kara/worktrees/guard-DOC-40",
+      "branch": "wt/DOC-40",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "scope": "connectors/README.md + Makefile docs-check anchor table only",
+      "brief": "/home/kara/.hermes/cache/scratch/guard-23-39-36/brief-DOC-40.txt",
+      "log": "/home/kara/.hermes/cache/scratch/guard-23-39-36/log-DOC-40.txt"
+    },
+    {
+      "task_id": "SKILL-cluster",
+      "task_ids": ["DOC-44", "DOC-20-R2", "DOC-38(i-ii)"],
+      "mode": "resume",
+      "worktree": "/home/kara/worktrees/guard-SKILL-cluster",
+      "branch": "wt/SKILL-cluster",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "scope": "skills/guard-usage/SKILL.md only",
+      "brief": "/home/kara/.hermes/cache/scratch/guard-23-39-36/brief-SKILL-cluster.txt",
+      "log": "/home/kara/.hermes/cache/scratch/guard-23-39-36/log-SKILL-cluster.txt"
+    },
+    {
+      "task_id": "DOC-35",
+      "task_ids": ["DOC-35"],
+      "mode": "resume",
+      "worktree": "/home/kara/worktrees/guard-DOC-35",
+      "branch": "wt/DOC-35",
+      "model": "openai/gpt-6.1-terra",
+      "provider": "xkiro",
+      "scope": "docs/ADOPTION.md only",
+      "brief": "/home/kara/.hermes/cache/scratch/guard-23-39-36/brief-DOC-35.txt",
+      "log": "/home/kara/.hermes/cache/scratch/guard-23-39-36/log-DOC-35.txt"
+    }
+  ],
+  "judge_lane": "gitreins tier-2 judge lane (deepseek GITREINS_LLM_API_KEY) returned 402 at 19:47Z and 21:49Z — status re-checked at complete time; if still unfunded, rows close tier1-only with local gate evidence and outage verdicts kept in history",
+  "not_dispatched": [
+    "README-cluster (DOC-33 DOC-37 DOC-41 DOC-43 DF-025 DF-026): README.md seam needs its own worker; wave budget spent",
+    "OPS rows DOC-36 + DOC-38(iii+, operations.md sites): operations.md seam, next tick",
+    "DOC-34: triple file seam, deferred by prior ticks — unchanged",
+    "REL-GUARD-003 / REL-GUARD-007: owner-gated release rows — untouched"
+  ]
+}

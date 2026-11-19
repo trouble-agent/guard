@@ -30,12 +30,12 @@
   "judge_lane": "gitreins tier-2 judge lane (deepseek GITREINS_LLM_API_KEY) returned 402 at 19:47Z per the 19:21Z manifest and remains unfunded — cluster rows close tier1-only with local gate evidence; outage verdicts kept in history",
   "gitreins_tasks": ["GUARD-DF-024", "DOC-35", "DOC-40", "README-cluster", "OPS-cluster", "SKILL-cluster", "CAL-cluster"],
   "processes": {
-    "GUARD-DF-024": "proc_78e8e0709069 (pid 3362866)",
-    "DOC-35": "proc_e3eb6fb60a48 (pid 3363768)",
-    "DOC-40": "proc_97c892067006 (pid 3364844)",
-    "README-cluster": "proc_f37d80b8a1bf (pid 3366489)",
-    "OPS-cluster": "proc_1cf26b6a2258 (pid 3369620)",
-    "SKILL-cluster": "proc_01b2e2083ee6 (pid 3372164)",
-    "CAL-cluster": "proc_ef652f7bdbcb (pid 3374841)"
+    "GUARD-DF-024": "retry1 proc_44812376b7d9 (pid 3432148); first burst proc_78e8e0709069 died instantly: gateway session.create unanswered (7-call burst contention)",
+    "DOC-35": "retry1 proc_464ad6195601 (pid 3432597, +25s)",
+    "DOC-40": "retry1 proc_eb74bfcf1b3f (pid 3432969, +50s)",
+    "README-cluster": "retry1 proc_fb277cf620ca (pid 3433308, +75s)",
+    "OPS-cluster": "retry1 proc_a9d8af7c9200 (pid 3433680, +100s)",
+    "SKILL-cluster": "retry1 proc_234f819f3d32 (pid 3434053, +125s)",
+    "CAL-cluster": "retry1 proc_13333af628d6 (pid 3434819, +150s)"
   }
 }
