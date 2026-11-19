@@ -151,10 +151,10 @@ Use this short, bounded sequence; avoid restart loops:
 
 ## Source anchors
 
-These line references are exact for the source revision this runbook was checked against; re-check them when `cmd/guardd/main.go` changes.
+These line references are exact for the source revision this runbook was checked against; re-check them when `cmd/guardd/main.go` changes. `make docs-check` re-checks every one of them against the cited line, so a drift in `cmd/guardd/main.go` fails the gate rather than this section going quietly wrong.
 
-- `cmd/guardd/main.go:120-153` — command flags, egress default selection, policy resolution, token resolution, and serving-mode wiring.
-- `cmd/guardd/main.go:207-247` — health endpoints, authentication/method/body checks, and `Result` response.
-- `cmd/guardd/main.go:250-290` — token requirement, bind normalization, egress warnings, and post-bind listening log.
-- `cmd/guardd/main.go:303-347` — token precedence and owner-only token-file permission validation.
-- `cmd/guardd/main.go:375-395` and `cmd/guardd/main.go:418-470` — policy selection, parsing, and validation failure behavior.
+- `cmd/guardd/main.go:139-209` — command flags, egress default selection, policy resolution, token resolution, and serving-mode wiring.
+- `cmd/guardd/main.go:239-287` — health endpoints, authentication/method/body checks, and `Result` response.
+- `cmd/guardd/main.go:289-302` and `cmd/guardd/main.go:313-330` — token requirement, bind normalization, egress warnings, and the post-bind listening log (`serveOn` announces only after `net.Listen` succeeds).
+- `cmd/guardd/main.go:350-366` and `cmd/guardd/main.go:373-387` — token precedence and owner-only token-file permission validation.
+- `cmd/guardd/main.go:420-436`, `cmd/guardd/main.go:459-498`, and `cmd/guardd/main.go:503-513` — policy selection, parsing, and validation failure behavior.

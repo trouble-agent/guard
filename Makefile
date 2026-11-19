@@ -105,12 +105,17 @@ docs-check: build
 	jq -e '.decision == "block" and .errored == true and (.reason | contains("fail-closed"))' "$$TMPHOME/empty.json" > /dev/null \
 	  || { echo "docs-check FAIL: empty-stdin run is not the fail-closed block verdict"; cat "$$TMPHOME/empty.json"; exit 1; }; \
 	echo "docs-check: empty-stdin fail-closed rc=2 OK"; \
-	echo "docs-check: checking connectors/README.md line anchors (DOC-16/DOC-40)"; \
+	CARRIERS="connectors/README.md skills/guard-usage/SKILL.md docs/operations.md"; \
+	echo "docs-check: checking line anchors cited by [$$CARRIERS] (DOC-16/DOC-34/DOC-40)"; \
 	printf '%s\n' \
+	  'main.go:74|var version = "dev"' \
+	  'main.go:139-209|func main() {' \
 	  'main.go:146-147|flag.String("source"' \
+	  'main.go:154-157|if *vers {' \
 	  'main.go:189|io.ReadAll(os.Stdin)' \
 	  'main.go:196|WithTimeout(context.Background(), 120*time.Second)' \
 	  'main.go:206-207|if res.Errored {' \
+	  'main.go:239-287|func newHandler(' \
 	  'main.go:241-251|handleHealth := func' \
 	  'main.go:256-257|"unauthorized: missing or invalid "' \
 	  'main.go:260|"POST only"' \
@@ -118,9 +123,14 @@ docs-check: build
 	  'main.go:273-274|json.NewDecoder(bytes.NewReader(body))' \
 	  'main.go:278|"content is required"' \
 	  'main.go:281|WithTimeout(r.Context(), 120*time.Second)' \
+	  'main.go:289-302|func serveHTTP(' \
+	  'main.go:313-330|func serve(' \
 	  'main.go:350-366|func resolveToken(' \
 	  'main.go:352-353|case envVal != "":' \
 	  'main.go:373-387|func readTokenFile(' \
+	  'main.go:420-436|func resolvePolicy(' \
+	  'main.go:459-498|func loadPolicyFile(' \
+	  'main.go:503-513|func validateBands(' \
 	  'guard_client.py:46|DEFAULT_ENDPOINT = os.environ.get("GUARD_ENDPOINT"' \
 	  'guard_client.py:208-211|CONSTRAINTS_FAIL_OPEN: Mapping[str, bool] = {' \
 	  'guard_client.py:217-224|timeout: float = 120.0,' \
@@ -132,26 +142,37 @@ docs-check: build
 	  'guard_client.py:349|"--fail-open",' \
 	  'guard_client.py:359-362|def _verdict_exit_code(' \
 	  > "$$TMPHOME/anchor_table.txt"; \
-	if [ ! -s "$$TMPHOME/anchor_table.txt" ]; then \
+	if [ -z "$$(cut -d'|' -f1 "$$TMPHOME/anchor_table.txt" | tr -d '[:space:]')" ]; then \
 	  echo "docs-check FAIL: anchor table is empty — the check would run on nothing (DOC-16)"; \
 	  exit 1; \
 	fi; \
 	TABLE_TOKENS=$$(cut -d'|' -f1 "$$TMPHOME/anchor_table.txt"); \
-	README_ANCHORS=$$(grep -oE '(main\.go|guard_client\.py):[0-9]+(-[0-9]+)?' connectors/README.md | sort -u); \
-	if [ -z "$$README_ANCHORS" ]; then \
-	  echo "docs-check FAIL: no main.go:/guard_client.py: anchors found in connectors/README.md — check ran on nothing (DOC-16)"; \
-	  exit 1; \
-	fi; \
 	anchor_fail=0; \
-	for tok in $$README_ANCHORS; do \
-	  if ! printf '%s\n' "$$TABLE_TOKENS" | grep -Fxq -- "$$tok"; then \
-	    echo "docs-check FAIL: connectors/README.md cites $$tok but the anchor table carries no expected subject for it — add '$$tok|<substring the cited line must contain>' (DOC-40)"; \
-	    anchor_fail=1; \
+	for carrier in $$CARRIERS; do \
+	  if [ ! -f "$$carrier" ]; then \
+	    echo "docs-check FAIL: listed anchor carrier $$carrier does not exist — the check would skip it silently (DOC-34)"; \
+	    anchor_fail=1; continue; \
 	  fi; \
+	  carrier_main=$$(grep -oE 'main\.go:[0-9]+(-[0-9]+)?' "$$carrier" | sort -u); \
+	  if [ -z "$$carrier_main" ]; then \
+	    echo "docs-check FAIL: listed anchor carrier $$carrier cites no main.go: anchors — the gate ran on nothing for that file (DOC-34: re-point its citations, do not drop them)"; \
+	    anchor_fail=1; continue; \
+	  fi; \
+	  carrier_anchors=$$(grep -oE '(main\.go|guard_client\.py):[0-9]+(-[0-9]+)?' "$$carrier" | sort -u); \
+	  for tok in $$carrier_anchors; do \
+	    if ! printf '%s\n' "$$TABLE_TOKENS" | grep -Fxq -- "$$tok"; then \
+	      echo "docs-check FAIL: $$carrier cites $$tok but the anchor table carries no expected subject for it — add '$$tok|<substring the cited line must contain>' (DOC-40)"; \
+	      anchor_fail=1; \
+	    fi; \
+	  done; \
 	done; \
 	for tok in $$TABLE_TOKENS; do \
-	  if ! grep -Fq -- "$$tok" connectors/README.md; then \
-	    echo "docs-check FAIL: anchor table entry $$tok is no longer cited in connectors/README.md — drop it or re-point the citation (DOC-40)"; \
+	  cited=0; \
+	  for carrier in $$CARRIERS; do \
+	    if grep -Fq -- "$$tok" "$$carrier"; then cited=1; fi; \
+	  done; \
+	  if [ "$$cited" -eq 0 ]; then \
+	    echo "docs-check FAIL: anchor table entry $$tok is no longer cited by any listed carrier [$$CARRIERS] — drop it or re-point the citation (DOC-40)"; \
 	    anchor_fail=1; \
 	  fi; \
 	done; \
@@ -230,7 +251,7 @@ docs-check: build
 	  echo "docs-check: anchor $$anchor_tok ok: $$anchor_start: $$anchor_start_text$${anchor_end:+ ... $$anchor_end: $$(sed -n "$${anchor_end}p" "$$anchor_path")}"; \
 	done < "$$TMPHOME/anchor_table.txt"; \
 	if [ "$$anchor_fail" -ne 0 ]; then \
-	  echo "docs-check FAIL: stale/incoherent connectors/README.md line anchors (DOC-16/DOC-40 — re-point the citation and update its table subject)"; \
+	  echo "docs-check FAIL: stale/incoherent line anchors in [$$CARRIERS] (DOC-16/DOC-34/DOC-40 — re-point the citation and update its table subject)"; \
 	  exit 1; \
 	fi; \
 	echo "docs-check: PASS"

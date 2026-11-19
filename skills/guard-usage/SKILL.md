@@ -47,11 +47,11 @@ printf '%s' "$msg" | ./bin/guardd                    # CLI, stdin
 **`-version` tells you which build you are running, and `dev` is a build
 defect, not a mystery.** The flag prints one line (`guardd v0.2.0`) and exits
 0 — it is handled before policy resolution, token resolution, classifier
-construction, and any egress, so it works on a box with no
-`$OPENROUTER_API_KEY`, no `GUARD_TOKEN`, and no network; use it as the first
-line of any release check or deploy smoke test. `main.version` is a
-build-time variable (default `"dev"` in `cmd/guardd/main.go`): release builds
-inject it via ldflags — `make build` passes
+construction, and any egress (`cmd/guardd/main.go:154-157`), so it works on a
+box with no `$OPENROUTER_API_KEY`, no `GUARD_TOKEN`, and no network; use it as
+the first line of any release check or deploy smoke test. `main.version` is a
+build-time variable (default `"dev"` at `cmd/guardd/main.go:74`): release
+builds inject it via ldflags — `make build` passes
 `-X main.version=$(VERSION)` (default `v0.2.0`; `grep -n 'VERSION' Makefile`
 shows both the default and the ldflags line, so cite that instead of a line
 number) and goreleaser
@@ -85,7 +85,8 @@ if not v.deliver: ...    # quarantine/review
   `guard.Policy`), validated strictly at startup — bands in (0,1],
   `review_at <= block_at`, omitted global fields inheriting the shipped
   defaults — and guardd refuses to run on a bad file instead of falling back to
-  looser bands (`cmd/guardd/main.go`, `resolvePolicy`/`loadPolicyFile`). With
+  looser bands (`cmd/guardd/main.go:420-436`, `resolvePolicy`;
+  `cmd/guardd/main.go:459-498`, `loadPolicyFile`). With
   no file named, guardd runs `guard.DefaultPolicy()`. An in-process Go consumer
   (crier) still builds its own `&guard.Guard{...}`.
 - **A verdict reports which row of the table decided it** (GUARD-DF-011):
@@ -210,15 +211,16 @@ first — the network is the latency.
   exactly 8,388,608 bytes is accepted and reaches the JSON decoder. The cap is
   applied to the raw byte stream BEFORE `json.Decode`, so an over-cap body is
   a 413 even when it is malformed JSON — never a `400 bad request: unexpected
-  EOF` (`cmd/guardd/main.go`, the `maxBodyBytes` constant and the `/check`
-  handler; GUARD-DF-008c). Verified live at HEAD 5947872: 8,388,609 bytes →
-  413 with that body; 8,388,608 bytes → past the size gate, surfacing the JSON
-  layer's `400 invalid character 'a'` instead.
-- The CLI's stdin path uses `io.ReadAll(os.Stdin)` and has no explicit input
-  cap in the source (GUARD-DF-008b; locate it with
-  `grep -n 'os.Stdin' cmd/guardd/main.go`). This is an implementation
-  statement, not a multi-gigabyte measurement; a bounded finite-input probe
-  does not measure behavior at that scale (GUARD-DF-017).
+  EOF` (`cmd/guardd/main.go:269-270`, the `maxBodyBytes` size gate in the
+  `/check` handler; GUARD-DF-008c). Verified live at HEAD 5947872: 8,388,609
+  bytes → 413 with that body; 8,388,608 bytes → past the size gate, surfacing
+  the JSON layer's `400 invalid character 'a'` instead.
+- The CLI's stdin path uses `io.ReadAll(os.Stdin)` (`cmd/guardd/main.go:189`)
+  and has no explicit input cap in the source (GUARD-DF-008b;
+  `grep -n 'os.Stdin' cmd/guardd/main.go` re-locates it if this anchor ever
+  rots). This is an implementation statement, not a multi-gigabyte
+  measurement; a bounded finite-input probe does not measure behavior at that
+  scale (GUARD-DF-017).
 - go.mod declares go 1.26.11; newer toolchains are fine.
 
 ch:trace row=GUARD-DF-017 spec=skills/guard-usage/SKILL.md,cmd/guardd/main.go wave=guard-GUARD-DF-017 test=bounded-cli-stdin-probe+source-anchor-check doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-probe-output witness=none:single-worker verdict=none:docs-only commit=none:worker-commit memory=none:pending
