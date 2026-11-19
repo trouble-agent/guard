@@ -87,9 +87,12 @@ The request body is a JSON object with this contract:
 | --- | --- |
 | Missing or invalid `X-Operator-Token` | `401 Unauthorized` |
 | Valid token, method other than `POST` | `405 Method Not Allowed` |
+| Valid token and `POST`, body larger than 8 MiB (8,388,608 bytes) | `413 Request Entity Too Large` |
 | Valid token and `POST`, malformed JSON | `400 Bad Request` |
 | Valid token and `POST`, empty or omitted `content` | `400 Bad Request` |
 | Valid token and `POST`, non-empty `content` | `200 OK` with a JSON `Result` body |
+
+The 8 MiB cap is applied while the body is read, before JSON decoding, so an oversized body receives `413` even when it is also malformed.
 
 The README [Quick Start](../README.md#quick-start) fixture defines base bands of `block_at: 0.85` and `review_at: 0.50`, plus a `webhook` override with `block_at: 0.55` and `review_at: 0.40`. With that policy loaded, these requests demonstrate base selection versus the source-selected override (the `jq` projection keeps the relevant response fields visible):
 
@@ -110,13 +113,6 @@ curl -sS -X POST \
 ```
 
 HTTP 200 means the request was processed and a `Result` was returned; inspect its `errored`, `decision`, `route`, and `reason` fields. It does not by itself mean live classification succeeded.
-
-ch:trace row=DOC-31 spec=docs/traceability-doctrine.md#close-out-shape wave=guard-foreman-2026-11-15-16-29-26 test=make-docs-check doc=docs/operations.md#/check evidence=docs/operations.md#quick-start-fixture-cross-check+docs/traceability-doctrine.md#close-out-shape witness=none:documentation verdict=PASS:docs-only-exemption commit=3f6d0e06af0be3a4ef09e08f41d3362346948a42 memory=none:docs-only
-
-STATUS: PASS
-TIER: T3 — docs-only close-out under the explicit exemption in `docs/traceability-doctrine.md#close-out-shape`; `make docs-check` and `go test ./... -count=1` were run, and the field/override claims were re-read in source and in the README Quick Start fixture.
-RESIDUAL: the known evidence gap remains: the two `curl` transcript comments show the `jq` projection shape, not a recorded live classifier response; they assume the Quick Start policy is loaded. This does not block the docs-only close-out because the marker cites the stable DOC-31 commit and prior tier-2 verdict evidence, rather than the run currently grading this marker.
-EVIDENCE: docs/operations.md §5 `/check` contract; README.md:42-46 (base `block_at` 0.85 / `review_at` 0.50 plus `webhook` override 0.55 / 0.40); guard.go:69-75 (`Input` fields), guard.go:96/106 (`OverrideSource`, `effective_block_at`), policy.go:90-108 (`selectFor` reads only `Overrides[source]`), cmd/guardd/main.go:256 (decoder without `DisallowUnknownFields`), main.go:260 (empty `content` -> 400); policy_test.go:365-397 (override selection); `make docs-check` PASS; `go test ./... -count=1` all four packages ok; prior tier-2 verdicts `f318c8ef` and `0f5f3f23` checked every `/check` contract criterion as PASS. Stable DOC-31 contract commit: `3f6d0e06af0be3a4ef09e08f41d3362346948a42`.
 
 ## 6. Classifier egress behavior
 
@@ -139,7 +135,7 @@ GUARD_POLICY=/etc/guard/policy.json GUARD_TOKEN='…' \
 - `WARNING: classifier egress is DISABLED; ...` confirms that classification is disabled and `/check` will return an in-band error result. The enabled warning explicitly states that submitted content can leave the host.
 - `guardd listening on ...` is emitted only after the TCP bind succeeds. If the address is already in use, expect a `serve: listen tcp ...` failure and no listening banner; check for another process or choose a free port.
 - Authentication refusals return 401 to the caller. The handler does not log each refusal in `main.go`; use an upstream access log, if configured, for request-level auditing. Do not infer that a refusal was logged by guardd itself.
-- A startup line containing `guardd: GUARD: policy ... override key(s) ["..."] not selected by any source seen so far` means an override key is unused and therefore inert. Override keys must be the exact `Input.Source` values the caller sends (for example, `webhook`), never the policy ID; correct the policy key or the request's `source` field and restart. This advisory warning does not change thresholds, verdicts, or fail-closed behavior, and the same key is not repeated on every request.
+- A startup line containing `guardd: GUARD: policy ... override key(s) ["..."] not selected by any source seen so far` is expected on a cold start and is not by itself evidence of a mistake. The check runs once at startup, before any request has been seen, so every correctly source-scoped override trips it — including the README Quick Start fixture, whose `webhook` override is live (a `POST /check` with `"source":"webhook"` against that policy returns `effective_block_at: 0.55` and `override_source: "webhook"`). Read the listed keys as "no request with this source has arrived yet", not as an unused or inert key. The operator check is the request, not the log: send one request whose `source` matches the key and confirm the response selects it (`override_source` plus the override's `effective_block_at`/`effective_review_at`). Only if such a request fails to select the override is the key actually wrong; then correct the policy key (override keys must be the exact `Input.Source` values the caller sends, for example `webhook`, never the policy ID) or the requester's `source` field, and restart. The advisory does not change thresholds, verdicts, or fail-closed behavior, and it is not repeated on every request.
 - Classification outcomes are returned in each `/check` JSON `Result`, not as a documented per-request guardd log line. Inspect the response fields (`errored`, `decision`, `route`, `reason`, and policy metadata) when diagnosing an outcome.
 
 ## 9. Bounded recovery and restart
