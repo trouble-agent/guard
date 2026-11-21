@@ -901,3 +901,55 @@ holding, with dispatches at 21:17:19 and 21:20:23 arriving after the recorded co
 is the duplicate-dispatch class, which belongs to the scheduler board, not this one.
 
 - ch:trace tick=guard-dogfood-2026-11-18-00-54-47 duplicate=yes delivery=6 new-evidence=yes surface=released-artifact-v0.1.0(5/5-notice-claims-measured-true,checksum-OK,block393ms/$0.000029) product-diff-since-walk=0 rows-filed=0 provenance=verified(head=98dba4e,origin-parity,tree-clean) residue=none-own verdict=SHIPPABLE(carry-forward;install=PASS-from-published-tarball)
+
+## 2026-11-21 — run 10, tick 1: the documented contract holds under real use (`guard-dogfood-2026-11-21-10-28-08`)
+
+Stand-in workdir did not resolve, so the walk ran on the real repo
+(`/home/kara/trouble-agent/guard`), tree clean at `98dba4e` when I started and at `c87b74e`
+(board-only commits from sibling lanes) when I wrote records. Built with `make build`
+(`-version` v0.2.0) and used the binary the way a consumer would: CLI verdicts, two
+`guardd -serve` instances on loopback, `/check` / `/healthz` / `/health`, auth and method and
+body-size and malformed-body handling, policy overlays with per-source bands and per-source
+`fail_closed`, an invalid band, a missing policy file, `GUARD_EGRESS_ENABLED=false`, and inputs
+far past the classifier window.
+
+**Verdict: works as documented. No product-defect row filed** — I could not make a real user
+reach a wrong or broken outcome. Cost figure reproduced to five significant digits.
+
+Perf leg (`coding-hermes-perf`): warm `POST /check`, 62-byte body, n=10, load 11.0 →
+min 211 ms, **p50 229 ms**, p90 240 ms. README promises 253 ms and `$0.0000263`; measured
+`cost_usd=0.000026334`. Cold CLI one verdict: 0.41/0.42/0.45 s wall (`duration_ms` 368), i.e.
+dominated by the single hosted classifier call. Same ~4.5 KB payload: `review` route cost
+1148 ms / $0.000208068 / 13445 classified bytes versus `deliver` 349 ms / $0.000145236 / 8965
+— 1.43× cost, 3.29× wall, matching the README's second-classifier-call accounting. **No PERF
+row:** nothing here is user-noticeable, and an earlier 302 ms median in this same walk was the
+16-core host at load 21–32, not guard — it fell to 229 ms at load 11.
+
+Three findings I chased and dropped because the docs already say so (recorded so the foreman
+does not re-file them):
+
+- A 22,120-byte body returns `errored=true / quarantine / classified_bytes=0` at HTTP 200
+  despite the 8 MiB HTTP cap, and even a 19,118-byte body blocks after `rot13` expands the
+  state to 38,241 bytes. README 327–331 states both caps and the normalized-budget rule.
+- A policy file's top-level `"fail_closed": false` is a silent no-op (`block/quarantine`,
+  `rc=2`, stderr only `policy loaded from -policy (...)`), while `overrides.<source>.fail_closed
+  = false` does work (`allow/review/errored`, `override_source=webhook`). README 507–512 and
+  552 name the trap explicitly.
+- The "1.5–1.8×" cost multiplier measured 1.43× on my payload; the README's 1.8× arm is its
+  4,032-byte chunk (+9.4% bytes), and its identical-bytes arm is 1.457× — internally
+  consistent, not over-stated.
+
+Install leg: **SKIPPED-install-bunker**, filed as `GUARD-DF-009-R2` (recurrence of
+GUARD-DF-009, reason in `blocked_reason`). `bunker list` reaches `bunker-las-03` and returns
+`No agents found.` (rc=0); local `bunkerd` is `inactive`; `bunker-qa.sh` had nothing to spawn
+on and was not run. No credential was minted, no visibility or permission touched. A local
+fresh-clone build was not substituted: the scratch cleanup before that probe was gated without
+consent, and a gated command did not run. Last proven install evidence stands at run 9
+delivery 6 (published v0.1.0 tarball, checksums OK, binary functional).
+
+Residue: two loopback `guardd` listeners left up for the walk — `127.0.0.1:18768` (default
+policy) and `127.0.0.1:18769` (`tight-webhook.json`), both token-gated; fixtures under
+`/mnt/ssd/tmp/guard-df-20261121/` outside the repo. Records: this entry, the board row, and
+`docs/dogfood/2026-11-21-run10-tick1-integration.md`.
+
+- ch:trace tick=guard-dogfood-2026-11-21-10-28-08 duplicate=no delivery=1 new-evidence=yes surface=cli+http+policy(9-contracts-exercised) product-diff-since-walk=0 rows-filed=1(GUARD-DF-009-R2,product-rows=0) provenance=verified(head=c87b74e,origin-parity,tree-clean) residue=2-loopback-listeners verdict=WORKS-AS-DOCUMENTED(install=SKIPPED)
