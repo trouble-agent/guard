@@ -1,0 +1,298 @@
+time="2026-11-22T19:48:40Z" level=info msg="Using docker host 'unix:///run/bunker/ec56dd3a/docker.sock', and daemon socket 'unix:///run/bunker/ec56dd3a/docker.sock'"
+[ci/ci] ⭐ Run Set up job
+[ci/ci] 🚀  Start image=catthehacker/ubuntu:act-latest
+[ci/ci]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[ci/ci]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[ci/ci]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[ci/ci]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[ci/ci]   ✅  Success - Set up job
+[ci/ci]   ☁  git clone 'https://github.com/actions/setup-go' # ref=v5
+[ci/ci]   ☁  git clone 'https://github.com/actions/setup-python' # ref=v5
+[ci/ci]   ☁  git clone 'https://github.com/golangci/golangci-lint-action' # ref=v7
+[ci/ci] ⭐ Run Main checkout
+[ci/ci]   🐳  docker cp src=/home/bunker-ec56dd3a/qa-guard/. dst=/home/bunker-ec56dd3a/qa-guard
+[ci/ci]   ✅  Success - Main checkout [200.590021ms]
+[ci/ci] ⭐ Run Main setup-go
+[ci/ci]   🐳  docker cp src=/home/bunker-ec56dd3a/.cache/act/actions-setup-go@v5/ dst=/var/run/act/actions/actions-setup-go@v5/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-go@v5/dist/setup/index.js] user= workdir=
+[ci/ci]   | Setup go version spec 1.26.11
+[ci/ci]   | Attempting to download 1.26.11...
+[ci/ci]   | (node:32) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | matching 1.26.11...
+[ci/ci]   | Acquiring 1.26.11 from https://github.com/actions/go-versions/releases/download/1.26.11-42945178835/go-1.26.11-linux-x64.tar.gz
+[ci/ci]   | Extracting Go...
+[ci/ci]   | [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /tmp/c05fac79-6818-4ba4-ae8d-67c45716e3a6 -f /tmp/0c5f9437-f47f-4666-a314-926fa86be481
+[ci/ci]   | Successfully extracted go to /tmp/c05fac79-6818-4ba4-ae8d-67c45716e3a6
+[ci/ci]   | Adding to the cache ...
+[ci/ci]   | Successfully cached go to /opt/hostedtoolcache/go/1.26.11/x64
+[ci/ci]   | Added go to the path
+[ci/ci]   | Successfully set up Go version 1.26.11
+[ci/ci]   | [command]/opt/hostedtoolcache/go/1.26.11/x64/bin/go env GOMODCACHE
+[ci/ci]   | [command]/opt/hostedtoolcache/go/1.26.11/x64/bin/go env GOCACHE
+[ci/ci]   | /root/go/pkg/mod
+[ci/ci]   | /root/.cache/go-build
+[ci/ci]   🚧  ::warning::Restore cache failed: Dependencies file is not found in /home/bunker-ec56dd3a/qa-guard. Supported file pattern: go.sum
+[ci/ci]   ❓ add-matcher /run/act/actions/actions-setup-go@v5/matchers.json
+[ci/ci]   | go version go1.26.11 linux/amd64
+[ci/ci]   | 
+[ci/ci]   ❓  ::group::go env
+[ci/ci]   | AR='ar'
+[ci/ci]   | CC='gcc'
+[ci/ci]   | CGO_CFLAGS='-O2 -g'
+[ci/ci]   | CGO_CPPFLAGS=''
+[ci/ci]   | CGO_CXXFLAGS='-O2 -g'
+[ci/ci]   | CGO_ENABLED='1'
+[ci/ci]   | CGO_FFLAGS='-O2 -g'
+[ci/ci]   | CGO_LDFLAGS='-O2 -g'
+[ci/ci]   | CXX='g++'
+[ci/ci]   | GCCGO='gccgo'
+[ci/ci]   | GO111MODULE=''
+[ci/ci]   | GOAMD64='v1'
+[ci/ci]   | GOARCH='amd64'
+[ci/ci]   | GOAUTH='netrc'
+[ci/ci]   | GOBIN=''
+[ci/ci]   | GOCACHE='/root/.cache/go-build'
+[ci/ci]   | GOCACHEPROG=''
+[ci/ci]   | GODEBUG=''
+[ci/ci]   | GOENV='/root/.config/go/env'
+[ci/ci]   | GOEXE=''
+[ci/ci]   | GOEXPERIMENT=''
+[ci/ci]   | GOFIPS140='off'
+[ci/ci]   | GOFLAGS=''
+[ci/ci]   | GOGCCFLAGS='-fPIC -m64 -pthread -Wl,--no-gc-sections -fmessage-length=0 -ffile-prefix-map=/tmp/go-build453018775=/tmp/go-build -gno-record-gcc-switches'
+[ci/ci]   | GOHOSTARCH='amd64'
+[ci/ci]   | GOHOSTOS='linux'
+[ci/ci]   | GOINSECURE=''
+[ci/ci]   | GOMOD='/home/bunker-ec56dd3a/qa-guard/go.mod'
+[ci/ci]   | GOMODCACHE='/root/go/pkg/mod'
+[ci/ci]   | GONOPROXY=''
+[ci/ci]   | GONOSUMDB=''
+[ci/ci]   | GOOS='linux'
+[ci/ci]   | GOPATH='/root/go'
+[ci/ci]   | GOPRIVATE=''
+[ci/ci]   | GOPROXY='https://proxy.golang.org,direct'
+[ci/ci]   | GOROOT='/opt/hostedtoolcache/go/1.26.11/x64'
+[ci/ci]   | GOSUMDB='sum.golang.org'
+[ci/ci]   | GOTELEMETRY='local'
+[ci/ci]   | GOTELEMETRYDIR='/root/.config/go/telemetry'
+[ci/ci]   | GOTMPDIR=''
+[ci/ci]   | GOTOOLCHAIN='auto'
+[ci/ci]   | GOTOOLDIR='/opt/hostedtoolcache/go/1.26.11/x64/pkg/tool/linux_amd64'
+[ci/ci]   | GOVCS=''
+[ci/ci]   | GOVERSION='go1.26.11'
+[ci/ci]   | GOWORK=''
+[ci/ci]   | PKG_CONFIG='pkg-config'
+[ci/ci]   | 
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ✅  Success - Main setup-go [11.63241648s]
+[ci/ci]   ⚙  ::set-output:: go-version=1.26.11
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/go/1.26.11/x64/bin
+[ci/ci]   ⚙  ::add-path:: /root/go/bin
+[ci/ci] ⭐ Run Main setup-python
+[ci/ci]   🐳  docker cp src=/home/bunker-ec56dd3a/.cache/act/actions-setup-python@v5/ dst=/var/run/act/actions/actions-setup-python@v5/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-python@v5/dist/setup/index.js] user= workdir=
+[ci/ci]   ❓  ::group::Installed versions
+[ci/ci]   | Version 3.x was not found in the local cache
+[ci/ci]   | (node:104) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | Version 3.x is available for downloading
+[ci/ci]   | Download from "https://github.com/actions/python-versions/releases/download/3.15.2-40340363276/python-3.15.2-linux-26.04-x64.tar.gz"
+[ci/ci]   | Extract downloaded archive
+[ci/ci]   | [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /tmp/600a7409-86bb-49a1-ad7d-f11b587234e2 -f /tmp/ac433be6-e7f0-46c3-916c-d084bdc9a64a
+[ci/ci]   | Execute installation script
+[ci/ci]   | Check if Python hostedtoolcache folder exist...
+[ci/ci]   | Creating Python hostedtoolcache folder...
+[ci/ci]   | Create Python 3.15.2 folder
+[ci/ci]   | Copy Python binaries to hostedtoolcache folder
+[ci/ci]   | Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+[ci/ci]   | Upgrading pip...
+[ci/ci]   | Collecting pip
+[ci/ci]   | Downloading pip-26.3-py3-none-any.whl.metadata (4.6 kB)
+[ci/ci]   | Downloading pip-26.3-py3-none-any.whl (2.0 MB)
+[ci/ci]   | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 40.7 MB/s  0:00:00
+[ci/ci]   | Installing collected packages: pip
+[ci/ci]   | Attempting uninstall: pip
+[ci/ci]   | Found existing installation: pip 26.2.2
+[ci/ci]   | Uninstalling pip-26.2.2:
+[ci/ci]   | Successfully uninstalled pip-26.2.2
+[ci/ci]   | Successfully installed pip-26.3
+[ci/ci]   | Create complete file
+[ci/ci]   | Successfully set up CPython (3.15.2)
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ❓ add-matcher /run/act/actions/actions-setup-python@v5/.github/python.json
+[ci/ci]   ✅  Success - Main setup-python [9.066379291s]
+[ci/ci]   ⚙  ::set-env:: pythonLocation=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: PKG_CONFIG_PATH=/opt/hostedtoolcache/Python/3.15.2/x64/lib/pkgconfig
+[ci/ci]   ⚙  ::set-env:: Python_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: Python2_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: Python3_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: LD_LIBRARY_PATH=/opt/hostedtoolcache/Python/3.15.2/x64/lib
+[ci/ci]   ⚙  ::set-output:: python-version=3.15.2
+[ci/ci]   ⚙  ::set-output:: python-path=/opt/hostedtoolcache/Python/3.15.2/x64/bin/python
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/Python/3.15.2/x64/bin
+[ci/ci] ⭐ Run Main install-python-test-dependency
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/3] user= workdir=
+[ci/ci]   | Collecting pytest
+[ci/ci]   |   Downloading pytest-9.2.0-py3-none-any.whl.metadata (7.9 kB)
+[ci/ci]   | Collecting iniconfig>=2 (from pytest)
+[ci/ci]   |   Downloading iniconfig-2.3.1-py3-none-any.whl.metadata (2.8 kB)
+[ci/ci]   | Collecting packaging>=24 (from pytest)
+[ci/ci]   |   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+[ci/ci]   | Collecting pluggy<2,>=1.6 (from pytest)
+[ci/ci]   |   Downloading pluggy-1.7.0-py3-none-any.whl.metadata (5.0 kB)
+[ci/ci]   | Collecting pygments>=2.15 (from pytest)
+[ci/ci]   |   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+[ci/ci]   | Downloading pytest-9.2.0-py3-none-any.whl (411 kB)
+[ci/ci]   | Downloading pluggy-1.7.0-py3-none-any.whl (27 kB)
+[ci/ci]   | Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+[ci/ci]   | Downloading packaging-26.3-py3-none-any.whl (129 kB)
+[ci/ci]   | Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+[ci/ci]   |    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 84.8 MB/s  0:00:00
+[ci/ci]   | Installing collected packages: pygments, pluggy, packaging, iniconfig, pytest
+[ci/ci]   | 
+[ci/ci]   | Successfully installed iniconfig-2.3.1 packaging-26.3 pluggy-1.7.0 pygments-2.21.0 pytest-9.2.0
+[ci/ci]   | WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+[ci/ci]   ✅  Success - Main install-python-test-dependency [3.058919732s]
+[ci/ci] ⭐ Run Main build
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/4] user= workdir=
+[ci/ci]   ✅  Success - Main build [13.287895769s]
+[ci/ci] ⭐ Run Main vet
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/5] user= workdir=
+[ci/ci]   ✅  Success - Main vet [2.983393549s]
+[ci/ci] ⭐ Run Main lint
+[ci/ci]   🐳  docker cp src=/home/bunker-ec56dd3a/.cache/act/golangci-golangci-lint-action@v7/ dst=/var/run/act/actions/golangci-golangci-lint-action@v7/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/golangci-golangci-lint-action@v7/dist/run/index.js] user= workdir=
+[ci/ci]   ❓  ::group::prepare environment
+[ci/ci]   | Checking for go.mod: go.mod
+[ci/ci]   | (node:3565) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | Cache not found for input keys: golangci-lint.cache-Linux-2968-929533b0970b7757c79a92fd97f006d99bd58e60, golangci-lint.cache-Linux-2968-
+[ci/ci]   | Finding needed golangci-lint version...
+[ci/ci]   | Requested golangci-lint 'v2.15', using 'v2.15.0', calculation took 211ms
+[ci/ci]   | Installation mode: binary
+[ci/ci]   | Installing golangci-lint binary v2.15.0...
+[ci/ci]   | Downloading binary https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-linux-amd64.tar.gz ...
+[ci/ci]   | [command]/usr/bin/tar xz --overwrite --warning=no-unknown-keyword --overwrite -C /root -f /tmp/be007d02-36f4-49ef-9fd7-7d0ad6965549
+[ci/ci]   | Installed golangci-lint into /root/golangci-lint-2.15.0-linux-amd64/golangci-lint in 567ms
+[ci/ci]   | Prepared env in 814ms
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ❓  ::group::run golangci-lint
+[ci/ci]   | Running [/root/golangci-lint-2.15.0-linux-amd64/golangci-lint config path] in [/home/bunker-ec56dd3a/qa-guard] ...
+[ci/ci]   | Running [/root/golangci-lint-2.15.0-linux-amd64/golangci-lint config verify] in [/home/bunker-ec56dd3a/qa-guard] ...
+[ci/ci]   | Running [/root/golangci-lint-2.15.0-linux-amd64/golangci-lint run] in [/home/bunker-ec56dd3a/qa-guard] ...
+[ci/ci]   | 0 issues.
+[ci/ci]   | 
+[ci/ci]   | golangci-lint found no issues
+[ci/ci]   | Ran golangci-lint in 4496ms
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ✅  Success - Main lint [6.82011907s]
+[ci/ci]   ⚙  ::add-path:: /root/golangci-lint-2.15.0-linux-amd64
+[ci/ci] ⭐ Run Main test
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/7] user= workdir=
+[ci/ci]   | ok  	github.com/trouble-agent/guard	0.051s
+[ci/ci]   | ok  	github.com/trouble-agent/guard/client	0.009s
+[ci/ci]   | ok  	github.com/trouble-agent/guard/cmd/guardd	0.171s
+[ci/ci]   | ok  	github.com/trouble-agent/guard/data/corpus	4.272s
+[ci/ci]   ✅  Success - Main test [6.927485293s]
+[ci/ci] ⭐ Run Main python-tests
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/8] user= workdir=connectors/python
+[ci/ci]   | ============================= test session starts ==============================
+[ci/ci]   | platform linux -- Python 3.15.2, pytest-9.2.0, pluggy-1.7.0
+[ci/ci]   | rootdir: /home/bunker-ec56dd3a/qa-guard/connectors/python
+[ci/ci]   | configfile: pyproject.toml
+[ci/ci]   | collected 32 items
+[ci/ci]   | 
+[ci/ci]   | test_guard_client.py ................................                    [100%]
+[ci/ci]   | 
+[ci/ci]   | ============================== 32 passed in 8.21s ==============================
+[ci/ci]   ✅  Success - Main python-tests [8.890753114s]
+[ci/ci] ⭐ Run Main docs-check
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/9] user= workdir=
+[ci/ci]   | mkdir -p bin
+[ci/ci]   | go build -ldflags "-X main.version=v0.2.0" -o bin/guardd ./cmd/guardd
+[ci/ci]   | # Note: client/ is a library package (no main); only cmd/guardd produces a binary.
+[ci/ci]   | docs-check: go directive = 1.26.11
+[ci/ci]   | docs-check: checking README at README.md
+[ci/ci]   | docs-check: full go directive 1.26.11 found in README
+[ci/ci]   | docs-check: replaying README build: go build -o guardd ./cmd/guardd          # produces ./guardd
+[ci/ci]   | docs-check: replaying README command: printf '%s' "hello, world" | ./guardd          # CLI: classify via stdin
+[ci/ci]   | docs-check: fail-closed JSON matches README
+[ci/ci]   | docs-check: empty-stdin fail-closed rc=2 OK
+[ci/ci]   | docs-check: checking line anchors cited by [connectors/README.md skills/guard-usage/SKILL.md docs/operations.md] (DOC-16/DOC-34/DOC-40)
+[ci/ci]   | docs-check: anchor main.go:74 ok: 74: var version = "dev"
+[ci/ci]   | docs-check: anchor main.go:139-209 ok: 139: func main() { ... 209: }
+[ci/ci]   | docs-check: anchor main.go:146-147 ok: 146: 		source    = flag.String("source", "", "source label, e.g. github_pr (drives policy overrides)") ... 147: 		channel   = flag.String("channel", "", "channel label, e.g. crier|task-router")
+[ci/ci]   | docs-check: anchor main.go:154-157 ok: 154: 	if *vers { ... 157: 	}
+[ci/ci]   | docs-check: anchor main.go:189 ok: 189: 		b, err := io.ReadAll(os.Stdin)
+[ci/ci]   | docs-check: anchor main.go:196 ok: 196: 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+[ci/ci]   | docs-check: anchor main.go:206-207 ok: 206: 	if res.Errored { ... 207: 		os.Exit(2)
+[ci/ci]   | docs-check: anchor main.go:239-287 ok: 239: func newHandler(g *guard.Guard, token string, egressEnabled bool) http.Handler { ... 287: }
+[ci/ci]   | docs-check: anchor main.go:241-251 ok: 241: 	handleHealth := func(w http.ResponseWriter, r *http.Request) { ... 251: 	mux.HandleFunc("/health", handleHealth)
+[ci/ci]   | docs-check: anchor main.go:256-257 ok: 256: 			http.Error(w, "unauthorized: missing or invalid "+OperatorTokenHeader, http.StatusUnauthorized) ... 257: 			return
+[ci/ci]   | docs-check: anchor main.go:260 ok: 260: 			http.Error(w, "POST only", http.StatusMethodNotAllowed)
+[ci/ci]   | docs-check: anchor main.go:269-270 ok: 269: 		if len(body) > maxBodyBytes { ... 270: 			http.Error(w, "request body exceeds 8 MiB (8388608 bytes)", http.StatusRequestEntityTooLarge)
+[ci/ci]   | docs-check: anchor main.go:273-274 ok: 273: 		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&in); err != nil { ... 274: 			http.Error(w, "bad request: "+err.Error(), http.StatusBadRequest)
+[ci/ci]   | docs-check: anchor main.go:278 ok: 278: 			http.Error(w, "content is required", http.StatusBadRequest)
+[ci/ci]   | docs-check: anchor main.go:281 ok: 281: 		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+[ci/ci]   | docs-check: anchor main.go:289-302 ok: 289: func serveHTTP(addr string, g *guard.Guard, token string, egressEnabled bool) { ... 302: }
+[ci/ci]   | docs-check: anchor main.go:313-330 ok: 313: func serve(addr string, h http.Handler) error { ... 330: }
+[ci/ci]   | docs-check: anchor main.go:350-366 ok: 350: func resolveToken(envVal, tokenfilePath, argvToken string) (token string, prov tokenProvenance, err error) { ... 366: }
+[ci/ci]   | docs-check: anchor main.go:352-353 ok: 352: 	case envVal != "": ... 353: 		return envVal, tokenFromEnv, nil
+[ci/ci]   | docs-check: anchor main.go:373-387 ok: 373: func readTokenFile(path string) ([]byte, error) { ... 387: }
+[ci/ci]   | docs-check: anchor main.go:420-436 ok: 420: func resolvePolicy(envPath, flagPath string) (guard.Policy, policyProvenance, error) { ... 436: }
+[ci/ci]   | docs-check: anchor main.go:459-498 ok: 459: func loadPolicyFile(path string) (guard.Policy, error) { ... 498: }
+[ci/ci]   | docs-check: anchor main.go:503-513 ok: 503: func validateBands(path, what string, blockAt, reviewAt float64) error { ... 513: }
+[ci/ci]   | docs-check: anchor guard_client.py:46 ok: 46: DEFAULT_ENDPOINT = os.environ.get("GUARD_ENDPOINT", "http://127.0.0.1:8768")
+[ci/ci]   | docs-check: anchor guard_client.py:208-211 ok: 208:     CONSTRAINTS_FAIL_OPEN: Mapping[str, bool] = { ... 211:     }
+[ci/ci]   | docs-check: anchor guard_client.py:217-224 ok: 217:         timeout: float = 120.0, ... 224:         self.timeout = timeout
+[ci/ci]   | docs-check: anchor guard_client.py:223 ok: 223:         self.token = token if token else os.environ.get("GUARD_TOKEN", "")
+[ci/ci]   | docs-check: anchor guard_client.py:262-263 ok: 262:         except Exception as exc:  # transport, timeout, HTTP status, bad JSON ... 263:             return self._on_error(exc)
+[ci/ci]   | docs-check: anchor guard_client.py:265-280 ok: 265:     def _on_error(self, exc: Exception) -> Verdict: ... 280:         raise GuardError(f"guard check failed: {exc}") from exc
+[ci/ci]   | docs-check: anchor guard_client.py:311 ok: 311:         "--endpoint",
+[ci/ci]   | docs-check: anchor guard_client.py:323 ok: 323:         "--timeout",
+[ci/ci]   | docs-check: anchor guard_client.py:349 ok: 349:         "--fail-open",
+[ci/ci]   | docs-check: anchor guard_client.py:359-362 ok: 359: def _verdict_exit_code(v: Optional[Verdict]) -> int: ... 362:     return {ROUTE_DELIVER: 0, ROUTE_REVIEW: 1, ROUTE_QUARANTINE: 2}.get(v.route, 1)
+[ci/ci]   | docs-check: PASS
+[ci/ci]   ✅  Success - Main docs-check [2.0141187s]
+[ci/ci] ⭐ Run Main gitleaks
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/10] user= workdir=
+[ci/ci]   | 
+[ci/ci]   |     ○
+[ci/ci]   |     │╲
+[ci/ci]   |     │ ○
+[ci/ci]   |     ○ ░
+[ci/ci]   |     ░    gitleaks
+[ci/ci]   | 
+[ci/ci]   | [90m7:51PM[0m [32mINF[0m [1mscanned ~1195670 bytes (1.20 MB) in 61.4ms[0m
+[ci/ci]   | [90m7:51PM[0m [32mINF[0m [1mno leaks found[0m
+[ci/ci]   ✅  Success - Main gitleaks [822.253012ms]
+[ci/ci] ⭐ Run Post lint
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/golangci-golangci-lint-action@v7/dist/post_run/index.js] user= workdir=
+[ci/ci]   | (node:6191) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/bunker-ec56dd3a/qa-guard --files-from manifest.txt --use-compress-program zstdmt
+[ci/ci]   | Cache Size: ~0 MB (210700 B)
+[ci/ci]   | Cache saved successfully
+[ci/ci]   | Saved cache for golangci-lint from paths '/root/.cache/golangci-lint' in 128ms
+[ci/ci]   ✅  Success - Post lint [358.395822ms]
+[ci/ci] ⭐ Run Post setup-python
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-python@v5/dist/cache-save/index.js] user= workdir=
+[ci/ci]   | (node:6222) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   ✅  Success - Post setup-python [192.981209ms]
+[ci/ci] ⭐ Run Post setup-go
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-go@v5/dist/cache-save/index.js] user= workdir=
+[ci/ci]   | (node:6235) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | [command]/opt/hostedtoolcache/go/1.26.11/x64/bin/go env GOMODCACHE
+[ci/ci]   | [command]/opt/hostedtoolcache/go/1.26.11/x64/bin/go env GOCACHE
+[ci/ci]   | /root/go/pkg/mod
+[ci/ci]   | /root/.cache/go-build
+[ci/ci]   | Primary key was not generated. Please check the log messages above for more errors or information
+[ci/ci]   ✅  Success - Post setup-go [253.134128ms]
+[ci/ci] ⭐ Run Complete job
+[ci/ci] Cleaning up container for job ci
+[ci/ci]   ✅  Success - Complete job
+[ci/ci] 🏁  Job succeeded

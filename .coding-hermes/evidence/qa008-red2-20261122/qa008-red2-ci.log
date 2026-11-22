@@ -1,0 +1,217 @@
+time="2026-11-21T18:26:29-08:00" level=info msg="Using docker host 'unix:///run/bunker/6f4a9f83/docker.sock', and daemon socket 'unix:///run/bunker/6f4a9f83/docker.sock'"
+[ci/ci] ⭐ Run Set up job
+[ci/ci] 🚀  Start image=catthehacker/ubuntu:act-latest
+[ci/ci]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[ci/ci]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[ci/ci]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[ci/ci]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[ci/ci]   ✅  Success - Set up job
+[ci/ci]   ☁  git clone 'https://github.com/actions/setup-go' # ref=v5
+[ci/ci]   ☁  git clone 'https://github.com/actions/setup-python' # ref=v5
+[ci/ci]   ☁  git clone 'https://github.com/golangci/golangci-lint-action' # ref=v7
+[ci/ci] ⭐ Run Main checkout
+[ci/ci]   🐳  docker cp src=/home/bunker-6f4a9f83/qa-guard/. dst=/home/bunker-6f4a9f83/qa-guard
+[ci/ci]   ✅  Success - Main checkout [146.677823ms]
+[ci/ci] ⭐ Run Main setup-go
+[ci/ci]   🐳  docker cp src=/home/bunker-6f4a9f83/.cache/act/actions-setup-go@v5/ dst=/var/run/act/actions/actions-setup-go@v5/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-go@v5/dist/setup/index.js] user= workdir=
+[ci/ci]   | Setup go version spec 1.26.11
+[ci/ci]   | Attempting to download 1.26.11...
+[ci/ci]   | (node:32) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | matching 1.26.11...
+[ci/ci]   | Acquiring 1.26.11 from https://github.com/actions/go-versions/releases/download/1.26.11-42945178835/go-1.26.11-linux-x64.tar.gz
+[ci/ci]   | Extracting Go...
+[ci/ci]   | [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /tmp/eb4bdab9-fb36-44c7-bf97-7bb304171706 -f /tmp/f3a9e567-01ed-4e39-b43c-4fdc529010f0
+[ci/ci]   | Successfully extracted go to /tmp/eb4bdab9-fb36-44c7-bf97-7bb304171706
+[ci/ci]   | Adding to the cache ...
+[ci/ci]   | Successfully cached go to /opt/hostedtoolcache/go/1.26.11/x64
+[ci/ci]   | Added go to the path
+[ci/ci]   | Successfully set up Go version 1.26.11
+[ci/ci]   | [command]/opt/hostedtoolcache/go/1.26.11/x64/bin/go env GOMODCACHE
+[ci/ci]   | [command]/opt/hostedtoolcache/go/1.26.11/x64/bin/go env GOCACHE
+[ci/ci]   | /root/go/pkg/mod
+[ci/ci]   | /root/.cache/go-build
+[ci/ci]   🚧  ::warning::Restore cache failed: Dependencies file is not found in /home/bunker-6f4a9f83/qa-guard. Supported file pattern: go.sum
+[ci/ci]   ❓ add-matcher /run/act/actions/actions-setup-go@v5/matchers.json
+[ci/ci]   | go version go1.26.11 linux/amd64
+[ci/ci]   | 
+[ci/ci]   ❓  ::group::go env
+[ci/ci]   | AR='ar'
+[ci/ci]   | CC='gcc'
+[ci/ci]   | CGO_CFLAGS='-O2 -g'
+[ci/ci]   | CGO_CPPFLAGS=''
+[ci/ci]   | CGO_CXXFLAGS='-O2 -g'
+[ci/ci]   | CGO_ENABLED='1'
+[ci/ci]   | CGO_FFLAGS='-O2 -g'
+[ci/ci]   | CGO_LDFLAGS='-O2 -g'
+[ci/ci]   | CXX='g++'
+[ci/ci]   | GCCGO='gccgo'
+[ci/ci]   | GO111MODULE=''
+[ci/ci]   | GOAMD64='v1'
+[ci/ci]   | GOARCH='amd64'
+[ci/ci]   | GOAUTH='netrc'
+[ci/ci]   | GOBIN=''
+[ci/ci]   | GOCACHE='/root/.cache/go-build'
+[ci/ci]   | GOCACHEPROG=''
+[ci/ci]   | GODEBUG=''
+[ci/ci]   | GOENV='/root/.config/go/env'
+[ci/ci]   | GOEXE=''
+[ci/ci]   | GOEXPERIMENT=''
+[ci/ci]   | GOFIPS140='off'
+[ci/ci]   | GOFLAGS=''
+[ci/ci]   | GOGCCFLAGS='-fPIC -m64 -pthread -Wl,--no-gc-sections -fmessage-length=0 -ffile-prefix-map=/tmp/go-build1393440948=/tmp/go-build -gno-record-gcc-switches'
+[ci/ci]   | GOHOSTARCH='amd64'
+[ci/ci]   | GOHOSTOS='linux'
+[ci/ci]   | GOINSECURE=''
+[ci/ci]   | GOMOD='/home/bunker-6f4a9f83/qa-guard/go.mod'
+[ci/ci]   | GOMODCACHE='/root/go/pkg/mod'
+[ci/ci]   | GONOPROXY=''
+[ci/ci]   | GONOSUMDB=''
+[ci/ci]   | GOOS='linux'
+[ci/ci]   | GOPATH='/root/go'
+[ci/ci]   | GOPRIVATE=''
+[ci/ci]   | GOPROXY='https://proxy.golang.org,direct'
+[ci/ci]   | GOROOT='/opt/hostedtoolcache/go/1.26.11/x64'
+[ci/ci]   | GOSUMDB='sum.golang.org'
+[ci/ci]   | GOTELEMETRY='local'
+[ci/ci]   | GOTELEMETRYDIR='/root/.config/go/telemetry'
+[ci/ci]   | GOTMPDIR=''
+[ci/ci]   | GOTOOLCHAIN='auto'
+[ci/ci]   | GOTOOLDIR='/opt/hostedtoolcache/go/1.26.11/x64/pkg/tool/linux_amd64'
+[ci/ci]   | GOVCS=''
+[ci/ci]   | GOVERSION='go1.26.11'
+[ci/ci]   | GOWORK=''
+[ci/ci]   | PKG_CONFIG='pkg-config'
+[ci/ci]   | 
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ✅  Success - Main setup-go [19.87804171s]
+[ci/ci]   ⚙  ::set-output:: go-version=1.26.11
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/go/1.26.11/x64/bin
+[ci/ci]   ⚙  ::add-path:: /root/go/bin
+[ci/ci] ⭐ Run Main setup-python
+[ci/ci]   🐳  docker cp src=/home/bunker-6f4a9f83/.cache/act/actions-setup-python@v5/ dst=/var/run/act/actions/actions-setup-python@v5/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-setup-python@v5/dist/setup/index.js] user= workdir=
+[ci/ci]   ❓  ::group::Installed versions
+[ci/ci]   | Version 3.x was not found in the local cache
+[ci/ci]   | (node:103) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | Version 3.x is available for downloading
+[ci/ci]   | Download from "https://github.com/actions/python-versions/releases/download/3.15.2-40340363276/python-3.15.2-linux-26.04-x64.tar.gz"
+[ci/ci]   | Extract downloaded archive
+[ci/ci]   | [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /tmp/6bed69a7-a84a-45df-8d2f-2260f4f0baf9 -f /tmp/1d46dd4d-5596-47de-8976-f2286b9e7a30
+[ci/ci]   | Execute installation script
+[ci/ci]   | Check if Python hostedtoolcache folder exist...
+[ci/ci]   | Creating Python hostedtoolcache folder...
+[ci/ci]   | Create Python 3.15.2 folder
+[ci/ci]   | Copy Python binaries to hostedtoolcache folder
+[ci/ci]   | Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+[ci/ci]   | Upgrading pip...
+[ci/ci]   | Collecting pip
+[ci/ci]   | Downloading pip-26.3-py3-none-any.whl.metadata (4.6 kB)
+[ci/ci]   | Downloading pip-26.3-py3-none-any.whl (2.0 MB)
+[ci/ci]   | ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 8.3 MB/s  0:00:00
+[ci/ci]   | 
+[ci/ci]   | Installing collected packages: pip
+[ci/ci]   | Attempting uninstall: pip
+[ci/ci]   | Found existing installation: pip 26.2.2
+[ci/ci]   | Uninstalling pip-26.2.2:
+[ci/ci]   | Successfully uninstalled pip-26.2.2
+[ci/ci]   | Successfully installed pip-26.3
+[ci/ci]   | Create complete file
+[ci/ci]   | Successfully set up CPython (3.15.2)
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ❓ add-matcher /run/act/actions/actions-setup-python@v5/.github/python.json
+[ci/ci]   ✅  Success - Main setup-python [34.041884522s]
+[ci/ci]   ⚙  ::set-env:: Python_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: Python2_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: Python3_ROOT_DIR=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: LD_LIBRARY_PATH=/opt/hostedtoolcache/Python/3.15.2/x64/lib
+[ci/ci]   ⚙  ::set-env:: pythonLocation=/opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::set-env:: PKG_CONFIG_PATH=/opt/hostedtoolcache/Python/3.15.2/x64/lib/pkgconfig
+[ci/ci]   ⚙  ::set-output:: python-version=3.15.2
+[ci/ci]   ⚙  ::set-output:: python-path=/opt/hostedtoolcache/Python/3.15.2/x64/bin/python
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/Python/3.15.2/x64
+[ci/ci]   ⚙  ::add-path:: /opt/hostedtoolcache/Python/3.15.2/x64/bin
+[ci/ci] ⭐ Run Main install-python-test-dependency
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/3] user= workdir=
+[ci/ci]   | Collecting pytest
+[ci/ci]   |   Downloading pytest-9.2.0-py3-none-any.whl.metadata (7.9 kB)
+[ci/ci]   | Collecting iniconfig>=2 (from pytest)
+[ci/ci]   |   Downloading iniconfig-2.3.1-py3-none-any.whl.metadata (2.8 kB)
+[ci/ci]   | Collecting packaging>=24 (from pytest)
+[ci/ci]   |   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+[ci/ci]   | Collecting pluggy<2,>=1.6 (from pytest)
+[ci/ci]   |   Downloading pluggy-1.7.0-py3-none-any.whl.metadata (5.0 kB)
+[ci/ci]   | Collecting pygments>=2.15 (from pytest)
+[ci/ci]   |   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+[ci/ci]   | Downloading pytest-9.2.0-py3-none-any.whl (411 kB)
+[ci/ci]   | Downloading pluggy-1.7.0-py3-none-any.whl (27 kB)
+[ci/ci]   | Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+[ci/ci]   | Downloading packaging-26.3-py3-none-any.whl (129 kB)
+[ci/ci]   | Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+[ci/ci]   |    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 5.2 MB/s  0:00:00
+[ci/ci]   | Installing collected packages: pygments, pluggy, packaging, iniconfig, pytest
+[ci/ci]   | 
+[ci/ci]   | Successfully installed iniconfig-2.3.1 packaging-26.3 pluggy-1.7.0 pygments-2.21.0 pytest-9.2.0
+[ci/ci]   | WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+[ci/ci]   ✅  Success - Main install-python-test-dependency [3.218582256s]
+[ci/ci] ⭐ Run Main build
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/4] user= workdir=
+[ci/ci]   ✅  Success - Main build [10.581544286s]
+[ci/ci] ⭐ Run Main vet
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/5] user= workdir=
+[ci/ci]   ✅  Success - Main vet [1.977322759s]
+[ci/ci] ⭐ Run Main lint
+[ci/ci]   🐳  docker cp src=/home/bunker-6f4a9f83/.cache/act/golangci-golangci-lint-action@v7/ dst=/var/run/act/actions/golangci-golangci-lint-action@v7/
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/golangci-golangci-lint-action@v7/dist/run/index.js] user= workdir=
+[ci/ci]   ❓  ::group::prepare environment
+[ci/ci]   | Checking for go.mod: go.mod
+[ci/ci]   | (node:3385) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | Cache not found for input keys: golangci-lint.cache-Linux-2968-929533b0970b7757c79a92fd97f006d99bd58e60, golangci-lint.cache-Linux-2968-
+[ci/ci]   | Finding needed golangci-lint version...
+[ci/ci]   | Requested golangci-lint 'v2.15', using 'v2.15.0', calculation took 215ms
+[ci/ci]   | Installation mode: binary
+[ci/ci]   | Installing golangci-lint binary v2.15.0...
+[ci/ci]   | Downloading binary https://github.com/golangci/golangci-lint/releases/download/v2.15.0/golangci-lint-2.15.0-linux-amd64.tar.gz ...
+[ci/ci]   | [command]/usr/bin/tar xz --overwrite --warning=no-unknown-keyword --overwrite -C /root -f /tmp/0ea6ecd1-1b3b-4c6f-bd50-c865ff3a8202
+[ci/ci]   | Installed golangci-lint into /root/golangci-lint-2.15.0-linux-amd64/golangci-lint in 1684ms
+[ci/ci]   | Prepared env in 1924ms
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ❓  ::group::run golangci-lint
+[ci/ci]   | Running [/root/golangci-lint-2.15.0-linux-amd64/golangci-lint config path] in [/home/bunker-6f4a9f83/qa-guard] ...
+[ci/ci]   | Running [/root/golangci-lint-2.15.0-linux-amd64/golangci-lint config verify] in [/home/bunker-6f4a9f83/qa-guard] ...
+[ci/ci]   | Running [/root/golangci-lint-2.15.0-linux-amd64/golangci-lint run] in [/home/bunker-6f4a9f83/qa-guard] ...
+[ci/ci]   | 0 issues.
+[ci/ci]   | 
+[ci/ci]   | golangci-lint found no issues
+[ci/ci]   | Ran golangci-lint in 3550ms
+[ci/ci]   ❓  ::endgroup::
+[ci/ci]   ✅  Success - Main lint [6.651666273s]
+[ci/ci]   ⚙  ::add-path:: /root/golangci-lint-2.15.0-linux-amd64
+[ci/ci] ⭐ Run Main test
+[ci/ci]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/7] user= workdir=
+[ci/ci]   | ok  	github.com/trouble-agent/guard	0.048s
+[ci/ci]   | --- FAIL: TestCheckAgainstStub (0.00s)
+[ci/ci]   |     client_test.go:41: got quarantine/block
+[ci/ci]   | FAIL
+[ci/ci]   | FAIL	github.com/trouble-agent/guard/client	0.008s
+[ci/ci]   | ok  	github.com/trouble-agent/guard/cmd/guardd	0.107s
+[ci/ci]   | ok  	github.com/trouble-agent/guard/data/corpus	3.962s
+[ci/ci]   | FAIL
+[ci/ci]   ❌  Failure - Main test [6.550532399s]
+[ci/ci] exitcode '1': failure
+[ci/ci] ⭐ Run Post lint
+[ci/ci]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/golangci-golangci-lint-action@v7/dist/post_run/index.js] user= workdir=
+[ci/ci]   | (node:5192) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[ci/ci]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[ci/ci]   | [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/bunker-6f4a9f83/qa-guard --files-from manifest.txt --use-compress-program zstdmt
+[ci/ci]   | Cache Size: ~0 MB (207362 B)
+[ci/ci]   | Cache saved successfully
+[ci/ci]   | Saved cache for golangci-lint from paths '/root/.cache/golangci-lint' in 122ms
+[ci/ci]   ✅  Success - Post lint [429.00196ms]
+[ci/ci] ⭐ Run Complete job
+[ci/ci]   ✅  Success - Complete job
+[ci/ci] 🏁  Job failed
+Error: Job 'ci' failed
