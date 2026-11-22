@@ -1,0 +1,7 @@
+PARENT_CAP=unlimited
+SUBSHELL_CAP=3145728
+CAP_EFFECTIVE=3145728 CAP_REQUESTED=3145728
+ok  	github.com/trouble-agent/guard	0.067s
+ok  	github.com/trouble-agent/guard/client	0.012s
+ok  	github.com/trouble-agent/guard/cmd/guardd	0.159s
+ok  	github.com/trouble-agent/guard/data/corpus	3.967s

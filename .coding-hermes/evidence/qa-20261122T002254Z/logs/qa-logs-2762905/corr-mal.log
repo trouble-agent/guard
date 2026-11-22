@@ -1,0 +1,2 @@
+guardd: policy loaded from default (id "default")
+{"decision":"block","risk_level":"medium","route":"quarantine","reason":"guard_error (fail-closed): no openrouter api key available","policy":"default","effective_block_at":0.85,"effective_review_at":0.5,"provider":"jev","score":0,"errored":true,"constraints":{"allow_tools":false,"allow_network":false,"allow_secrets":false},"bytes_seen":0,"classified_bytes":0,"truncated":false}

@@ -1,0 +1,5 @@
+NETWORK_CUT_APPLIED
+ok  	github.com/trouble-agent/guard	0.058s
+ok  	github.com/trouble-agent/guard/client	0.023s
+ok  	github.com/trouble-agent/guard/cmd/guardd	0.145s
+ok  	github.com/trouble-agent/guard/data/corpus	4.040s
