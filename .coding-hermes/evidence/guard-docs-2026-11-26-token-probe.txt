@@ -1,0 +1,9 @@
+guard-docs-2026-11-26-10-12-37; audited commit af135e93d79c399f1be50f7071af1de3dc708e89
+Source: docs/operations.md:32: install -m 0600 /dev/null /run/guardd/operator-token
+Scratch reproduction (destination substituted to avoid touching any real credential):
+d=$(mktemp -d "$TMPDIR/guard-docs-probe.XXXXXX"); printf 'existing-secret' > "$d/operator-token"; chmod 600 "$d/operator-token"; printf 'before bytes='; wc -c < "$d/operator-token"; install -m 0600 /dev/null "$d/operator-token"; printf 'after bytes='; wc -c < "$d/operator-token"; stat -c 'after mode=%a' "$d/operator-token"
+Observed:
+before bytes=15
+after bytes=0
+after mode=600
+The existing file is truncated on repeat use, destroying the token. No actual operator token was touched.
