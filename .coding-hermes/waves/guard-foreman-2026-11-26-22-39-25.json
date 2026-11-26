@@ -1,0 +1,8 @@
+{
+  "tick": "guard-foreman-2026-11-26-22-39-25",
+  "base": "b444529",
+  "workers": [
+    {"task": "DOC-45", "worktree": "/home/kara/worktrees/guard-DOC-45", "branch": "wt/DOC-45", "model": "glm-5.3-flash", "provider": "opencode-go-2", "status": "prepared"},
+    {"task": "DOC-46", "worktree": "/home/kara/worktrees/guard-DOC-46", "branch": "wt/DOC-46", "model": "glm-5.3-flash", "provider": "opencode-go-2", "status": "prepared"}
+  ]
+}
