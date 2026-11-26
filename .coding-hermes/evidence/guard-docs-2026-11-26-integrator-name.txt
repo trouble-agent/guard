@@ -1,0 +1,40 @@
+guard documentation audit evidence
+published target: /home/kara/trouble-agent/guard
+published commit: 59b1f4633fe2250188ac7fbb95f93152a4edf3f3
+
+Finding: README.md labels the Python distribution as `guard-client`, while the shipped package metadata names it `guard-agent-client`. The README wording is an integrator-facing package identity claim; following it can lead a consumer to the unrelated PyPI package that the adoption guide explicitly warns against.
+
+$ git rev-parse HEAD
+rc=0
+59b1f4633fe2250188ac7fbb95f93152a4edf3f3
+
+$ grep -nF 'connectors/python/`guard-client`' README.md
+rc=1
+(no matching corrected distribution name in that form)
+
+$ grep -nE 'name =|pip install|guard-agent-client|guard-client' connectors/python/pyproject.toml docs/ADOPTION.md connectors/README.md README.md
+rc=0
+connectors/python/pyproject.toml:6:name = "guard-agent-client"
+docs/ADOPTION.md:61:`guard-client` on PyPI belongs to an unrelated project, so `pip install
+docs/ADOPTION.md:62:guard-client` will install the wrong package):
+docs/ADOPTION.md:65:pip install /path/to/guard/connectors/python
+docs/ADOPTION.md:76:pip install "guard-agent-client @ git+https://github.com/trouble-agent/guard.git@594787295c3f44cd49938db99c4c771fceaa2357#subdirectory=connectors/python"
+docs/ADOPTION.md:84:The distribution is named `guard-agent-client` (import name stays
+docs/ADOPTION.md:85:`guard_client`) specifically to avoid the `guard-client` PyPI collision — use
+docs/ADOPTION.md:86:that name in the requirement, not `guard-client`.
+README.md:423:`connectors/python/` (`guard-client`): stdlib-only, speaks the HTTP shape
+
+$ grep -nF 'guard-agent-client' README.md connectors/README.md docs/ADOPTION.md
+rc=0
+docs/ADOPTION.md:76:pip install "guard-agent-client @ git+https://github.com/trouble-agent/guard.git@594787295c3f44cd49938db99c4c771fceaa2357#subdirectory=connectors/python"
+docs/ADOPTION.md:84:The distribution is named `guard-agent-client` (import name stays
+docs/ADOPTION.md:85:`guard_client`) specifically to avoid the `guard-client` PyPI collision — use
+
+affected reader: Python/integrator readers of README.md:395-423.
+control: docs/ADOPTION.md:84-86 already distinguishes the distribution name (`guard-agent-client`) from the import name (`guard_client`) and warns against `guard-client`.
+
+$ make docs-check
+rc=0
+make docs-check: PASS (README build, fail-closed JSON, and configured source-anchor checks)
+
+This is a source/docs differential at T2 for the finding; docs-check does not assert the package distribution name. No live PyPI publication lookup was performed, so registry availability and external package ownership remain unverified.
