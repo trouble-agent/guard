@@ -26,11 +26,15 @@ GUARD_EGRESS_ENABLED=false \
 ./bin/guardd -serve 127.0.0.1:8768
 ```
 
-For an owner-only token file instead:
+For a token file instead, first ensure `/run/guardd` is a trusted directory writable only by the service owner or administrator. Create the file as the service user with this one-time command:
 
 ```sh
-install -m 0600 /dev/null /run/guardd/operator-token
-# Populate the file using your secret-management mechanism.
+( umask 077; set -C; : > /run/guardd/operator-token )
+```
+
+This creates an empty owner-only file and fails rather than overwriting an existing file. If it fails, stop and investigate; do not delete or truncate an existing credential. Populate the new file with a non-empty token using your secret-management mechanism, without putting the secret in shell history, command arguments, or logs. Verify its owner and permissions, and ensure the service user can read it. Only then start the service:
+
+```sh
 GUARD_EGRESS_ENABLED=false ./bin/guardd -serve 127.0.0.1:8768 \
   -tokenfile /run/guardd/operator-token
 ```
@@ -48,7 +52,7 @@ chmod 0600 /run/guardd/operator-token
 stat -c '%a %n' /run/guardd/operator-token
 ```
 
-`GUARD_TOKEN` takes precedence over `-tokenfile` if both are set. The token is read at startup; change credentials by updating the environment/file and restarting the process.
+`GUARD_TOKEN` takes precedence over `-tokenfile` if both are set. The token is read only at startup. For rotation, provision a separate owner-only file in the same trusted directory, populate it securely, and verify its owner, permissions, and readability before replacing the old file atomically using your secret manager. Coordinate the credential change with clients and restart the service to load it; a non-empty `GUARD_TOKEN` must also be rotated or removed, otherwise it overrides the file. Do not rerun the one-time creation command on the existing file or leave an empty file in its place. Protect or securely retire the old credential according to your secret-management policy.
 
 ## 3. Bind address and exposure
 
