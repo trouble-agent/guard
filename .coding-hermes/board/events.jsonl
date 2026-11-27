@@ -329,3 +329,5 @@
 {"id":1794782735157477327,"timestamp":"2026-11-22T20:04:18","event_type":"task_completed","task_id":"QA-GUARD-008","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
 {"id":1794782735157477328,"timestamp":"2026-11-26T10:21:50","event_type":"task_created","task_id":"DOC-45","actor":"foreman","detail":"{\"id\":\"DOC-45\",\"status\":\"pending\"}","tick_number":null}
 {"id":1794782735157477329,"timestamp":"2026-11-26T10:41:13","event_type":"task_created","task_id":"DOC-46","actor":"foreman","detail":"{\"id\":\"DOC-46\",\"status\":\"pending\"}","tick_number":null}
+{"id":1794782735157477330,"timestamp":"2026-11-27T16:39:17","event_type":"task_completed","task_id":"DOC-45","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
+{"id":1794782735157477331,"timestamp":"2026-11-27T16:40:54","event_type":"task_completed","task_id":"DOC-46","actor":"foreman","detail":"{\"status\":\"complete\"}","tick_number":null}
