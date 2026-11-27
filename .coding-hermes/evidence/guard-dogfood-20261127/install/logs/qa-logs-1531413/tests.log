@@ -1,0 +1,4 @@
+ok  	github.com/trouble-agent/guard	0.051s
+ok  	github.com/trouble-agent/guard/client	0.007s
+ok  	github.com/trouble-agent/guard/cmd/guardd	0.064s
+ok  	github.com/trouble-agent/guard/data/corpus	3.153s
