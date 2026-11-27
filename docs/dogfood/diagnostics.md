@@ -2,13 +2,13 @@
 
 This file records durable real-use diagnostics and the current integration boundaries. Historical detailed runs remain in the dated `docs/dogfood/*findings.md` files and `.coding-hermes/dogfood-log.md`.
 
-## Current run: 2026-11-11, HEAD 92c3e07178f2dd267a1512318029c06e50922c5e
+## Current run: 2026-11-27, HEAD 337890bef4a9a818e5de9efa8b98741f7deab6d1
 
-The Go CLI, authenticated HTTP service, and Python connector all exercised successfully. The no-key CLI path returned the expected fail-closed block with rc=2. The local HTTP path returned health 200, unauthenticated /check 401, empty content 400, and an authenticated egress-disabled error verdict with HTTP 200. A fresh Python virtual environment installed `connectors/python` and exposed the `guard` console command; an unreachable endpoint returned rc=3.
+This run exercised the source-built Go CLI and authenticated HTTP service as a real consumer. `make build` produced `guardd v0.2.0`; a benign hosted classification delivered, injection text quarantined, an isolated no-key CLI returned the documented fail-closed rc=2 error, and HTTP health/auth/egress-disabled paths matched their contracts. Local `go test ./... -count=1`, `go vet ./...`, and `make docs-check` all passed.
 
-The live provider path returned a benign deliver verdict in 0.84s and an injection quarantine verdict in 0.81s. Five warm deliver runs measured 406.0ms ±17.3ms, range 378.8–421.8ms. User+system CPU was about 21ms on the direct deliver run, so the Jev network round trip dominates. The documented usage range is tracked by GUARD-DF-016 because its precision no longer reproduces at this HEAD.
+Five hyperfine runs after one warmup measured benign CLI mean 774.1 ms (597–1249 ms) and injection mean 1.181 s (1.024–1.319 s) on 16 CPUs at load about 20.36–21.65. User+system CPU was only tens of milliseconds; the hosted Jev round trip dominates. No PERF row was filed because no local code path was slow enough to justify profiling.
 
-The install battery completed on fresh bunker agent 1867ca04 at bunker-mvp: fresh-install, lint, tests, CI, upgrade, resource, and error-path cells were green/OK; cells for Docker, compose, UI, shutdown, and corruption were N/A by repository shape; network disconnect was INFO because the suite has no network dependency. Collect destroyed the agent and post-collect info returned not_found. The host used shared network namespaces and had unrelated agents, so tenant-isolation coverage is not claimed.
+The ephemeral `bunker-qa.sh` battery ran against this exact HEAD on agent 9009d5cc at bunker-las-02 and was collected to `/home/kara/.hermes/qa/evidence/guard/qa-20261127T125917Z/`. Fresh install, tests, CI/act, upgrade, resource, disconnect, corruption, and error-path cells completed according to their evidence. The native lint cell failed before linting because another golangci-lint process was running; this is not a product lint result. The agent and key were absent after collection.
 
 ## Durable integration rules
 

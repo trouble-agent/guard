@@ -223,4 +223,10 @@ first — the network is the latency.
   scale (GUARD-DF-017).
 - go.mod declares go 1.26.11; newer toolchains are fine.
 
+## Dogfood update — 2026-11-27
+
+Tested commit: 337890bef4a9a818e5de9efa8b98741f7deab6d1. `make build` produced a stamped binary and `./bin/guardd -version` returned `guardd v0.2.0`. A credential-free smoke test uses a fresh HOME with `OPENROUTER_API_KEY` unset; it returns rc=2 with `errored:true`, `route=quarantine`, and the explicit fail-closed no-key reason. For HTTP, `/healthz` and `/health` returned 200, unauthenticated `/check` returned 401, and authenticated `/check` with `GUARD_EGRESS_ENABLED=false` returned an in-band fail-closed error verdict with HTTP 200.
+
+The same run measured five hyperfine samples after one warmup on a 16-core host at load about 20.36–21.65: benign CLI mean 774.1 ms (range 597–1249 ms), injection mean 1.181 s (range 1.024–1.319 s). User+system CPU was only tens of milliseconds; hosted Jev latency dominates, so no PERF row was filed. The fresh bunker battery was collected from agent 9009d5cc on bunker-las-02 at `/home/kara/.hermes/qa/evidence/guard/qa-20261127T125917Z/`; its native lint cell failed before linting because another golangci-lint process was running. Independent `go test ./... -count=1`, `go vet ./...`, and `make docs-check` passed.
+
 ch:trace row=GUARD-DF-017 spec=skills/guard-usage/SKILL.md,cmd/guardd/main.go wave=guard-GUARD-DF-017 test=bounded-cli-stdin-probe+source-anchor-check doc=skills/guard-usage/SKILL.md evidence=none:ephemeral-probe-output witness=none:single-worker verdict=none:docs-only commit=none:worker-commit memory=none:pending
