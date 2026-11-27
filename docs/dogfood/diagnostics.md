@@ -10,6 +10,10 @@ Five hyperfine runs after one warmup measured benign CLI mean 774.1 ms (597–12
 
 The ephemeral `bunker-qa.sh` battery ran against this exact HEAD on agent 9009d5cc at bunker-las-02 and was collected to `/home/kara/.hermes/qa/evidence/guard/qa-20261127T125917Z/`; the committed copy is `.coding-hermes/evidence/guard-dogfood-20261127/install/`. Fresh install, tests, CI/act, upgrade, resource, disconnect, corruption, and error-path cells completed according to their evidence. The native lint cell failed before linting because another golangci-lint process was running; this is not a product lint result. The agent and key were absent after collection.
 
+## 2026-11-27 redelivery
+
+A separate recheck at `857533b1ea6c5b449615909037beb9774d9c4afa` exercised live CLI verdicts and launched a new bunker battery. Compilation and a separately executed no-key fail-closed CLI were verified. Collection completed; tests and CI/act passed, while lint failed before linting because another golangci-lint ran concurrently. Agent 699c50b0 was destroyed and its absence verified. Evidence is in `.coding-hermes/evidence/guard-dogfood-20261127-redelivery/`; see `2026-11-27-redelivery.md` for timing limits and scope. The prior completed run remains documented separately above.
+
 ## Durable integration rules
 
 - Bind consumers to `route` plus `constraints`, not `decision` alone.

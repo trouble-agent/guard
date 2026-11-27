@@ -914,6 +914,8 @@ is the duplicate-dispatch class, which belongs to the scheduler board, not this 
 
 - ch:trace tick=guard-dogfood-2026-11-27-12-27-32 duplicate=no delivery=1 new-evidence=yes surface=cli+http+install verdict=SHIPPABLE rows-filed=0 install=PASS(agent=9009d5cc@bunker-las-02,teardown-verified) perf=measured-no-row
 
+Redelivery recheck at 857533b1ea6c5b449615909037beb9774d9c4afa: source-built CLI delivered one benign input in 1.00, 0.83, 0.60 seconds and quarantined an injection in 1.24 seconds; hosted classifier used. Fresh cold state was not established. New bunker agent 699c50b0 at bunker-las-02 compiled the source and ran a no-key fail-closed CLI (rc=2); battery collected: tests and CI/act passed, lint failed before linting due to concurrent golangci-lint. Agent destroyed; all-status server census empty. Evidence: `.coding-hermes/evidence/guard-dogfood-20261127-redelivery/`. No board changes authorized or made; no new product or performance finding. DuckBrain recall timed out.
+
 
 Stand-in workdir did not resolve, so the walk ran on the real repo
 (`/home/kara/trouble-agent/guard`), tree clean at `98dba4e` when I started and at `c87b74e`

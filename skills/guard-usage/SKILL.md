@@ -33,6 +33,7 @@ One Go core, three consumption shapes, one `Result` contract. Route on
 
 ```bash
 go build -o bin/guardd ./cmd/guardd
+# Plain go build reports "dev"; use make build when you need the release version stamp.
 ./bin/guardd -version                                # build version, exit 0 — no key/token/network needed
 printf '%s' "$msg" | ./bin/guardd                    # CLI, stdin
 ./bin/guardd -content "$msg" -source github_pr       # CLI, one-shot
