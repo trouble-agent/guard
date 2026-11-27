@@ -8,7 +8,7 @@ This run exercised the source-built Go CLI and authenticated HTTP service as a r
 
 Five hyperfine runs after one warmup measured benign CLI mean 774.1 ms (597–1249 ms) and injection mean 1.181 s (1.024–1.319 s) on 16 CPUs at load about 20.36–21.65. User+system CPU was only tens of milliseconds; the hosted Jev round trip dominates. No PERF row was filed because no local code path was slow enough to justify profiling.
 
-The ephemeral `bunker-qa.sh` battery ran against this exact HEAD on agent 9009d5cc at bunker-las-02 and was collected to `/home/kara/.hermes/qa/evidence/guard/qa-20261127T125917Z/`. Fresh install, tests, CI/act, upgrade, resource, disconnect, corruption, and error-path cells completed according to their evidence. The native lint cell failed before linting because another golangci-lint process was running; this is not a product lint result. The agent and key were absent after collection.
+The ephemeral `bunker-qa.sh` battery ran against this exact HEAD on agent 9009d5cc at bunker-las-02 and was collected to `/home/kara/.hermes/qa/evidence/guard/qa-20261127T125917Z/`; the committed copy is `.coding-hermes/evidence/guard-dogfood-20261127/install/`. Fresh install, tests, CI/act, upgrade, resource, disconnect, corruption, and error-path cells completed according to their evidence. The native lint cell failed before linting because another golangci-lint process was running; this is not a product lint result. The agent and key were absent after collection.
 
 ## Durable integration rules
 

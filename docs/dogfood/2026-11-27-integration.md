@@ -41,7 +41,7 @@ The local CPU portion is tens of milliseconds while the hosted classifier domina
 
 ## Ephemeral install leg
 
-The install battery did run through `bunker-qa.sh` on fresh agent 9009d5cc at bunker-las-02, against the exact tested HEAD. Launch was detached and collection initially reported RUNNING; the terminal marker was then observed on the agent. Final collection returned `COLLECTED already-collected`, pulled 23 agent rows, and wrote durable controller evidence to `/home/kara/.hermes/qa/evidence/guard/qa-20261127T125917Z/`. The agent was absent from `bunker-las-02` afterward and its key file was absent.
+The install battery did run through `bunker-qa.sh` on fresh agent 9009d5cc at bunker-las-02, against the exact tested HEAD. Launch was detached and collection initially reported RUNNING; the terminal marker was then observed on the agent. Final collection returned `COLLECTED already-collected`, pulled 23 agent rows, and wrote durable controller evidence to `/home/kara/.hermes/qa/evidence/guard/qa-20261127T125917Z/`. The committed copy is `.coding-hermes/evidence/guard-dogfood-20261127/install/` with the JSONL, manifest, and per-cell logs.
 
 Measured battery cells: fresh-install OK, tests OK, CI/act OK, upgrade OK, chaos-resource PASS, chaos-disconnect INFO, chaos-corruption OK, and chaos-errorpath OK. Docker/build/compose and UI were N/A or safety-skipped by repository shape/live-controller protection. The native lint cell was FAIL, but its own log says `parallel golangci-lint is running`; this is a shared-agent/harness concurrency failure, not a product lint result. Local source validation independently returned `go test ./... -count=1` rc=0, `go vet ./...` rc=0, and `make docs-check` PASS.
 
