@@ -9,6 +9,10 @@ description: Use when integrating or running the guard message-security filter (
 One Go core, three consumption shapes, one `Result` contract. Route on
 `result.route` + `result.constraints`, never on `decision` alone.
 
+## Fresh-machine diagnostic
+
+A 2026-11-27 bunker battery at source 64167c23 reported a successful `go build ./...` compilation, not an installed executable. Its linter panicked because the harness selected Go 1.27.4 while golangci-lint was built with Go 1.26; inspect toolchain compatibility before treating that lint cell as a product defect. Full run: `docs/dogfood/2026-11-27-122732-followup.md`.
+
 ## Prerequisites
 
 - Go ≥1.26.11 to build (`go build ./...` — go.mod declares `go 1.26.11`); zero external deps.

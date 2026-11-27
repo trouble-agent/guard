@@ -14,6 +14,10 @@ The ephemeral `bunker-qa.sh` battery ran against this exact HEAD on agent 9009d5
 
 A separate recheck at `857533b1ea6c5b449615909037beb9774d9c4afa` exercised live CLI verdicts and launched a new bunker battery. Compilation and a separately executed no-key fail-closed CLI were verified. Collection completed; tests and CI/act passed, while lint failed before linting because another golangci-lint ran concurrently. Agent 699c50b0 was destroyed and its absence verified. Evidence is in `.coding-hermes/evidence/guard-dogfood-20261127-redelivery/`; see `2026-11-27-redelivery.md` for timing limits and scope. The prior completed run remains documented separately above.
 
+## 2026-11-27 follow-up at 64167c23
+
+CLI classification succeeded for benign and injection inputs; isolated missing-key behavior failed closed. First/repeat wall times were 1.20/0.78 seconds, not established cold/warm. Fresh bunker compile passed; its linter failed before a product result because it was built with Go 1.26 but the harness selected Go 1.27.4. Final battery and cleanup were outstanding at handoff; see `2026-11-27-122732-followup.md` and its linked handoff for collection.
+
 ## Durable integration rules
 
 - Bind consumers to `route` plus `constraints`, not `decision` alone.

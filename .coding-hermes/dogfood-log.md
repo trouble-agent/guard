@@ -914,6 +914,8 @@ is the duplicate-dispatch class, which belongs to the scheduler board, not this 
 
 - ch:trace tick=guard-dogfood-2026-11-27-12-27-32 duplicate=no delivery=1 new-evidence=yes surface=cli+http+install verdict=SHIPPABLE rows-filed=0 install=PASS(agent=9009d5cc@bunker-las-02,teardown-verified) perf=measured-no-row
 
+Redelivery at source 64167c23fb4a45ef8e6eda7adca229ba804174d3: benign CLI delivered twice, attack quarantined, missing-key failed closed. First/repeat benign 1.20/0.78 s; cold cache not established. Fresh bunker battery a0d0f40a on bunker-las-03 was running at handoff; compile cell passed but executable installation and final battery verdict were not yet proven. Lint failed from Go 1.27 vs linter Go 1.26 toolchain mismatch. No board writes authorized. Full evidence and handoff: docs/dogfood/2026-11-27-122732-followup.md and /home/kara/.hermes/qa/evidence/guard/guard-dogfood-2026-11-27-12-27-32-new/HANDOFF.md.
+
 Redelivery recheck at 857533b1ea6c5b449615909037beb9774d9c4afa: source-built CLI delivered one benign input in 1.00, 0.83, 0.60 seconds and quarantined an injection in 1.24 seconds; hosted classifier used. Fresh cold state was not established. New bunker agent 699c50b0 at bunker-las-02 compiled the source and ran a no-key fail-closed CLI (rc=2); battery collected: tests and CI/act passed, lint failed before linting due to concurrent golangci-lint. Agent destroyed; all-status server census empty. Evidence: `.coding-hermes/evidence/guard-dogfood-20261127-redelivery/`. No board changes authorized or made; no new product or performance finding. DuckBrain recall timed out.
 
 
@@ -966,3 +968,52 @@ policy) and `127.0.0.1:18769` (`tight-webhook.json`), both token-gated; fixtures
 `docs/dogfood/2026-11-21-run10-tick1-integration.md`.
 
 - ch:trace tick=guard-dogfood-2026-11-21-10-28-08 duplicate=no delivery=1 new-evidence=yes surface=cli+http+policy(9-contracts-exercised) product-diff-since-walk=0 rows-filed=1(GUARD-DF-009-R2,product-rows=0) provenance=verified(head=c87b74e,origin-parity,tree-clean) residue=2-loopback-listeners verdict=WORKS-AS-DOCUMENTED(install=SKIPPED)
+## 2026-11-27 delivery 8 — install battery collected to terminal
+
+Tick guard-dogfood-2026-11-27-12-27-32, delivery 8. Eight distinct inbound dispatch timestamps
+were counted across the rotated gateway/agent log families (07:27:39, 08:30:29, 08:40:16,
+08:57:22, 09:12:10, 09:28:31, 09:41:08, 09:48:13, host-local -05); that count includes this fire.
+Only four of those fires left a record, which is why earlier entries stop at "delivery 1" — the
+ordinal here comes from the attributed dispatch count, not from the headings.
+
+No product re-walk. Product-source delta since the measured commit
+64167c23fb4a45ef8e6eda7adca229ba804174d3 is 0 files (the only uncommitted paths are
+.coding-hermes/, docs/dogfood/ and skills/), and HEAD == origin/main == 64167c2 at collection, so
+the CLI/HTTP arms and the delivery-1 perf numbers stand. Perf was NOT re-measured: an unchanged
+tree re-driven measures the host, and the earlier figure (benign CLI mean 774 ms at loadavg ~21)
+was already classifier-bound with tens of milliseconds of local CPU.
+
+Two things this delivery owns.
+
+1. INSTALL LEG CLOSED — PASS, teardown verified. The detached battery the third delivery left
+   running (agent 4aae569b, bunker-mvp, launched 14:45:31Z, TTL 4h) was collected to terminal
+   instead of relaunched: 27 ledger rows — 19 OK, 1 PASS, 2 SKIPPED, 3 N/A, 1 INFO, 1 WARN,
+   nothing FAIL or UNVERIFIED. tests OK, ci-pass OK (act, 1 job green), upgrade OK (v0.1.0 tree
+   via git archive → HEAD reinstall clean), chaos-corruption OK, chaos-resource PASS,
+   chaos-errorpath OK (rc=2 on missing config), fresh-install OK but compile-only by design.
+   lint is OK here (`golangci-lint run` rc=0); this corrects the mid-run status that the
+   follow-up documents still describe as failing on a Go 1.27.4 vs linter Go 1.26 mismatch —
+   those documents are left as published and this entry supersedes them. An executable built
+   from this source on the fresh host ran and failed closed (rc=2, errored=true, no API key),
+   recorded in executable-probe.log. Agent destroyed: `bunker info 4aae569b` not_found and the
+   all-status census on bunker-mvp no longer lists it; bunker-las-02 reports "No agents found."
+   Evidence committed at .coding-hermes/evidence/guard-dogfood-20261127-d8-collect/ (INDEX.md,
+   qa-evidence.jsonl, executable-probe.log, HANDOFF.md, logs/), which also clears that run's
+   evidence-outside-repo WARN.
+
+2. STRANDED RECORDS RECONCILED. Four prior fires of this tick wrote records and left them
+   uncommitted: .coding-hermes/dogfood-log.md (+2 lines), docs/dogfood/diagnostics.md,
+   skills/guard-usage/SKILL.md, and three untracked reports
+   (2026-11-27-122732-followup.md, 2026-11-27-122732-collection-recheck.md,
+   2026-11-27-122732-third-delivery.md). They are committed with this entry, unchanged in
+   substance, and attributed to the deliveries that wrote them.
+
+Rows: none filed. Neither the battery nor the CLI/HTTP walk produced a product defect. The one
+thing a stranger cannot do is install a CURRENT release, which is owner-gated REL-GUARD-007
+(blocked, P1), not a product bug. Board untouched: 150 rows, no duplicate ids, DOC-45 and DOC-46
+remain the only pending rows.
+
+Residue: one unnamed agent 18beb8fa on bunker-las-03 (created 14:46:06Z, expires 18:46:06Z) is
+not named by any record of this tick; it was left running and is reported rather than destroyed.
+
+- ch:trace tick=guard-dogfood-2026-11-27-12-27-32 duplicate=yes delivery=8 new-evidence=yes surface=install-battery-collected(product-diff-since-walk=0) rows-filed=0 install=PASS(agent=4aae569b@bunker-mvp,destroyed-verified) perf=not-remeasured(unchanged-tree) records=stranded-committed verdict=SHIPPABLE(carry-forward)

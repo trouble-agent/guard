@@ -1,0 +1,11 @@
+# Guard dogfood redelivery collection recheck
+
+Tick: guard-dogfood-2026-11-27-12-27-32. This is a redelivery, not a new independent tick. Source: 64167c23fb4a45ef8e6eda7adca229ba804174d3, matching the live remote HEAD at recheck. Built `go build -o ../guardd ./cmd/guardd` from a `git archive` snapshot in a unique scratch directory.
+
+Promise: classify untrusted text and fail closed when the classifier cannot be reached. A benign 56-byte release-summary request returned allow/deliver (scores 0.44 and 0.37, rc 0). An instruction to reveal API keys returned block/quarantine, score 0.98. The benign request with an isolated HOME and no key returned block/quarantine, errored=true, rc 2. This small set establishes behavior for these inputs only, not general injection detection accuracy.
+
+Performance: `/usr/bin/time ../guardd -content 'Please summarize the project release notes for the team.'` took 1.98 s on the first call and 0.83 s on the repeated call using the hosted classifier. Caches were not reset, so cold latency is unmeasured. Network/model wait was not separately profiled; no local hot path is established, and no performance row is claimed.
+
+Bunker: collected the existing redelivery's agent a0d0f40a on bunker-las-03. Raw evidence is `/home/kara/.hermes/qa/evidence/guard/guard-dogfood-2026-11-27-12-27-32-new/evidence.jsonl`. The compile-only fresh-install cell and tests passed; CI/act reported pass. Lint failed because the runner installed Go 1.27.4 while golangci-lint was built with Go 1.26. The collector timed out after 90 seconds, but a fresh all-status listing returned no agents and the local evidence contains the collected cells. An executable invocation on that agent and the published release install remain unverified. An exec attempt found the agent already absent; no teardown cause is inferred. The inherited battery is not a new launch in this delivery.
+
+No board changes were made: the lane explicitly prohibits board mutation despite separately requesting filed findings. Existing uncommitted same-tick log, diagnostics, usage skill and follow-up were preserved, not attributed to this delivery. DuckBrain guard recall timed out. This report is an uncommitted delivery artifact; the current log/diagnostics/usage changes remain uncommitted as well.
